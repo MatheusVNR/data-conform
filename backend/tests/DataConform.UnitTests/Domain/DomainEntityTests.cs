@@ -9,7 +9,7 @@ public class DomainEntityTests
     [Fact]
     public void Workspace_ShouldInitializeWithDefaults()
     {
-        var workspace = new Workspace
+        Workspace workspace = new Workspace
         {
             Name = "Empresa Teste",
             Slug = "empresa-teste"
@@ -27,8 +27,8 @@ public class DomainEntityTests
     [Fact]
     public void ImportProject_ShouldLinkToWorkspaceAndFiles()
     {
-        var workspaceId = Guid.NewGuid();
-        var project = new ImportProject
+        Guid workspaceId = Guid.NewGuid();
+        ImportProject project = new ImportProject
         {
             WorkspaceId = workspaceId,
             Name = "Importação de Clientes 2026",
@@ -45,7 +45,7 @@ public class DomainEntityTests
     [Fact]
     public void ImportFile_ShouldDefaultToPendingStatus()
     {
-        var file = new ImportFile
+        ImportFile file = new ImportFile
         {
             OriginalFileName = "clientes.xlsx",
             StoredFileName = "uuid-clientes.xlsx",
@@ -61,8 +61,8 @@ public class DomainEntityTests
     [Fact]
     public void ValidationIssue_ShouldCreateWithRequiredAttributes()
     {
-        var fileId = Guid.NewGuid();
-        var issue = new ValidationIssue
+        Guid fileId = Guid.NewGuid();
+        ValidationIssue issue = new ValidationIssue
         {
             FileId = fileId,
             RowNumber = 12,

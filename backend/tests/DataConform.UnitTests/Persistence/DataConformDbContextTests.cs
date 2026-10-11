@@ -10,7 +10,7 @@ public class DataConformDbContextTests
 {
     private static DataConformDbContext CreateInMemoryDbContext()
     {
-        var options = new DbContextOptionsBuilder<DataConformDbContext>()
+        DbContextOptions<DataConformDbContext> options = new DbContextOptionsBuilder<DataConformDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
@@ -20,22 +20,22 @@ public class DataConformDbContextTests
     [Fact]
     public async Task SaveChangesAsync_ShouldPersistWorkspaceWithHierarchy()
     {
-        using var context = CreateInMemoryDbContext();
+        using DataConformDbContext context = CreateInMemoryDbContext();
 
-        var workspace = new Workspace
+        Workspace workspace = new Workspace
         {
             Name = "Matriz São Paulo",
             Slug = "matriz-sp"
         };
 
-        var project = new ImportProject
+        ImportProject project = new ImportProject
         {
             Workspace = workspace,
             Name = "Carga Produtos Outubro",
             TargetSystem = "TOTVS Protheus"
         };
 
-        var file = new ImportFile
+        ImportFile file = new ImportFile
         {
             Project = project,
             OriginalFileName = "produtos_v1.csv",
@@ -46,7 +46,7 @@ public class DataConformDbContextTests
             TotalRows = 100
         };
 
-        var issue = new ValidationIssue
+        ValidationIssue issue = new ValidationIssue
         {
             File = file,
             RowNumber = 5,
@@ -62,12 +62,12 @@ public class DataConformDbContextTests
         file.ValidationIssues.Add(issue);
 
         context.Workspaces.Add(workspace);
-        var result = await context.SaveChangesAsync();
+        int result = await context.SaveChangesAsync();
 
         Assert.True(result > 0);
 
         // Consultar a partir do banco em memória
-        var savedWorkspace = await context.Workspaces
+        Workspace? savedWorkspace = await context.Workspaces
             .Include(w => w.Projects)
                 .ThenInclude(p => p.Files)
                     .ThenInclude(f => f.ValidationIssues)
@@ -76,15 +76,15 @@ public class DataConformDbContextTests
         Assert.NotNull(savedWorkspace);
         Assert.Single(savedWorkspace.Projects);
 
-        var savedProject = savedWorkspace.Projects.First();
+        ImportProject savedProject = savedWorkspace.Projects.First();
         Assert.Equal("Carga Produtos Outubro", savedProject.Name);
         Assert.Single(savedProject.Files);
 
-        var savedFile = savedProject.Files.First();
+        ImportFile savedFile = savedProject.Files.First();
         Assert.Equal(FileStatus.Processing, savedFile.Status);
         Assert.Single(savedFile.ValidationIssues);
 
-        var savedIssue = savedFile.ValidationIssues.First();
+        ValidationIssue savedIssue = savedFile.ValidationIssues.First();
         Assert.Equal(IssueSeverity.Error, savedIssue.Severity);
         Assert.Equal("NEGATIVE_VALUE", savedIssue.IssueCode);
     }
