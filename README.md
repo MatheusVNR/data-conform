@@ -25,14 +25,14 @@ O projeto adota uma arquitetura monorepositório separada em backend, frontend e
 - **Backend (.NET 10 / C#):**
   - Arquitetura em camadas (Domain, Application, Infrastructure, Api).
   - ASP.NET Core Web API com suporte a OpenAPI.
-  - Entity Framework Core planejado para persistência com SQL Server.
+  - Entity Framework Core planejado para persistência com PostgreSQL (Npgsql).
   - Testes automatizados com xUnit.
 - **Frontend (React + TypeScript + Vite):**
   - Interface construída com React e TypeScript.
   - Bundler e ambiente de desenvolvimento rápido com Vite.
   - Padronização de código com ESLint.
 - **Infraestrutura Local (Docker Compose):**
-  - Contêiner SQL Server 2022 oficial para desenvolvimento local.
+  - Contêiner PostgreSQL 17 oficial (Alpine) para desenvolvimento local.
   - Configuração via variáveis de ambiente seguras com persistência em volume Docker.
 
 ---
@@ -57,7 +57,7 @@ DataConform/
 │   ├── eslint.config.js                    # Regras de linting do ESLint
 │   └── src/                                # Código-fonte da aplicação React
 │
-├── docker-compose.yml                      # Definição do serviço SQL Server local
+├── docker-compose.yml                      # Definição do serviço PostgreSQL local
 ├── .env.example                            # Modelo ilustrativo de variáveis de ambiente
 ├── .gitignore                              # Arquivos ignorados pelo Git
 └── README.md                               # Documentação inicial do repositório
@@ -133,12 +133,12 @@ Antes de iniciar o serviço de banco de dados, crie o arquivo `.env` na raiz do 
 Copy-Item .env.example .env
 ```
 
-Abra o arquivo `.env` gerado e defina uma senha forte para a variável `MSSQL_SA_PASSWORD` (deve conter maiúsculas, minúsculas, números e caracteres especiais).
+Abra o arquivo `.env` gerado e ajuste o usuário, senha e banco de dados caso deseje customizar.
 
 > [!CAUTION]
 > **Nunca comite o arquivo `.env` no Git.** Mantenha senhas e credenciais reais restritas ao seu ambiente local.
 
-### 7.2. Iniciar o SQL Server
+### 7.2. Iniciar o PostgreSQL
 
 Com o Docker Desktop ou o daemon do Docker em execução:
 
@@ -146,7 +146,7 @@ Com o Docker Desktop ou o daemon do Docker em execução:
 docker compose up -d
 ```
 
-Para verificar o status e a integridade (healthcheck) do contêiner:
+Para verificar o status e a integridade (healthcheck com `pg_isready`) do contêiner:
 
 ```powershell
 docker compose ps

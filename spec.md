@@ -130,7 +130,7 @@ Utilize as seguintes tecnologias como padrão inicial.
 - .NET 10 ou uma versão LTS posterior compatível com o ambiente, caso exista uma justificativa técnica para a atualização.
 - ASP.NET Core Web API.
 - Entity Framework Core.
-- SQL Server.
+- PostgreSQL.
 - Swagger/OpenAPI para documentação da API.
 - xUnit para testes automatizados.
 
@@ -150,7 +150,7 @@ Utilize a estrutura padrão e estável do ecossistema escolhido. Não adicione b
 
 - Docker.
 - Docker Compose.
-- SQL Server executado em contêiner para desenvolvimento local.
+- PostgreSQL executado em contêiner para desenvolvimento local.
 
 O ambiente local deverá ser reproduzível, com configurações documentadas e sem dependência de serviços pagos para a inicialização básica.
 
@@ -374,7 +374,7 @@ Escopo planejado:
 
 - Configuração de injeção de dependência.
 - Configuração inicial do EF Core.
-- Integração com SQL Server.
+- Integração com PostgreSQL.
 - Definição inicial do modelo de domínio.
 - Configuração de migrations.
 - Convenções de persistência.
@@ -477,9 +477,9 @@ Não implemente páginas de negócio, rotas, autenticação, chamadas à API ou 
 
 Preserve a estrutura padrão mínima do template.
 
-### 9.4. SQL Server com Docker Compose
+### 9.4. PostgreSQL com Docker Compose
 
-Crie um `docker-compose.yml` na raiz contendo somente o serviço do SQL Server.
+Crie um `docker-compose.yml` na raiz contendo somente o serviço do PostgreSQL.
 
 Requisitos:
 
