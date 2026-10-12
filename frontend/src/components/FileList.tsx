@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FC } from 'react';
 import type { ImportFileDto } from '../types';
 import { FileStatusLabels } from '../types';
@@ -7,6 +7,7 @@ interface FileListProps {
   files: ImportFileDto[];
   onValidate: (fileId: string, requiredColumns?: string) => Promise<void>;
   onViewReport: (fileId: string) => void;
+  onDeleteFile?: (fileId: string) => Promise<void>;
   validatingFileId: string | null;
 }
 
@@ -14,10 +15,40 @@ export const FileList: FC<FileListProps> = ({
   files,
   onValidate,
   onViewReport,
+  onDeleteFile,
   validatingFileId,
 }) => {
   const [selectedFileForRules, setSelectedFileForRules] = useState<string | null>(null);
   const [requiredColumnsInput, setRequiredColumnsInput] = useState<string>('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        setSelectedFileForRules(null);
+        setRequiredColumnsInput('');
+        setConfirmDeleteId(null);
+      }
+    };
+    if (selectedFileForRules || confirmDeleteId) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [selectedFileForRules, confirmDeleteId]);
+
+  const handleDelete = async (fileId: string): Promise<void> => {
+    if (!onDeleteFile) return;
+    try {
+      setDeletingId(fileId);
+      await onDeleteFile(fileId);
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+    }
+  };
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
@@ -133,10 +164,44 @@ export const FileList: FC<FileListProps> = ({
                         type="button"
                         className="btn btn-primary btn-xs"
                         onClick={() => setSelectedFileForRules(file.id)}
-                        disabled={isValidatingThis}
+                        disabled={isValidatingThis || deletingId === file.id}
                       >
                         {isValidatingThis ? 'Validando...' : file.status === 2 ? 'Revalidar' : 'Validar'}
                       </button>
+
+                      {onDeleteFile && (
+                        confirmDeleteId === file.id ? (
+                          <div className="inline-delete-confirm">
+                            <span className="confirm-prompt text-xs font-semibold text-error">Excluir?</span>
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-xs"
+                              disabled={deletingId === file.id}
+                              onClick={() => handleDelete(file.id)}
+                            >
+                              {deletingId === file.id ? '...' : 'Sim'}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-xs"
+                              disabled={deletingId === file.id}
+                              onClick={() => setConfirmDeleteId(null)}
+                            >
+                              Não
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-ghost-danger btn-xs"
+                            title="Excluir arquivo e histórico"
+                            disabled={isValidatingThis || deletingId === file.id}
+                            onClick={() => setConfirmDeleteId(file.id)}
+                          >
+                            🗑 Excluir
+                          </button>
+                        )
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -147,7 +212,17 @@ export const FileList: FC<FileListProps> = ({
       </div>
 
       {selectedFileForRules && (
-        <div className="modal-backdrop" role="dialog" aria-modal="true">
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedFileForRules(null);
+              setRequiredColumnsInput('');
+            }
+          }}
+        >
           <div className="modal-card">
             <div className="modal-header">
               <h3>Configurar Validação do Arquivo</h3>

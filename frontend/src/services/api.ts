@@ -245,3 +245,14 @@ export async function getFileReport(fileId: string): Promise<ValidationReportDto
   }
   return (await response.json()) as ValidationReportDto;
 }
+
+export async function deleteFile(fileId: string): Promise<void> {
+  const response: Response = await fetch(`${API_BASE_URL}/files/${fileId}`, {
+    method: 'DELETE',
+    headers: getHeaders(false),
+  });
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(errorData.error || 'Erro ao excluir arquivo');
+  }
+}

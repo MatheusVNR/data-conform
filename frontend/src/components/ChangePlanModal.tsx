@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FC } from 'react';
 import type { WorkspaceDto, WorkspaceQuotaDto } from '../types';
 import { changeWorkspacePlan } from '../services/api';
@@ -17,6 +17,7 @@ interface PlanOption {
   monthlyFiles: number;
   maxRows: string;
   description: string;
+  capacityGain?: string;
   highlight?: boolean;
 }
 
@@ -28,6 +29,7 @@ const PLANS: PlanOption[] = [
     monthlyFiles: 20,
     maxRows: '1.000 linhas/arquivo',
     description: 'Ideal para testes, validações esporádicas e pequenas planilhas.',
+    capacityGain: 'Entrada: 20 uploads/mês',
   },
   {
     key: 'Professional',
@@ -36,6 +38,7 @@ const PLANS: PlanOption[] = [
     monthlyFiles: 500,
     maxRows: '50.000 linhas/arquivo',
     description: 'Para operações comerciais ativas com integrações ERP contínuas.',
+    capacityGain: '+480 uploads/mês (25x mais)',
     highlight: true,
   },
   {
@@ -45,6 +48,7 @@ const PLANS: PlanOption[] = [
     monthlyFiles: 10000,
     maxRows: '1.000.000 linhas/arquivo',
     description: 'Volume massivo, alta prioridade de processamento e auditoria avançada.',
+    capacityGain: '+9.500 uploads/mês (Massivo)',
   },
 ];
 
@@ -57,6 +61,20 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
   const [selectedPlan, setSelectedPlan] = useState<string>('Professional');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen || !workspace) return null;
 
@@ -78,7 +96,16 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
   };
 
   return (
-    <div className="modal-backdrop">
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div className="modal-dialog plan-modal-dialog">
         <div className="modal-header">
           <h2>Gerenciar Plano Comercial & Cotas</h2>
@@ -107,7 +134,12 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
                   }`}
                   onClick={() => setSelectedPlan(plan.key)}
                 >
-                  {plan.highlight && <span className="plan-badge-popular">Mais Popular</span>}
+                  <div className="plan-card-top-badges">
+                    {plan.highlight && <span className="plan-badge-popular">Mais Popular</span>}
+                    {plan.capacityGain && (
+                      <span className="plan-badge-gain">{plan.capacityGain}</span>
+                    )}
+                  </div>
                   <div className="plan-card-header">
                     <h3>{plan.name}</h3>
                     <div className="plan-price">{plan.price}</div>

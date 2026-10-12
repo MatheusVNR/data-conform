@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FC, FormEvent } from 'react';
 import type { CreateImportProjectRequest } from '../types';
 
@@ -14,6 +14,20 @@ export const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClos
   const [targetSystem, setTargetSystem] = useState<string>('TOTVS Protheus');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) {
     return null;
@@ -46,7 +60,16 @@ export const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <div className="modal-backdrop" role="dialog" aria-modal="true">
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div className="modal-card">
         <div className="modal-header">
           <h3>Novo Projeto de Importação</h3>

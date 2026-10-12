@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FC } from 'react';
 import type { ValidationIssueDto, ValidationReportDto } from '../types';
 import { IssueSeverityLabels } from '../types';
@@ -14,6 +14,33 @@ const isWarningSeverity = (s: unknown): boolean => s === 0 || s === '0' || s ===
 export const ValidationReportModal: FC<ValidationReportModalProps> = ({ report, onClose }) => {
   const [severityFilter, setSeverityFilter] = useState<'all' | '1' | '0'>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [copiedText, setCopiedText] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (report) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [report, onClose]);
+
+  const handleCopyText = async (text: string): Promise<void> => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedText(text);
+      setTimeout(() => {
+        setCopiedText((curr: string | null) => (curr === text ? null : curr));
+      }, 2000);
+    } catch {
+      // Fallback if clipboard API is restricted
+    }
+  };
 
   const filteredIssues: ValidationIssueDto[] = useMemo(() => {
     if (!report) return [];
@@ -34,6 +61,35 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({ report, 
     });
   }, [report, severityFilter, searchTerm]);
 
+  const handleExportCsv = (): void => {
+    if (!report || filteredIssues.length === 0) return;
+
+    const headers: string[] = ['Linha', 'Coluna', 'Severidade', 'Codigo', 'Mensagem', 'Valor Capturado'];
+    const rows: string[][] = filteredIssues.map((issue: ValidationIssueDto) => [
+      issue.rowNumber ? String(issue.rowNumber) : '',
+      issue.columnName ?? 'Geral',
+      isErrorSeverity(issue.severity) ? 'Erro' : 'Aviso',
+      issue.issueCode,
+      `"${(issue.message ?? '').replace(/"/g, '""')}"`,
+      `"${(issue.rawValue ?? '').replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent: string =
+      '\uFEFF' + [headers.join(';'), ...rows.map((r: string[]) => r.join(';'))].join('\r\n');
+    const blob: Blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url: string = URL.createObjectURL(blob);
+    const link: HTMLAnchorElement = document.createElement('a');
+    link.href = url;
+    link.setAttribute(
+      'download',
+      `data_conform_${report.originalFileName.replace(/\.[^/.]+$/, '')}_inconsistencias.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   if (!report) return null;
 
   const conformityRate: number =
@@ -41,11 +97,20 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({ report, 
       ? Math.round((report.validRows / report.totalRows) * 100)
       : 100;
 
-  const errorCount: number = report.issues.filter((i) => isErrorSeverity(i.severity)).length;
-  const warningCount: number = report.issues.filter((i) => isWarningSeverity(i.severity)).length;
+  const errorCount: number = report.issues.filter((i: ValidationIssueDto) => isErrorSeverity(i.severity)).length;
+  const warningCount: number = report.issues.filter((i: ValidationIssueDto) => isWarningSeverity(i.severity)).length;
 
   return (
-    <div className="modal-backdrop report-modal-backdrop" role="dialog" aria-modal="true">
+    <div
+      className="modal-backdrop report-modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div className="modal-card report-modal-card">
         <div className="modal-header">
           <div>
@@ -165,12 +230,32 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({ report, 
                         </span>
                       </td>
                       <td>
-                        <code className="issue-code">{issue.issueCode}</code>
+                        <button
+                          type="button"
+                          className="code-copy-btn"
+                          title="Clique para copiar código"
+                          onClick={() => handleCopyText(issue.issueCode)}
+                        >
+                          <code className="issue-code">{issue.issueCode}</code>
+                          <span className="copy-indicator">
+                            {copiedText === issue.issueCode ? '✓ Copiado' : '📋'}
+                          </span>
+                        </button>
                       </td>
                       <td>{issue.message}</td>
                       <td>
                         {issue.rawValue ? (
-                          <code className="raw-val-badge">{issue.rawValue}</code>
+                          <button
+                            type="button"
+                            className="val-copy-btn"
+                            title="Clique para copiar valor"
+                            onClick={() => handleCopyText(issue.rawValue!)}
+                          >
+                            <code className="raw-val-badge">{issue.rawValue}</code>
+                            {copiedText === issue.rawValue && (
+                              <span className="copy-indicator-inline">✓</span>
+                            )}
+                          </button>
                         ) : (
                           <span className="text-muted">—</span>
                         )}
@@ -183,8 +268,18 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({ report, 
           )}
         </div>
 
-        <div className="modal-footer">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
+        <div className="modal-footer report-modal-footer">
+          {filteredIssues.length > 0 && (
+            <button
+              type="button"
+              className="btn btn-secondary btn-export-csv"
+              onClick={handleExportCsv}
+              title="Baixar lista filtrada de inconsistências em formato CSV"
+            >
+              📥 Exportar CSV ({filteredIssues.length})
+            </button>
+          )}
+          <button type="button" className="btn btn-primary" onClick={onClose}>
             Fechar
           </button>
         </div>

@@ -13,6 +13,7 @@ import { WorkspaceModal } from './components/WorkspaceModal';
 import {
   createProject,
   createWorkspace,
+  deleteFile,
   getAuthToken,
   getCurrentUser,
   getFileReport,
@@ -240,6 +241,20 @@ export const App: FC = () => {
     }
   };
 
+  const handleDeleteFile = async (fileId: string): Promise<void> => {
+    try {
+      await deleteFile(fileId);
+      setFiles((prev: ImportFileDto[]) => prev.filter((f: ImportFileDto) => f.id !== fileId));
+      if (activeWorkspace) {
+        await loadQuotaForWorkspace(activeWorkspace.id);
+      }
+      showAlert('Arquivo e dados associados excluídos com sucesso!');
+    } catch (err: unknown) {
+      const msg: string = err instanceof Error ? err.message : 'Erro ao excluir arquivo';
+      showAlert(msg, 'error');
+    }
+  };
+
   const handleAuthSuccess = async (authData: AuthResponseDto): Promise<void> => {
     setCurrentUser(authData);
     showAlert(`Bem-vindo, ${authData.fullName}!`);
@@ -297,7 +312,17 @@ export const App: FC = () => {
       <main className="main-content">
         {alert && (
           <div className={`alert-toast alert-${alert.type}`} role="alert">
-            {alert.type === 'success' ? '✓ ' : '✕ '} {alert.text}
+            <span className="alert-toast-content">
+              {alert.type === 'success' ? '✓ ' : '✕ '} {alert.text}
+            </span>
+            <button
+              type="button"
+              className="btn-toast-close"
+              aria-label="Fechar notificação"
+              onClick={() => setAlert(null)}
+            >
+              &times;
+            </button>
           </div>
         )}
 
@@ -396,6 +421,7 @@ export const App: FC = () => {
                     files={files}
                     onValidate={handleValidateFile}
                     onViewReport={handleViewReport}
+                    onDeleteFile={handleDeleteFile}
                     validatingFileId={validatingFileId}
                   />
                 </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FC, FormEvent } from 'react';
 import type { AuthResponseDto, LoginRequestDto, RegisterRequestDto } from '../types';
 import { login, register } from '../services/api';
@@ -17,6 +17,20 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) =>
   const [workspaceName, setWorkspaceName] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -53,7 +67,16 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) =>
   };
 
   return (
-    <div className="modal-backdrop">
+    <div
+      className="modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div className="modal-dialog auth-modal-dialog">
         <div className="modal-header">
           <h2>{isRegister ? 'Criar Conta Corporativa' : 'Entrar no DataConform'}</h2>

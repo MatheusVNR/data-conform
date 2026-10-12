@@ -39,6 +39,11 @@ public static class FileEndpoints
             .Produces<ValidationReportDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        group.MapDelete("/files/{fileId:guid}", DeleteFile)
+            .WithName("DeleteFile")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return group;
     }
 
@@ -329,5 +334,40 @@ public static class FileEndpoints
         };
 
         return Results.Ok(report);
+    }
+
+    private static async Task<IResult> DeleteFile(
+        Guid fileId,
+        IApplicationDbContext dbContext,
+        IFileStorageService fileStorage,
+        IAuditService auditService,
+        CancellationToken cancellationToken)
+    {
+        ImportFile? importFile = await dbContext.ImportFiles
+            .Include(f => f.Project)
+            .FirstOrDefaultAsync(f => f.Id == fileId, cancellationToken);
+
+        if (importFile == null)
+        {
+            return Results.NotFound(new { error = "Arquivo informado não foi encontrado." });
+        }
+
+        Guid workspaceId = importFile.Project.WorkspaceId;
+        string fileName = importFile.OriginalFileName;
+
+        await fileStorage.DeleteFileAsync(importFile.StoredFileName, cancellationToken);
+        dbContext.ImportFiles.Remove(importFile);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await auditService.LogAsync(
+            workspaceId,
+            null,
+            "DeleteFile",
+            "ImportFile",
+            fileId.ToString(),
+            $"Arquivo '{fileName}' foi excluído do projeto.",
+            cancellationToken);
+
+        return Results.NoContent();
     }
 }
