@@ -14,6 +14,17 @@ export const IssueSeverityLabels: Record<IssueSeverity, string> = {
   1: 'Erro',
 };
 
+export type PlanTier = 'Starter' | 'Professional' | 'Enterprise' | 0 | 1 | 2;
+
+export const PlanTierLabels: Record<string, string> = {
+  '0': 'Starter',
+  '1': 'Professional',
+  '2': 'Enterprise',
+  Starter: 'Starter',
+  Professional: 'Professional',
+  Enterprise: 'Enterprise',
+};
+
 export interface WorkspaceDto {
   id: string;
   name: string;
@@ -21,6 +32,54 @@ export interface WorkspaceDto {
   createdAt: string;
   updatedAt?: string | null;
   projectsCount: number;
+  plan: PlanTier;
+  monthlyFilesUploaded: number;
+  monthlyFilesQuota: number;
+  maxRowsPerFile: number;
+}
+
+export interface WorkspaceQuotaDto {
+  workspaceId: string;
+  plan: PlanTier;
+  monthlyFilesUploaded: number;
+  monthlyFilesQuota: number;
+  maxRowsPerFile: number;
+  usagePercentage: number;
+}
+
+export interface AuthResponseDto {
+  token: string;
+  userId: string;
+  email: string;
+  fullName: string;
+  role: string;
+  workspaceId: string;
+  workspaceName: string;
+  workspaceSlug: string;
+  plan: string;
+}
+
+export interface LoginRequestDto {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequestDto {
+  email: string;
+  password: string;
+  fullName: string;
+  workspaceName?: string;
+}
+
+export interface AuditLogDto {
+  id: string;
+  workspaceId: string;
+  userId?: string | null;
+  action: string;
+  entityName: string;
+  entityId: string;
+  details?: string | null;
+  createdAt: string;
 }
 
 export interface CreateWorkspaceRequest {

@@ -9,6 +9,8 @@ public interface IApplicationDbContext
     DbSet<ImportProject> ImportProjects { get; }
     DbSet<ImportFile> ImportFiles { get; }
     DbSet<ValidationIssue> ValidationIssues { get; }
+    DbSet<User> Users { get; }
+    DbSet<AuditLog> AuditLogs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

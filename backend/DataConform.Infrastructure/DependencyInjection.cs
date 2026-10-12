@@ -23,6 +23,10 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<DataConformDbContext>());
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddSingleton<IPasswordHasher, Security.PasswordHasher>();
+        services.AddSingleton<IJwtTokenGenerator, Security.JwtTokenGenerator>();
+        services.AddScoped<ISubscriptionQuotaService, SubscriptionQuotaService>();
+        services.AddScoped<IAuditService, AuditService>();
 
         return services;
     }

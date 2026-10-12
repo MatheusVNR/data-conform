@@ -15,6 +15,8 @@ public class DataConformDbContext : DbContext, IApplicationDbContext
     public DbSet<ImportProject> ImportProjects => Set<ImportProject>();
     public DbSet<ImportFile> ImportFiles => Set<ImportFile>();
     public DbSet<ValidationIssue> ValidationIssues => Set<ValidationIssue>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

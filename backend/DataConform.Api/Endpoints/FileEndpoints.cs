@@ -47,6 +47,8 @@ public static class FileEndpoints
         IFormFile? file,
         IApplicationDbContext dbContext,
         IFileStorageService fileStorage,
+        ISubscriptionQuotaService quotaService,
+        IAuditService auditService,
         CancellationToken cancellationToken)
     {
         if (file == null || file.Length == 0)
@@ -67,12 +69,21 @@ public static class FileEndpoints
             return Results.BadRequest(new { error = "Formato de arquivo não suportado nesta etapa. Por favor, envie um arquivo .csv ou .txt." });
         }
 
-        bool projectExists = await dbContext.ImportProjects
-            .AnyAsync(p => p.Id == projectId, cancellationToken);
+        ImportProject? project = await dbContext.ImportProjects
+            .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
 
-        if (!projectExists)
+        if (project == null)
         {
             return Results.NotFound(new { error = "Projeto de importação informado não foi encontrado." });
+        }
+
+        DataConform.Application.Common.Models.QuotaCheckResult quotaCheck = await quotaService.CheckUploadQuotaAsync(project.WorkspaceId, 0, cancellationToken);
+        if (!quotaCheck.IsAllowed)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status403Forbidden,
+                title: "Limite do plano atingido",
+                detail: quotaCheck.Reason);
         }
 
         using Stream fileStream = file.OpenReadStream();
@@ -90,6 +101,16 @@ public static class FileEndpoints
 
         dbContext.ImportFiles.Add(importFile);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await quotaService.IncrementFilesUploadedAsync(project.WorkspaceId, cancellationToken);
+        await auditService.LogAsync(
+            project.WorkspaceId,
+            null,
+            "UploadFile",
+            "ImportFile",
+            importFile.Id.ToString(),
+            $"Arquivo '{originalFileName}' ({file.Length} bytes) enviado com sucesso.",
+            cancellationToken);
 
         ImportFileDto dto = new ImportFileDto
         {
@@ -150,6 +171,8 @@ public static class FileEndpoints
         IApplicationDbContext dbContext,
         IFileStorageService fileStorage,
         ICsvValidatorService validatorService,
+        ISubscriptionQuotaService quotaService,
+        IAuditService auditService,
         CancellationToken cancellationToken)
     {
         ImportFile? importFile = await dbContext.ImportFiles
@@ -160,6 +183,9 @@ public static class FileEndpoints
         {
             return Results.NotFound(new { error = "Arquivo informado não foi encontrado." });
         }
+
+        ImportProject? project = await dbContext.ImportProjects
+            .FirstOrDefaultAsync(p => p.Id == importFile.ProjectId, cancellationToken);
 
         importFile.Status = FileStatus.Processing;
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -182,6 +208,24 @@ public static class FileEndpoints
                 requiredColumnsList,
                 cancellationToken);
 
+            if (project != null)
+            {
+                DataConform.Application.Common.Models.QuotaCheckResult rowQuotaCheck = await quotaService.CheckUploadQuotaAsync(
+                    project.WorkspaceId,
+                    validationResult.TotalRows,
+                    cancellationToken);
+
+                if (!rowQuotaCheck.IsAllowed)
+                {
+                    importFile.Status = FileStatus.Failed;
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                    return Results.Problem(
+                        statusCode: StatusCodes.Status403Forbidden,
+                        title: "Limite de linhas do plano excedido",
+                        detail: rowQuotaCheck.Reason);
+                }
+            }
+
             // Remover inconsistências anteriores caso revalide
             if (importFile.ValidationIssues.Count > 0)
             {
@@ -200,6 +244,18 @@ public static class FileEndpoints
             importFile.ProcessedAt = DateTimeOffset.UtcNow;
 
             await dbContext.SaveChangesAsync(cancellationToken);
+
+            if (project != null)
+            {
+                await auditService.LogAsync(
+                    project.WorkspaceId,
+                    null,
+                    "ValidateFile",
+                    "ImportFile",
+                    importFile.Id.ToString(),
+                    $"Arquivo validado: {validationResult.TotalRows} linhas, {validationResult.Issues.Count} inconsistências.",
+                    cancellationToken);
+            }
 
             ValidationReportDto report = new ValidationReportDto
             {

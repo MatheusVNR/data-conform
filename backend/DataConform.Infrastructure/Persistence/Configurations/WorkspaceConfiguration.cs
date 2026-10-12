@@ -26,9 +26,36 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
         builder.Property(w => w.CreatedAt)
             .IsRequired();
 
+        builder.Property(w => w.Plan)
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(50);
+
+        builder.Property(w => w.MonthlyFilesUploaded)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        builder.Property(w => w.MonthlyFilesQuota)
+            .IsRequired()
+            .HasDefaultValue(20);
+
+        builder.Property(w => w.MaxRowsPerFile)
+            .IsRequired()
+            .HasDefaultValue(1000);
+
         builder.HasMany(w => w.Projects)
             .WithOne(p => p.Workspace)
             .HasForeignKey(p => p.WorkspaceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(w => w.Users)
+            .WithOne(u => u.Workspace)
+            .HasForeignKey(u => u.WorkspaceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(w => w.AuditLogs)
+            .WithOne(a => a.Workspace)
+            .HasForeignKey(a => a.WorkspaceId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

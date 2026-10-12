@@ -22,6 +22,47 @@ namespace DataConform.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("DataConform.Domain.Entities.AuditLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("EntityName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("WorkspaceId", "CreatedAt");
+
+                    b.ToTable("audit_logs", (string)null);
+                });
+
             modelBuilder.Entity("DataConform.Domain.Entities.ImportFile", b =>
                 {
                     b.Property<Guid>("Id")
@@ -111,6 +152,53 @@ namespace DataConform.Infrastructure.Persistence.Migrations
                     b.ToTable("import_projects", (string)null);
                 });
 
+            modelBuilder.Entity("DataConform.Domain.Entities.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid>("WorkspaceId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("WorkspaceId");
+
+                    b.ToTable("users", (string)null);
+                });
+
             modelBuilder.Entity("DataConform.Domain.Entities.ValidationIssue", b =>
                 {
                     b.Property<Guid>("Id")
@@ -167,10 +255,30 @@ namespace DataConform.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("MaxRowsPerFile")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1000);
+
+                    b.Property<int>("MonthlyFilesQuota")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(20);
+
+                    b.Property<int>("MonthlyFilesUploaded")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Plan")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Slug")
                         .IsRequired()
@@ -188,6 +296,17 @@ namespace DataConform.Infrastructure.Persistence.Migrations
                     b.ToTable("workspaces", (string)null);
                 });
 
+            modelBuilder.Entity("DataConform.Domain.Entities.AuditLog", b =>
+                {
+                    b.HasOne("DataConform.Domain.Entities.Workspace", "Workspace")
+                        .WithMany("AuditLogs")
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Workspace");
+                });
+
             modelBuilder.Entity("DataConform.Domain.Entities.ImportFile", b =>
                 {
                     b.HasOne("DataConform.Domain.Entities.ImportProject", "Project")
@@ -203,6 +322,17 @@ namespace DataConform.Infrastructure.Persistence.Migrations
                 {
                     b.HasOne("DataConform.Domain.Entities.Workspace", "Workspace")
                         .WithMany("Projects")
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Workspace");
+                });
+
+            modelBuilder.Entity("DataConform.Domain.Entities.User", b =>
+                {
+                    b.HasOne("DataConform.Domain.Entities.Workspace", "Workspace")
+                        .WithMany("Users")
                         .HasForeignKey("WorkspaceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -233,7 +363,11 @@ namespace DataConform.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("DataConform.Domain.Entities.Workspace", b =>
                 {
+                    b.Navigation("AuditLogs");
+
                     b.Navigation("Projects");
+
+                    b.Navigation("Users");
                 });
 #pragma warning restore 612, 618
         }

@@ -28,6 +28,16 @@ public static class WorkspaceEndpoints
             .Produces<WorkspaceDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        group.MapGet("/{id:guid}/quota", GetWorkspaceQuota)
+            .WithName("GetWorkspaceQuota")
+            .Produces<DataConform.Application.Common.Models.WorkspaceQuotaDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        group.MapPost("/{id:guid}/change-plan", ChangeWorkspacePlan)
+            .WithName("ChangeWorkspacePlan")
+            .Produces<DataConform.Application.Common.Models.WorkspaceQuotaDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return group;
     }
 
@@ -72,7 +82,11 @@ public static class WorkspaceEndpoints
             Slug = workspace.Slug,
             CreatedAt = workspace.CreatedAt,
             UpdatedAt = workspace.UpdatedAt,
-            ProjectsCount = 0
+            ProjectsCount = 0,
+            Plan = workspace.Plan,
+            MonthlyFilesUploaded = workspace.MonthlyFilesUploaded,
+            MonthlyFilesQuota = workspace.MonthlyFilesQuota,
+            MaxRowsPerFile = workspace.MaxRowsPerFile
         };
 
         return Results.Created($"/api/workspaces/{workspace.Id}", dto);
@@ -90,7 +104,11 @@ public static class WorkspaceEndpoints
                 Slug = w.Slug,
                 CreatedAt = w.CreatedAt,
                 UpdatedAt = w.UpdatedAt,
-                ProjectsCount = w.Projects.Count
+                ProjectsCount = w.Projects.Count,
+                Plan = w.Plan,
+                MonthlyFilesUploaded = w.MonthlyFilesUploaded,
+                MonthlyFilesQuota = w.MonthlyFilesQuota,
+                MaxRowsPerFile = w.MaxRowsPerFile
             })
             .ToListAsync(cancellationToken);
 
@@ -118,9 +136,48 @@ public static class WorkspaceEndpoints
             Slug = workspace.Slug,
             CreatedAt = workspace.CreatedAt,
             UpdatedAt = workspace.UpdatedAt,
-            ProjectsCount = workspace.Projects.Count
+            ProjectsCount = workspace.Projects.Count,
+            Plan = workspace.Plan,
+            MonthlyFilesUploaded = workspace.MonthlyFilesUploaded,
+            MonthlyFilesQuota = workspace.MonthlyFilesQuota,
+            MaxRowsPerFile = workspace.MaxRowsPerFile
         };
 
         return Results.Ok(dto);
+    }
+
+    private static async Task<IResult> GetWorkspaceQuota(
+        Guid id,
+        ISubscriptionQuotaService quotaService,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            DataConform.Application.Common.Models.WorkspaceQuotaDto quota = await quotaService.GetWorkspaceQuotaAsync(id, cancellationToken);
+            return Results.Ok(quota);
+        }
+        catch (KeyNotFoundException)
+        {
+            return Results.NotFound(new { error = "Workspace não encontrado." });
+        }
+    }
+
+    private static async Task<IResult> ChangeWorkspacePlan(
+        Guid id,
+        UpdatePlanRequest request,
+        ISubscriptionQuotaService quotaService,
+        IAuditService auditService,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            DataConform.Application.Common.Models.WorkspaceQuotaDto updated = await quotaService.UpdatePlanAsync(id, request.Plan, cancellationToken);
+            await auditService.LogAsync(id, null, "ChangePlan", "Workspace", id.ToString(), $"Plano alterado para {request.Plan}", cancellationToken);
+            return Results.Ok(updated);
+        }
+        catch (KeyNotFoundException)
+        {
+            return Results.NotFound(new { error = "Workspace não encontrado." });
+        }
     }
 }
