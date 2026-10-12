@@ -1,0 +1,51 @@
+services:
+  # Backend API (.NET 10 Web Service via Docker)
+  - type: web
+    name: dataconform-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dataconform-db
+          property: connectionString
+      - key: Jwt__Secret
+        generateValue: true
+      - key: Cors__AllowedOrigins
+        value: "*"
+
+  # Frontend (React 19 Static Site)
+  - type: web
+    name: dataconform-web
+    runtime: static
+    buildCommand: npm --prefix frontend install && npm --prefix frontend run build
+    staticPublishPath: ./frontend/dist
+    plan: free
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: dataconform-api
+          property: host
+
+databases:
+  - name: dataconform-db
+    databaseName: dataconform
+    user: dataconform
+    plan: free

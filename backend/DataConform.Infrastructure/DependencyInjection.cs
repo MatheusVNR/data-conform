@@ -11,7 +11,23 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        string? connectionString = configuration.GetConnectionString("DefaultConnection");
+        string? connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? configuration["DATABASE_URL"]
+            ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+
+        if (!string.IsNullOrWhiteSpace(connectionString) &&
+            (connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||
+             connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase)))
+        {
+            Uri uri = new Uri(connectionString);
+            string[] userInfo = uri.UserInfo.Split(':');
+            string username = Uri.UnescapeDataString(userInfo[0]);
+            string password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+            int port = uri.Port > 0 ? uri.Port : 5432;
+            string database = uri.AbsolutePath.TrimStart('/');
+
+            connectionString = $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Prefer;Trust Server Certificate=true";
+        }
 
         services.AddDbContext<DataConformDbContext>(options =>
         {

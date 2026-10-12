@@ -1,0 +1,57 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: dataconform_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dataconform
+      POSTGRES_USER: dataconform_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-DataConformProdPass2026!}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dataconform_user -d dataconform"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dataconform_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=dataconform;Username=dataconform_user;Password=${DB_PASSWORD:-DataConformProdPass2026!}
+      Jwt__Secret: ${JWT_SECRET:-DataConformSuperSecretJwtKey2026WithSufficientLengthForHmacSha256SecurityStandards!}
+      Jwt__Issuer: DataConform
+      Jwt__Audience: DataConform
+      Cors__AllowedOrigins: ${ALLOWED_ORIGINS:-*}
+      Database__AutoMigrate: "true"
+    volumes:
+      - backend_storage:/app/storage/uploads
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""
+        VITE_STRIPE_PRO_URL: ${VITE_STRIPE_PRO_URL:-}
+        VITE_STRIPE_ENTERPRISE_URL: ${VITE_STRIPE_ENTERPRISE_URL:-}
+    container_name: dataconform_web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data:
+  backend_storage:

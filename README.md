@@ -302,28 +302,85 @@ data-conform/
 │   ├── DataConform.Application/            # Interfaces, DTOs e Regras de Negócio (CsvValidator)
 │   ├── DataConform.Infrastructure/         # EF Core 10, Migrations, Repositórios, BCrypt e JWT
 │   ├── DataConform.Api/                    # Minimal APIs, Endpoints de Roteamento e Program.cs
-│   └── tests/
-│       └── DataConform.UnitTests/          # 18 Testes Unitários com xUnit
+│   ├── tests/
+│   │   └── DataConform.UnitTests/          # 18 Testes Unitários com xUnit
+│   ├── Dockerfile                          # Multi-stage build .NET 10 para produção
+│   └── .dockerignore
 │
 ├── frontend/
 │   ├── src/
 │   │   ├── components/                     # Modais, Navbar, FileList, Uploader, Relatórios
-│   │   ├── services/api.ts                 # Cliente HTTP tipado com Axios
+│   │   ├── services/api.ts                 # Cliente HTTP tipado com suporte a VITE_API_URL
 │   │   ├── types/index.ts                  # DTOs e Interfaces TypeScript
 │   │   ├── App.tsx                         # Orquestrador de telas e fluxos de estado
 │   │   └── App.css                         # Design System corporativo em CSS puro
 │   ├── scripts/homologate.mjs              # Script de homologação automatizada com Edge
+│   ├── Dockerfile                          # Multi-stage build Node 22 + Nginx Alpine
+│   ├── nginx.conf                          # Configuração de roteamento SPA e cache
 │   └── vite.config.ts                      # Configuração do Vite
 │
 ├── scripts/
 │   ├── sample_clientes_erp.csv             # Arquivo de teste para homologação
 │   └── screenshots/                        # Evidências e capturas reais das telas (01 a 12)
 │
-├── docker-compose.yml                      # Orquestração do PostgreSQL 17 Alpine
-├── .env.example                            # Modelo seguro de variáveis de ambiente
+├── docker-compose.yml                      # Orquestração local do PostgreSQL 17 Alpine
+├── docker-compose.prod.yml                 # Orquestração completa de produção (DB + API + Web)
+├── render.yaml                             # Blueprint 1-clique para deploy no Render.com
+├── .env.example                            # Modelo local de variáveis de ambiente
+├── .env.prod.example                       # Modelo de produção para Docker Compose / VPS
 ├── .gitignore                              # Regras de exclusão de binários e segredos
 └── README.md                               # Documentação central do projeto
 ```
+
+---
+
+## Como Colocar no Ar (Deploy em Produção)
+
+### Opção 1: Deploy com 1 Clique na Nuvem (Render.com - Gratuito / Sem Infraestrutura)
+
+O repositório já inclui um **Blueprint (`render.yaml`)** pré-configurado que provisiona automaticamente:
+1. **PostgreSQL Gerenciado** (com credenciais seguras e backup).
+2. **API Backend .NET 10** (com auto-migração do EF Core e health check ativo).
+3. **Frontend React 19** (com certificado SSL/HTTPS gratuito e SPA rewrite).
+
+#### Passo a passo (5 minutos):
+1. Crie uma conta gratuita em [render.com](https://render.com/).
+2. No painel, clique em **New +** > **Blueprint**.
+3. Conecte sua conta do GitHub e selecione o repositório `data-conform`.
+4. O Render detectará o arquivo `render.yaml` e exibirá os 3 serviços a serem criados.
+5. Clique em **Apply**. O Render fará o build e fornecerá uma URL pública com HTTPS (ex: `https://dataconform-web.onrender.com`).
+
+---
+
+### Opção 2: Deploy em VPS / Servidor Próprio (Docker Compose)
+
+Para rodar em qualquer VPS (DigitalOcean, Hetzner, AWS Lightsail, Linode, Hostinger):
+
+1. **Clone o repositório na sua VPS:**
+   ```bash
+   git clone https://github.com/MatheusVNR/data-conform.git
+   cd data-conform
+   ```
+
+2. **Configure o arquivo de variáveis de ambiente:**
+   ```bash
+   cp .env.prod.example .env
+   # Edite as senhas e segredos:
+   nano .env
+   ```
+
+3. **Inicie toda a stack de produção com um único comando:**
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d --build
+   ```
+
+4. **Verifique o status dos serviços:**
+   ```bash
+   docker compose -f docker-compose.prod.yml ps
+   ```
+   - O Frontend estará respondendo na porta `80`.
+   - O Backend estará respondendo na porta `8080` (com proxy automático configurado).
+   - O Banco de Dados PostgreSQL estará isolado na rede interna do Docker.
 
 ---
 

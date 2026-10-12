@@ -12,7 +12,12 @@ import type {
   WorkspaceQuotaDto,
 } from '../types';
 
-const API_BASE_URL: string = '/api';
+const configuredApiUrl: string | undefined = import.meta.env.VITE_API_URL as string | undefined;
+const API_BASE_URL: string = configuredApiUrl && configuredApiUrl.trim().length > 0
+  ? (configuredApiUrl.trim().endsWith('/api')
+      ? configuredApiUrl.trim().replace(/\/+$/, '')
+      : `${configuredApiUrl.trim().replace(/\/+$/, '')}/api`)
+  : '/api';
 const TOKEN_KEY: string = 'dataconform_token';
 
 export function getAuthToken(): string | null {
