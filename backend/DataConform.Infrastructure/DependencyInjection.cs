@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using DataConform.Application.Common.Interfaces;
 using DataConform.Infrastructure.Persistence;
+using DataConform.Infrastructure.Services;
 
 namespace DataConform.Infrastructure;
 
@@ -21,6 +22,7 @@ public static class DependencyInjection
         });
 
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<DataConformDbContext>());
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
         return services;
     }
