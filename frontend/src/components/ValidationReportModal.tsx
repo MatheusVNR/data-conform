@@ -64,14 +64,23 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({ report, 
   const handleExportCsv = (): void => {
     if (!report || filteredIssues.length === 0) return;
 
+    const sanitizeCsvCell = (val: string | null | undefined): string => {
+      if (!val) return '""';
+      let safe: string = val;
+      if (/^[=+\-@\t\r]/.test(safe)) {
+        safe = `'${safe}`;
+      }
+      return `"${safe.replace(/"/g, '""')}"`;
+    };
+
     const headers: string[] = ['Linha', 'Coluna', 'Severidade', 'Codigo', 'Mensagem', 'Valor Capturado'];
     const rows: string[][] = filteredIssues.map((issue: ValidationIssueDto) => [
       issue.rowNumber ? String(issue.rowNumber) : '',
       issue.columnName ?? 'Geral',
       isErrorSeverity(issue.severity) ? 'Erro' : 'Aviso',
-      issue.issueCode,
-      `"${(issue.message ?? '').replace(/"/g, '""')}"`,
-      `"${(issue.rawValue ?? '').replace(/"/g, '""')}"`,
+      sanitizeCsvCell(issue.issueCode),
+      sanitizeCsvCell(issue.message),
+      sanitizeCsvCell(issue.rawValue),
     ]);
 
     const csvContent: string =

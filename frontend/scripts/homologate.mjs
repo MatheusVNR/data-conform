@@ -42,9 +42,9 @@ async function run() {
     const toggleBtn = await page.waitForSelector('.auth-toggle-link button');
     await toggleBtn.click();
     await page.waitForSelector('#auth-name');
-    await page.type('#auth-name', 'Matheus Ramos');
+    await page.type('#auth-name', 'Matheus Teste');
     await page.type('#auth-ws', 'Nexus ERP Solutions');
-    const uniqueEmail = `matheus.${Date.now()}@nexuserp.com`;
+    const uniqueEmail = `teste.${Date.now()}@exemploerp.com`;
     await page.type('#auth-email', uniqueEmail);
     await page.type('#auth-password', 'senhaSegura123!');
     await new Promise((r) => setTimeout(r, 500));

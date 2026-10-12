@@ -1470,3 +1470,32 @@
   padding: 0.2rem 0.5rem;
   border-radius: 9999px;
 }
+
+.plan-disclaimer-box {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background-color: var(--primary-light);
+  border: 1px solid var(--primary-border);
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.25rem;
+  font-size: 0.8rem;
+  color: var(--primary);
+}
+
+.disclaimer-badge {
+  font-weight: 700;
+  background: var(--primary);
+  color: #ffffff;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.disclaimer-text {
+  font-size: 0.78rem;
+  color: #1e3a8a;
+}

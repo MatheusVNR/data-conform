@@ -97,7 +97,7 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) =>
                     id="auth-name"
                     type="text"
                     className="form-control"
-                    placeholder="Ex: Matheus Ramos"
+                    placeholder="Ex: Matheus Teste"
                     value={fullName}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)}
                     required

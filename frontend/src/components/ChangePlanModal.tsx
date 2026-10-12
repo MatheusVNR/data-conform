@@ -34,7 +34,7 @@ const PLANS: PlanOption[] = [
   {
     key: 'Professional',
     name: 'Professional',
-    price: 'R$ 299 / mês',
+    price: 'R$ 79 / mês *',
     monthlyFiles: 500,
     maxRows: '50.000 linhas/arquivo',
     description: 'Para operações comerciais ativas com integrações ERP contínuas.',
@@ -44,7 +44,7 @@ const PLANS: PlanOption[] = [
   {
     key: 'Enterprise',
     name: 'Enterprise',
-    price: 'R$ 990 / mês',
+    price: 'R$ 249 / mês *',
     monthlyFiles: 10000,
     maxRows: '1.000.000 linhas/arquivo',
     description: 'Volume massivo, alta prioridade de processamento e auditoria avançada.',
@@ -120,6 +120,13 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
           <p className="plan-modal-intro">
             Selecione o plano ideal para a capacidade operacional do workspace <strong>{workspace.name}</strong>:
           </p>
+
+          <div className="plan-disclaimer-box">
+            <span className="disclaimer-badge">Valores Ilustrativos</span>
+            <span className="disclaimer-text">
+              * Preços e limites acima são meramente demonstrativos para homologação e customizáveis por cada organização.
+            </span>
+          </div>
 
           <div className="plans-grid">
             {PLANS.map((plan: PlanOption) => {

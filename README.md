@@ -105,6 +105,10 @@ flowchart LR
 
 ## Demonstração Visual do Produto
 
+> [!NOTE]
+> **Aviso sobre Dados de Demonstração & Valores Ilustrativos:**  
+> Todos os nomes de usuários (ex: *Matheus Teste*), e-mails corporativos, bem como os valores monetários e planos exibidos nas telas abaixo são **estritamente demonstrativos e ilustrativos**, servindo apenas para comprovar o funcionamento dos fluxos de software e a flexibilidade comercial da plataforma. Valores e regras são livremente customizáveis por contrato.
+
 ### 1. Painel Principal & Seleção de Projetos
 Visão consolidada com indicador de cota comercial, lista de projetos organizados por ERP e fila de arquivos:
 ![Dashboard com Projeto Selecionado](./scripts/screenshots/06-project-selected-dashboard.png)
