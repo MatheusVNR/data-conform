@@ -21,6 +21,9 @@ interface PlanOption {
   highlight?: boolean;
 }
 
+const STRIPE_PRO_URL: string = (import.meta.env.VITE_STRIPE_PRO_URL as string | undefined) ?? '';
+const STRIPE_ENTERPRISE_URL: string = (import.meta.env.VITE_STRIPE_ENTERPRISE_URL as string | undefined) ?? '';
+
 const PLANS: PlanOption[] = [
   {
     key: 'Starter',
@@ -187,9 +190,27 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
             Fechar
           </button>
+          {selectedPlan.toLowerCase() !== 'starter' &&
+            ((selectedPlan.toLowerCase() === 'professional' && STRIPE_PRO_URL) ||
+            (selectedPlan.toLowerCase() === 'enterprise' && STRIPE_ENTERPRISE_URL) ? (
+              <a
+                href={selectedPlan.toLowerCase() === 'professional' ? STRIPE_PRO_URL : STRIPE_ENTERPRISE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary"
+              >
+                💳 Assinar {selectedPlan} (Cartão / Pix)
+              </a>
+            ) : null)}
           <button
             type="button"
-            className="btn btn-primary"
+            className={
+              selectedPlan.toLowerCase() !== 'starter' &&
+              ((selectedPlan.toLowerCase() === 'professional' && STRIPE_PRO_URL) ||
+                (selectedPlan.toLowerCase() === 'enterprise' && STRIPE_ENTERPRISE_URL))
+                ? 'btn btn-outline'
+                : 'btn btn-primary'
+            }
             onClick={handleConfirmPlan}
             disabled={loading || selectedPlan.toLowerCase() === currentPlanStr.toLowerCase()}
           >
