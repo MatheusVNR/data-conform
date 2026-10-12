@@ -1,5 +1,6 @@
 import type { FC } from 'react';
 import type { AuthResponseDto, WorkspaceDto } from '../types';
+import { PlanTierLabels } from '../types';
 
 interface NavbarProps {
   workspaces: WorkspaceDto[];
@@ -24,7 +25,7 @@ export const Navbar: FC<NavbarProps> = ({
   onOpenPlanModal,
   onOpenAuditModal,
 }) => {
-  const planName: string = activeWorkspace ? String(activeWorkspace.plan) : 'Starter';
+  const planName: string = activeWorkspace ? (PlanTierLabels[String(activeWorkspace.plan)] ?? 'Starter') : 'Starter';
 
   return (
     <header className="navbar">
@@ -87,7 +88,7 @@ export const Navbar: FC<NavbarProps> = ({
 
               <button
                 type="button"
-                className="btn btn-outline btn-sm"
+                className="btn btn-outline btn-sm btn-audit-trigger"
                 onClick={onOpenAuditModal}
                 title="Histórico de auditoria"
               >

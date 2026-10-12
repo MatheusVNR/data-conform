@@ -8,6 +8,9 @@ interface ValidationReportModalProps {
   onClose: () => void;
 }
 
+const isErrorSeverity = (s: unknown): boolean => s === 1 || s === '1' || s === 'Error' || s === 'error';
+const isWarningSeverity = (s: unknown): boolean => s === 0 || s === '0' || s === 'Warning' || s === 'warning';
+
 export const ValidationReportModal: FC<ValidationReportModalProps> = ({ report, onClose }) => {
   const [severityFilter, setSeverityFilter] = useState<'all' | '1' | '0'>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -18,8 +21,8 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({ report, 
     return report.issues.filter((issue: ValidationIssueDto) => {
       const matchesSeverity: boolean =
         severityFilter === 'all' ||
-        (severityFilter === '1' && issue.severity === 1) ||
-        (severityFilter === '0' && issue.severity === 0);
+        (severityFilter === '1' && isErrorSeverity(issue.severity)) ||
+        (severityFilter === '0' && isWarningSeverity(issue.severity));
 
       const matchesSearch: boolean =
         !searchTerm.trim() ||
@@ -38,8 +41,8 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({ report, 
       ? Math.round((report.validRows / report.totalRows) * 100)
       : 100;
 
-  const errorCount: number = report.issues.filter((i) => i.severity === 1).length;
-  const warningCount: number = report.issues.filter((i) => i.severity === 0).length;
+  const errorCount: number = report.issues.filter((i) => isErrorSeverity(i.severity)).length;
+  const warningCount: number = report.issues.filter((i) => isWarningSeverity(i.severity)).length;
 
   return (
     <div className="modal-backdrop report-modal-backdrop" role="dialog" aria-modal="true">
@@ -156,9 +159,9 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({ report, 
                       </td>
                       <td>
                         <span
-                          className={`badge ${issue.severity === 1 ? 'badge-failed' : 'badge-processing'}`}
+                          className={`badge ${isErrorSeverity(issue.severity) ? 'badge-failed' : 'badge-warning'}`}
                         >
-                          {IssueSeverityLabels[issue.severity]}
+                          {IssueSeverityLabels[String(issue.severity)] ?? String(issue.severity)}
                         </span>
                       </td>
                       <td>

@@ -1,0 +1,6 @@
+id;nome;email;data_nascimento;cpf;status
+1;João Silva;joao.silva@empresa.com;1985-04-12;12345678901;ATIVO
+2;Maria Santos;;1990-11-23;23456789012;ATIVO
+3;Carlos Souza;carlos.souza@empresa.com;invalid-date;34567890123;INATIVO
+4;João Silva;joao.silva@empresa.com;1985-04-12;12345678901;ATIVO
+5;Ana Oliveira;ana.oliveira@empresa.com;1992-07-08;;ATIVO

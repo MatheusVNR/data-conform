@@ -34,6 +34,7 @@ import type {
   WorkspaceDto,
   WorkspaceQuotaDto,
 } from './types';
+import { PlanTierLabels } from './types';
 import './App.css';
 
 export const App: FC = () => {
@@ -312,9 +313,13 @@ export const App: FC = () => {
               <div className="hero-details">
                 <div className="hero-title-row">
                   <h1>{activeWorkspace?.name || 'Selecione um Workspace'}</h1>
-                  <span className={`plan-badge-pill plan-badge-${String(activeWorkspace?.plan || 'Starter').toLowerCase()}`}>
-                    {String(activeWorkspace?.plan || 'Starter')}
-                  </span>
+                  {activeWorkspace && (
+                    <span
+                      className={`plan-badge-pill plan-badge-${(PlanTierLabels[String(activeWorkspace.plan)] ?? 'Starter').toLowerCase()}`}
+                    >
+                      {PlanTierLabels[String(activeWorkspace.plan)] ?? 'Starter'}
+                    </span>
+                  )}
                 </div>
                 <p className="hero-subtitle">
                   Ambiente B2B de validação e parametrização para importações contínuas no ERP corporativo.

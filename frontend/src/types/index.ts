@@ -7,11 +7,15 @@ export const FileStatusLabels: Record<FileStatus, string> = {
   3: 'Falha',
 };
 
-export type IssueSeverity = 0 | 1;
+export type IssueSeverity = 0 | 1 | 'Warning' | 'Error' | 'warning' | 'error';
 
-export const IssueSeverityLabels: Record<IssueSeverity, string> = {
-  0: 'Aviso',
-  1: 'Erro',
+export const IssueSeverityLabels: Record<string, string> = {
+  '0': 'Aviso',
+  '1': 'Erro',
+  Warning: 'Aviso',
+  Error: 'Erro',
+  warning: 'Aviso',
+  error: 'Erro',
 };
 
 export type PlanTier = 'Starter' | 'Professional' | 'Enterprise' | 0 | 1 | 2;
