@@ -20,12 +20,13 @@ services:
         value: "*"
 
   # Frontend (React 19 Static Site)
+  # Observação: Static sites no Render rodam direto no CDN global e não usam a propriedade 'plan'
   - type: web
     name: dataconform-web
     runtime: static
-    buildCommand: npm --prefix frontend install && npm --prefix frontend run build
-    staticPublishPath: ./frontend/dist
-    plan: free
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
     headers:
       - path: /*
         name: X-Frame-Options
@@ -39,10 +40,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: dataconform-api
-          property: host
+        sync: false
 
 databases:
   - name: dataconform-db
