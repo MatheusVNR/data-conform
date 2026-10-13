@@ -11,9 +11,15 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        string? connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? configuration["DATABASE_URL"]
+        string? envDbUrl = configuration["DATABASE_URL"]
             ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+
+        string? defaultConnection = configuration.GetConnectionString("DefaultConnection");
+
+        // DATABASE_URL fornecida por provedores de nuvem (Render/Railway) tem prioridade sobre o fallback do appsettings.json
+        string? connectionString = !string.IsNullOrWhiteSpace(envDbUrl)
+            ? envDbUrl
+            : defaultConnection;
 
         if (!string.IsNullOrWhiteSpace(connectionString) &&
             (connectionString.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) ||

@@ -72,6 +72,9 @@ using (IServiceScope scope = app.Services.CreateScope())
     bool autoMigrate = builder.Configuration.GetValue<bool>("Database:AutoMigrate", true);
     if (autoMigrate)
     {
+        string? dbDataSource = dbContext.Database.GetDbConnection().DataSource;
+        logger.LogInformation("Iniciando migrações no banco de dados em: {DataSource}", dbDataSource);
+
         for (int attempt = 1; attempt <= 5; attempt++)
         {
             try

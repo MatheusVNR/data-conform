@@ -14,6 +14,10 @@ services:
         fromDatabase:
           name: dataconform-db
           property: connectionString
+      - key: ConnectionStrings__DefaultConnection
+        fromDatabase:
+          name: dataconform-db
+          property: connectionString
       - key: Jwt__Secret
         generateValue: true
       - key: Cors__AllowedOrigins
