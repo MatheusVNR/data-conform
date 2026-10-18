@@ -11,40 +11,39 @@ public static class ProjectEndpoints
     public static RouteGroupBuilder MapProjectEndpoints(this IEndpointRouteBuilder routes)
     {
         RouteGroupBuilder group = routes.MapGroup("/api")
-            .WithTags("Projects");
+            .WithTags("Projects")
+            .RequireAuthorization();
 
         group.MapPost("/workspaces/{workspaceId:guid}/projects", CreateProject)
             .WithName("CreateProject")
             .Produces<ImportProjectDto>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapGet("/workspaces/{workspaceId:guid}/projects", GetProjectsByWorkspace)
             .WithName("GetProjectsByWorkspace")
             .Produces<List<ImportProjectDto>>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapGet("/projects/{projectId:guid}", GetProjectById)
             .WithName("GetProjectById")
             .Produces<ImportProjectDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapDelete("/projects/{projectId:guid}", DeleteProject)
             .WithName("DeleteProject")
             .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         return group;
-    }
-
-    private static Guid? TryGetAuthenticatedUserId(ClaimsPrincipal principal)
-    {
-        string? rawUserId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!string.IsNullOrWhiteSpace(rawUserId) && Guid.TryParse(rawUserId, out Guid parsedUserId))
-        {
-            return parsedUserId;
-        }
-        return null;
     }
 
     private static async Task<IResult> CreateProject(
@@ -68,6 +67,12 @@ public static class ProjectEndpoints
             return Results.NotFound(new { error = "Workspace informado não foi encontrado." });
         }
 
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, workspaceId, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
+        }
+
         ImportProject project = new ImportProject
         {
             WorkspaceId = workspaceId,
@@ -79,7 +84,7 @@ public static class ProjectEndpoints
         dbContext.ImportProjects.Add(project);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
+        Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
 
         await auditService.LogAsync(
             workspaceId,
@@ -107,6 +112,7 @@ public static class ProjectEndpoints
 
     private static async Task<IResult> GetProjectsByWorkspace(
         Guid workspaceId,
+        ClaimsPrincipal claimsPrincipal,
         IApplicationDbContext dbContext,
         CancellationToken cancellationToken)
     {
@@ -116,6 +122,12 @@ public static class ProjectEndpoints
         if (!workspaceExists)
         {
             return Results.NotFound(new { error = "Workspace informado não foi encontrado." });
+        }
+
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, workspaceId, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
         }
 
         List<ImportProjectDto> list = await dbContext.ImportProjects
@@ -139,6 +151,7 @@ public static class ProjectEndpoints
 
     private static async Task<IResult> GetProjectById(
         Guid projectId,
+        ClaimsPrincipal claimsPrincipal,
         IApplicationDbContext dbContext,
         CancellationToken cancellationToken)
     {
@@ -149,6 +162,12 @@ public static class ProjectEndpoints
         if (project == null)
         {
             return Results.NotFound(new { error = "Projeto de importação não encontrado." });
+        }
+
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, project.WorkspaceId, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
         }
 
         ImportProjectDto dto = new ImportProjectDto
@@ -183,6 +202,12 @@ public static class ProjectEndpoints
             return Results.NotFound(new { error = "Projeto de importação não encontrado." });
         }
 
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, project.WorkspaceId, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
+        }
+
         Guid workspaceId = project.WorkspaceId;
         string projectName = project.Name;
 
@@ -194,7 +219,7 @@ public static class ProjectEndpoints
         dbContext.ImportProjects.Remove(project);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
+        Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
 
         await auditService.LogAsync(
             workspaceId,

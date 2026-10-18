@@ -18,15 +18,19 @@ public static class AuthEndpoints
 
         group.MapPost("/register", Register)
             .WithName("Register")
+            .RequireRateLimiting("AuthPolicy")
             .Produces<AuthResponseDto>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status409Conflict);
+            .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests);
 
         group.MapPost("/login", Login)
             .WithName("Login")
+            .RequireRateLimiting("AuthPolicy")
             .Produces<AuthResponseDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status401Unauthorized);
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests);
 
         group.MapGet("/me", GetCurrentUser)
             .WithName("GetCurrentUser")

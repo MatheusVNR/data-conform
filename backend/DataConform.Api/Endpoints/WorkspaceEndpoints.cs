@@ -17,8 +17,10 @@ public static class WorkspaceEndpoints
 
         group.MapPost("/", CreateWorkspace)
             .WithName("CreateWorkspace")
+            .RequireAuthorization()
             .Produces<WorkspaceDto>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status409Conflict);
 
         group.MapGet("/", GetWorkspaces)
@@ -27,59 +29,57 @@ public static class WorkspaceEndpoints
 
         group.MapGet("/{id:guid}", GetWorkspaceById)
             .WithName("GetWorkspaceById")
+            .RequireAuthorization()
             .Produces<WorkspaceDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapPut("/{id:guid}", UpdateWorkspace)
             .WithName("UpdateWorkspace")
+            .RequireAuthorization()
             .Produces<WorkspaceDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapDelete("/{id:guid}", DeleteWorkspace)
             .WithName("DeleteWorkspace")
+            .RequireAuthorization()
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapGet("/{id:guid}/quota", GetWorkspaceQuota)
             .WithName("GetWorkspaceQuota")
+            .RequireAuthorization()
             .Produces<WorkspaceQuotaDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapPost("/{id:guid}/change-plan", ChangeWorkspacePlan)
             .WithName("ChangeWorkspacePlan")
+            .RequireAuthorization()
             .Produces<WorkspaceQuotaDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapPost("/{id:guid}/checkout/confirm", ConfirmStripeCheckout)
             .WithName("ConfirmStripeCheckout")
+            .RequireAuthorization()
             .Produces<WorkspaceQuotaDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         return group;
-    }
-
-    private static Guid? TryGetAuthenticatedUserId(ClaimsPrincipal principal)
-    {
-        string? rawUserId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!string.IsNullOrWhiteSpace(rawUserId) && Guid.TryParse(rawUserId, out Guid parsedUserId))
-        {
-            return parsedUserId;
-        }
-        return null;
-    }
-
-    private static Guid? TryGetPrimaryWorkspaceId(ClaimsPrincipal principal)
-    {
-        string? rawWorkspaceId = principal.FindFirst("workspace_id")?.Value;
-        if (!string.IsNullOrWhiteSpace(rawWorkspaceId) && Guid.TryParse(rawWorkspaceId, out Guid parsedWorkspaceId))
-        {
-            return parsedWorkspaceId;
-        }
-        return null;
     }
 
     private static async Task<IResult> CreateWorkspace(
@@ -121,7 +121,7 @@ public static class WorkspaceEndpoints
         dbContext.Workspaces.Add(workspace);
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
+        Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
 
         await auditService.LogAsync(
             workspace.Id,
@@ -154,43 +154,16 @@ public static class WorkspaceEndpoints
         IApplicationDbContext dbContext,
         CancellationToken cancellationToken)
     {
-        Guid? userId = TryGetAuthenticatedUserId(claimsPrincipal);
-        Guid? primaryWorkspaceId = TryGetPrimaryWorkspaceId(claimsPrincipal);
+        HashSet<Guid> allowedWorkspaceIds = await TenantAuthorizationHelper.GetAllowedWorkspaceIdsAsync(
+            claimsPrincipal,
+            dbContext,
+            cancellationToken);
 
         // Isolamento Multi-tenant estrito: visitantes não autenticados não visualizam organizações de terceiros
-        if (userId == null && primaryWorkspaceId == null)
+        if (allowedWorkspaceIds.Count == 0)
         {
             List<WorkspaceDto> emptyList = new List<WorkspaceDto>();
             return Results.Ok(emptyList);
-        }
-
-        HashSet<Guid> allowedWorkspaceIds = new HashSet<Guid>();
-        if (primaryWorkspaceId.HasValue)
-        {
-            allowedWorkspaceIds.Add(primaryWorkspaceId.Value);
-        }
-
-        if (userId.HasValue)
-        {
-            Guid? userDbWorkspaceId = await dbContext.Users
-                .Where(u => u.Id == userId.Value)
-                .Select(u => (Guid?)u.WorkspaceId)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (userDbWorkspaceId.HasValue)
-            {
-                allowedWorkspaceIds.Add(userDbWorkspaceId.Value);
-            }
-
-            List<Guid> createdWorkspaceIds = await dbContext.AuditLogs
-                .Where(a => a.UserId == userId.Value && a.Action == "CreateWorkspace")
-                .Select(a => a.WorkspaceId)
-                .ToListAsync(cancellationToken);
-
-            foreach (Guid createdId in createdWorkspaceIds)
-            {
-                allowedWorkspaceIds.Add(createdId);
-            }
         }
 
         List<WorkspaceDto> list = await dbContext.Workspaces
@@ -216,6 +189,7 @@ public static class WorkspaceEndpoints
 
     private static async Task<IResult> GetWorkspaceById(
         Guid id,
+        ClaimsPrincipal claimsPrincipal,
         IApplicationDbContext dbContext,
         CancellationToken cancellationToken)
     {
@@ -226,6 +200,12 @@ public static class WorkspaceEndpoints
         if (workspace == null)
         {
             return Results.NotFound(new { error = "Organização / Workspace não encontrado." });
+        }
+
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, id, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
         }
 
         WorkspaceDto dto = new WorkspaceDto
@@ -267,13 +247,19 @@ public static class WorkspaceEndpoints
             return Results.NotFound(new { error = "Organização / Workspace não encontrado." });
         }
 
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, id, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
+        }
+
         string oldName = workspace.Name;
         workspace.Name = request.Name.Trim();
         workspace.UpdatedAt = DateTimeOffset.UtcNow;
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
+        Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
 
         await auditService.LogAsync(
             workspace.Id,
@@ -303,6 +289,7 @@ public static class WorkspaceEndpoints
 
     private static async Task<IResult> DeleteWorkspace(
         Guid id,
+        ClaimsPrincipal claimsPrincipal,
         IApplicationDbContext dbContext,
         IFileStorageService fileStorage,
         CancellationToken cancellationToken)
@@ -315,6 +302,12 @@ public static class WorkspaceEndpoints
         if (workspace == null)
         {
             return Results.NotFound(new { error = "Organização / Workspace não encontrado." });
+        }
+
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, id, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
         }
 
         bool hasBoundUsers = await dbContext.Users.AnyAsync(u => u.WorkspaceId == id, cancellationToken);
@@ -340,9 +333,17 @@ public static class WorkspaceEndpoints
 
     private static async Task<IResult> GetWorkspaceQuota(
         Guid id,
+        ClaimsPrincipal claimsPrincipal,
+        IApplicationDbContext dbContext,
         ISubscriptionQuotaService quotaService,
         CancellationToken cancellationToken)
     {
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, id, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
+        }
+
         try
         {
             WorkspaceQuotaDto quota = await quotaService.GetWorkspaceQuotaAsync(id, cancellationToken);
@@ -358,10 +359,17 @@ public static class WorkspaceEndpoints
         Guid id,
         UpdatePlanRequest request,
         ClaimsPrincipal claimsPrincipal,
+        IApplicationDbContext dbContext,
         ISubscriptionQuotaService quotaService,
         IAuditService auditService,
         CancellationToken cancellationToken)
     {
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, id, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
+        }
+
         if (request.Plan != PlanTier.Starter)
         {
             return Results.BadRequest(new
@@ -375,7 +383,7 @@ public static class WorkspaceEndpoints
             WorkspaceQuotaDto updated = await quotaService.UpdatePlanAsync(id, request.Plan, cancellationToken);
             string actionDetail = $"Assinatura retornada ao plano gratuito Starter.{(string.IsNullOrWhiteSpace(request.Reason) ? "" : $" Motivo: {request.Reason}")}";
 
-            Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
+            Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
             await auditService.LogAsync(id, currentUserId, "ChangePlan", "Workspace", id.ToString(), actionDetail, cancellationToken);
             return Results.Ok(updated);
         }
@@ -394,6 +402,12 @@ public static class WorkspaceEndpoints
         IAuditService auditService,
         CancellationToken cancellationToken)
     {
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, id, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
+        }
+
         if (string.IsNullOrWhiteSpace(request.SessionId) ||
             (!request.SessionId.StartsWith("cs_test_", StringComparison.OrdinalIgnoreCase) &&
              !request.SessionId.StartsWith("cs_live_", StringComparison.OrdinalIgnoreCase)) ||
@@ -419,7 +433,7 @@ public static class WorkspaceEndpoints
 
             if (!alreadyProcessed)
             {
-                Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
+                Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
                 await auditService.LogAsync(
                     id,
                     currentUserId,

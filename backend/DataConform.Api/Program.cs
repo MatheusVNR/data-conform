@@ -1,5 +1,7 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using DataConform.Api.Endpoints;
@@ -36,6 +38,33 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 builder.Services.AddAuthorization();
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            error = "Muitas tentativas de autenticação em curto período. Aguarde um minuto antes de tentar novamente."
+        }, cancellationToken);
+    };
+
+    options.AddPolicy("AuthPolicy", httpContext =>
+    {
+        string partitionKey = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous-ip";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+});
 
 string allowedOriginsConfig = builder.Configuration["Cors:AllowedOrigins"] ?? "";
 string[] allowedOrigins = string.IsNullOrWhiteSpace(allowedOriginsConfig)
@@ -127,6 +156,7 @@ app.MapGet("/docs", () => Results.Content(
 app.MapGet("/scalar", () => Results.Redirect("/docs")).ExcludeFromDescription();
 
 app.UseCors("AllowFrontend");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

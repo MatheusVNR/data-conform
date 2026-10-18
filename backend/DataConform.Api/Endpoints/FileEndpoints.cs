@@ -15,34 +15,40 @@ public static class FileEndpoints
     public static RouteGroupBuilder MapFileEndpoints(this IEndpointRouteBuilder routes)
     {
         RouteGroupBuilder group = routes.MapGroup("/api")
-            .WithTags("Files");
+            .WithTags("Files")
+            .RequireAuthorization();
 
         group.MapPost("/projects/{projectId:guid}/files/upload", UploadFile)
             .WithName("UploadFile")
             .DisableAntiforgery()
             .Produces<ImportFileDto>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapGet("/projects/{projectId:guid}/files", GetFilesByProject)
             .WithName("GetFilesByProject")
             .Produces<List<ImportFileDto>>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapPost("/files/{fileId:guid}/validate", ValidateFile)
             .WithName("ValidateFile")
             .Produces<ValidationReportDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
         group.MapGet("/files/{fileId:guid}/report", GetValidationReport)
             .WithName("GetValidationReport")
             .Produces<ValidationReportDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapDelete("/files/{fileId:guid}", DeleteFile)
             .WithName("DeleteFile")
             .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         return group;
@@ -50,12 +56,7 @@ public static class FileEndpoints
 
     private static Guid? TryGetAuthenticatedUserId(ClaimsPrincipal principal)
     {
-        string? rawUserId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!string.IsNullOrWhiteSpace(rawUserId) && Guid.TryParse(rawUserId, out Guid parsedUserId))
-        {
-            return parsedUserId;
-        }
-        return null;
+        return TenantAuthorizationHelper.GetAuthenticatedUserId(principal);
     }
 
     private static async Task<IResult> UploadFile(
@@ -93,6 +94,12 @@ public static class FileEndpoints
         if (project == null)
         {
             return Results.NotFound(new { error = "Projeto de importação informado não foi encontrado." });
+        }
+
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, project.WorkspaceId, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
         }
 
         long maxPlanSizeBytes = project.Workspace.Plan switch
@@ -168,15 +175,22 @@ public static class FileEndpoints
 
     private static async Task<IResult> GetFilesByProject(
         Guid projectId,
+        ClaimsPrincipal claimsPrincipal,
         IApplicationDbContext dbContext,
         CancellationToken cancellationToken)
     {
-        bool projectExists = await dbContext.ImportProjects
-            .AnyAsync(p => p.Id == projectId, cancellationToken);
+        ImportProject? project = await dbContext.ImportProjects
+            .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
 
-        if (!projectExists)
+        if (project == null)
         {
             return Results.NotFound(new { error = "Projeto de importação não encontrado." });
+        }
+
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, project.WorkspaceId, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
         }
 
         List<ImportFileDto> list = await dbContext.ImportFiles
@@ -224,6 +238,17 @@ public static class FileEndpoints
         ImportProject? project = await dbContext.ImportProjects
             .FirstOrDefaultAsync(p => p.Id == importFile.ProjectId, cancellationToken);
 
+        if (project == null)
+        {
+            return Results.NotFound(new { error = "Projeto de importação não encontrado." });
+        }
+
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, project.WorkspaceId, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
+        }
+
         importFile.Status = FileStatus.Processing;
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -245,22 +270,19 @@ public static class FileEndpoints
                 requiredColumnsList,
                 cancellationToken);
 
-            if (project != null)
-            {
-                DataConform.Application.Common.Models.QuotaCheckResult rowQuotaCheck = await quotaService.CheckUploadQuotaAsync(
-                    project.WorkspaceId,
-                    validationResult.TotalRows,
-                    cancellationToken);
+            DataConform.Application.Common.Models.QuotaCheckResult rowQuotaCheck = await quotaService.CheckUploadQuotaAsync(
+                project.WorkspaceId,
+                validationResult.TotalRows,
+                cancellationToken);
 
-                if (!rowQuotaCheck.IsAllowed)
-                {
-                    importFile.Status = FileStatus.Failed;
-                    await dbContext.SaveChangesAsync(cancellationToken);
-                    return Results.Problem(
-                        statusCode: StatusCodes.Status403Forbidden,
-                        title: "Limite de linhas do plano excedido",
-                        detail: rowQuotaCheck.Reason);
-                }
+            if (!rowQuotaCheck.IsAllowed)
+            {
+                importFile.Status = FileStatus.Failed;
+                await dbContext.SaveChangesAsync(cancellationToken);
+                return Results.Problem(
+                    statusCode: StatusCodes.Status403Forbidden,
+                    title: "Limite de linhas do plano excedido",
+                    detail: rowQuotaCheck.Reason);
             }
 
             // Remover inconsistências anteriores caso revalide
@@ -282,18 +304,15 @@ public static class FileEndpoints
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
-            if (project != null)
-            {
-                Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
-                await auditService.LogAsync(
-                    project.WorkspaceId,
-                    currentUserId,
-                    "ValidateFile",
-                    "ImportFile",
-                    importFile.Id.ToString(),
-                    $"Arquivo validado: {validationResult.TotalRows} linhas, {validationResult.Issues.Count} inconsistências.",
-                    cancellationToken);
-            }
+            Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
+            await auditService.LogAsync(
+                project.WorkspaceId,
+                currentUserId,
+                "ValidateFile",
+                "ImportFile",
+                importFile.Id.ToString(),
+                $"Arquivo validado: {validationResult.TotalRows} linhas, {validationResult.Issues.Count} inconsistências.",
+                cancellationToken);
 
             ValidationReportDto report = new ValidationReportDto
             {
@@ -329,16 +348,24 @@ public static class FileEndpoints
 
     private static async Task<IResult> GetValidationReport(
         Guid fileId,
+        ClaimsPrincipal claimsPrincipal,
         IApplicationDbContext dbContext,
         CancellationToken cancellationToken)
     {
         ImportFile? importFile = await dbContext.ImportFiles
+            .Include(f => f.Project)
             .Include(f => f.ValidationIssues)
             .FirstOrDefaultAsync(f => f.Id == fileId, cancellationToken);
 
         if (importFile == null)
         {
             return Results.NotFound(new { error = "Arquivo informado não foi encontrado." });
+        }
+
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, importFile.Project.WorkspaceId, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
         }
 
         ValidationReportDto report = new ValidationReportDto
@@ -387,6 +414,12 @@ public static class FileEndpoints
         }
 
         Guid workspaceId = importFile.Project.WorkspaceId;
+        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, workspaceId, dbContext, cancellationToken);
+        if (!canAccess)
+        {
+            return TenantAuthorizationHelper.ForbiddenTenantResult();
+        }
+
         string fileName = importFile.OriginalFileName;
 
         await fileStorage.DeleteFileAsync(importFile.StoredFileName, cancellationToken);
