@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DataConform.Application.Common.Interfaces;
@@ -9,7 +10,7 @@ namespace DataConform.Api.Endpoints;
 
 public static class FileEndpoints
 {
-    private const long MaxFileSizeBytes = 20 * 1024 * 1024; // 20 MB
+    private const long MaxFileSizeBytes = 50 * 1024 * 1024; // 50 MB teto global
 
     public static RouteGroupBuilder MapFileEndpoints(this IEndpointRouteBuilder routes)
     {
@@ -47,9 +48,20 @@ public static class FileEndpoints
         return group;
     }
 
+    private static Guid? TryGetAuthenticatedUserId(ClaimsPrincipal principal)
+    {
+        string? rawUserId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrWhiteSpace(rawUserId) && Guid.TryParse(rawUserId, out Guid parsedUserId))
+        {
+            return parsedUserId;
+        }
+        return null;
+    }
+
     private static async Task<IResult> UploadFile(
         Guid projectId,
         IFormFile? file,
+        ClaimsPrincipal claimsPrincipal,
         IApplicationDbContext dbContext,
         IFileStorageService fileStorage,
         ISubscriptionQuotaService quotaService,
@@ -63,7 +75,7 @@ public static class FileEndpoints
 
         if (file.Length > MaxFileSizeBytes)
         {
-            return Results.BadRequest(new { error = $"O tamanho do arquivo excede o limite máximo permitido de {MaxFileSizeBytes / (1024 * 1024)} MB." });
+            return Results.BadRequest(new { error = $"O tamanho do arquivo excede o teto máximo permitido de {MaxFileSizeBytes / (1024 * 1024)} MB." });
         }
 
         string originalFileName = Path.GetFileName(file.FileName);
@@ -71,15 +83,32 @@ public static class FileEndpoints
 
         if (extension != ".csv" && extension != ".txt")
         {
-            return Results.BadRequest(new { error = "Formato de arquivo não suportado nesta etapa. Por favor, envie um arquivo .csv ou .txt." });
+            return Results.BadRequest(new { error = "Formato de arquivo não suportado. Por favor, envie um arquivo delimitado .csv ou .txt." });
         }
 
         ImportProject? project = await dbContext.ImportProjects
+            .Include(p => p.Workspace)
             .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
 
         if (project == null)
         {
             return Results.NotFound(new { error = "Projeto de importação informado não foi encontrado." });
+        }
+
+        long maxPlanSizeBytes = project.Workspace.Plan switch
+        {
+            PlanTier.Enterprise => 50L * 1024L * 1024L,
+            PlanTier.Professional => 25L * 1024L * 1024L,
+            _ => 5L * 1024L * 1024L
+        };
+
+        if (file.Length > maxPlanSizeBytes)
+        {
+            long maxMb = maxPlanSizeBytes / (1024L * 1024L);
+            return Results.BadRequest(new
+            {
+                error = $"O arquivo enviado ({file.Length / 1024} KB) excede o limite de {maxMb} MB por arquivo do seu plano ({project.Workspace.Plan}). Faça upgrade para enviar lotes maiores."
+            });
         }
 
         DataConform.Application.Common.Models.QuotaCheckResult quotaCheck = await quotaService.CheckUploadQuotaAsync(project.WorkspaceId, 0, cancellationToken);
@@ -107,10 +136,12 @@ public static class FileEndpoints
         dbContext.ImportFiles.Add(importFile);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
+
         await quotaService.IncrementFilesUploadedAsync(project.WorkspaceId, cancellationToken);
         await auditService.LogAsync(
             project.WorkspaceId,
-            null,
+            currentUserId,
             "UploadFile",
             "ImportFile",
             importFile.Id.ToString(),
@@ -173,6 +204,7 @@ public static class FileEndpoints
     private static async Task<IResult> ValidateFile(
         Guid fileId,
         [FromQuery] string? requiredColumns,
+        ClaimsPrincipal claimsPrincipal,
         IApplicationDbContext dbContext,
         IFileStorageService fileStorage,
         ICsvValidatorService validatorService,
@@ -252,9 +284,10 @@ public static class FileEndpoints
 
             if (project != null)
             {
+                Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
                 await auditService.LogAsync(
                     project.WorkspaceId,
-                    null,
+                    currentUserId,
                     "ValidateFile",
                     "ImportFile",
                     importFile.Id.ToString(),
@@ -338,6 +371,7 @@ public static class FileEndpoints
 
     private static async Task<IResult> DeleteFile(
         Guid fileId,
+        ClaimsPrincipal claimsPrincipal,
         IApplicationDbContext dbContext,
         IFileStorageService fileStorage,
         IAuditService auditService,
@@ -359,9 +393,11 @@ public static class FileEndpoints
         dbContext.ImportFiles.Remove(importFile);
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
+
         await auditService.LogAsync(
             workspaceId,
-            null,
+            currentUserId,
             "DeleteFile",
             "ImportFile",
             fileId.ToString(),

@@ -1,12 +1,14 @@
 import type {
   AuditLogDto,
   AuthResponseDto,
+  ConfirmCheckoutRequest,
   CreateImportProjectRequest,
   CreateWorkspaceRequest,
   ImportFileDto,
   ImportProjectDto,
   LoginRequestDto,
   RegisterRequestDto,
+  UpdateWorkspaceRequest,
   ValidationReportDto,
   WorkspaceDto,
   WorkspaceQuotaDto,
@@ -19,6 +21,14 @@ const API_BASE_URL: string = configuredApiUrl && configuredApiUrl.trim().length 
       : `${configuredApiUrl.trim().replace(/\/+$/, '')}/api`)
   : '/api';
 const TOKEN_KEY: string = 'dataconform_token';
+
+export function getApiDocsUrl(): string {
+  if (configuredApiUrl && configuredApiUrl.trim().length > 0) {
+    const cleanRoot: string = configuredApiUrl.trim().replace(/\/api\/?$/, '').replace(/\/+$/, '');
+    return `${cleanRoot}/docs`;
+  }
+  return 'http://localhost:5039/docs';
+}
 
 export function getAuthToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -54,7 +64,7 @@ export async function login(request: LoginRequestDto): Promise<AuthResponseDto> 
 
   if (!response.ok) {
     const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'Credenciais inválidas.');
+    throw new Error(errorData.error || 'E-mail ou senha incorretos.');
   }
 
   const data: AuthResponseDto = (await response.json()) as AuthResponseDto;
@@ -71,7 +81,7 @@ export async function register(request: RegisterRequestDto): Promise<AuthRespons
 
   if (!response.ok) {
     const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'Erro ao criar conta.');
+    throw new Error(errorData.error || 'Erro ao criar conta corporativa.');
   }
 
   const data: AuthResponseDto = (await response.json()) as AuthResponseDto;
@@ -101,7 +111,7 @@ export async function getWorkspaces(): Promise<WorkspaceDto[]> {
     headers: getHeaders(false),
   });
   if (!response.ok) {
-    throw new Error('Falha ao carregar workspaces');
+    throw new Error('Falha ao carregar organizações / workspaces');
   }
   return (await response.json()) as WorkspaceDto[];
 }
@@ -115,10 +125,37 @@ export async function createWorkspace(request: CreateWorkspaceRequest): Promise<
 
   if (!response.ok) {
     const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'Erro ao criar workspace');
+    throw new Error(errorData.error || 'Erro ao criar organização');
   }
 
   return (await response.json()) as WorkspaceDto;
+}
+
+export async function updateWorkspace(workspaceId: string, request: UpdateWorkspaceRequest): Promise<WorkspaceDto> {
+  const response: Response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}`, {
+    method: 'PUT',
+    headers: getHeaders(true),
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(errorData.error || 'Erro ao renomear organização');
+  }
+
+  return (await response.json()) as WorkspaceDto;
+}
+
+export async function deleteWorkspace(workspaceId: string): Promise<void> {
+  const response: Response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}`, {
+    method: 'DELETE',
+    headers: getHeaders(false),
+  });
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(errorData.error || 'Erro ao excluir organização');
+  }
 }
 
 export async function getWorkspaceQuota(workspaceId: string): Promise<WorkspaceQuotaDto> {
@@ -131,16 +168,38 @@ export async function getWorkspaceQuota(workspaceId: string): Promise<WorkspaceQ
   return (await response.json()) as WorkspaceQuotaDto;
 }
 
-export async function changeWorkspacePlan(workspaceId: string, plan: string | number): Promise<WorkspaceQuotaDto> {
+export async function changeWorkspacePlan(
+  workspaceId: string,
+  plan: string | number,
+  reason?: string
+): Promise<WorkspaceQuotaDto> {
   const response: Response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/change-plan`, {
     method: 'POST',
     headers: getHeaders(true),
-    body: JSON.stringify({ plan }),
+    body: JSON.stringify({ plan, reason }),
   });
 
   if (!response.ok) {
     const errorData = (await response.json().catch(() => ({}))) as { error?: string };
     throw new Error(errorData.error || 'Erro ao alterar plano do workspace');
+  }
+
+  return (await response.json()) as WorkspaceQuotaDto;
+}
+
+export async function confirmStripeCheckout(
+  workspaceId: string,
+  request: ConfirmCheckoutRequest
+): Promise<WorkspaceQuotaDto> {
+  const response: Response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/checkout/confirm`, {
+    method: 'POST',
+    headers: getHeaders(true),
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(errorData.error || 'Erro ao confirmar pagamento do Stripe');
   }
 
   return (await response.json()) as WorkspaceQuotaDto;
@@ -183,6 +242,18 @@ export async function createProject(
   }
 
   return (await response.json()) as ImportProjectDto;
+}
+
+export async function deleteProject(projectId: string): Promise<void> {
+  const response: Response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+    method: 'DELETE',
+    headers: getHeaders(false),
+  });
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(errorData.error || 'Erro ao excluir projeto');
+  }
 }
 
 // Files

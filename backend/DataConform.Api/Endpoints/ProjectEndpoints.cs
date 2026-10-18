@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Http.HttpResults;
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using DataConform.Application.Common.Interfaces;
 using DataConform.Application.Projects.Dtos;
@@ -29,13 +29,30 @@ public static class ProjectEndpoints
             .Produces<ImportProjectDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        group.MapDelete("/projects/{projectId:guid}", DeleteProject)
+            .WithName("DeleteProject")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return group;
+    }
+
+    private static Guid? TryGetAuthenticatedUserId(ClaimsPrincipal principal)
+    {
+        string? rawUserId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrWhiteSpace(rawUserId) && Guid.TryParse(rawUserId, out Guid parsedUserId))
+        {
+            return parsedUserId;
+        }
+        return null;
     }
 
     private static async Task<IResult> CreateProject(
         Guid workspaceId,
         CreateImportProjectRequest request,
+        ClaimsPrincipal claimsPrincipal,
         IApplicationDbContext dbContext,
+        IAuditService auditService,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -61,6 +78,17 @@ public static class ProjectEndpoints
 
         dbContext.ImportProjects.Add(project);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
+
+        await auditService.LogAsync(
+            workspaceId,
+            currentUserId,
+            "CreateProject",
+            "ImportProject",
+            project.Id.ToString(),
+            $"Projeto '{project.Name}' (Destino: {project.TargetSystem ?? "Genérico"}) criado.",
+            cancellationToken);
 
         ImportProjectDto dto = new ImportProjectDto
         {
@@ -92,6 +120,7 @@ public static class ProjectEndpoints
 
         List<ImportProjectDto> list = await dbContext.ImportProjects
             .Where(p => p.WorkspaceId == workspaceId)
+            .OrderByDescending(p => p.CreatedAt)
             .Select(p => new ImportProjectDto
             {
                 Id = p.Id,
@@ -135,5 +164,47 @@ public static class ProjectEndpoints
         };
 
         return Results.Ok(dto);
+    }
+
+    private static async Task<IResult> DeleteProject(
+        Guid projectId,
+        ClaimsPrincipal claimsPrincipal,
+        IApplicationDbContext dbContext,
+        IFileStorageService fileStorage,
+        IAuditService auditService,
+        CancellationToken cancellationToken)
+    {
+        ImportProject? project = await dbContext.ImportProjects
+            .Include(p => p.Files)
+            .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
+
+        if (project == null)
+        {
+            return Results.NotFound(new { error = "Projeto de importação não encontrado." });
+        }
+
+        Guid workspaceId = project.WorkspaceId;
+        string projectName = project.Name;
+
+        foreach (ImportFile file in project.Files)
+        {
+            await fileStorage.DeleteFileAsync(file.StoredFileName, cancellationToken);
+        }
+
+        dbContext.ImportProjects.Remove(project);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
+
+        await auditService.LogAsync(
+            workspaceId,
+            currentUserId,
+            "DeleteProject",
+            "ImportProject",
+            projectId.ToString(),
+            $"Projeto '{projectName}' e todos os seus arquivos foram excluídos.",
+            cancellationToken);
+
+        return Results.NoContent();
     }
 }

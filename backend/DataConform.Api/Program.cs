@@ -104,15 +104,28 @@ app.Use(async (context, next) =>
 });
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.MapOpenApi();
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
+app.MapGet("/docs", () => Results.Content(
+    """
+    <!doctype html>
+    <html lang="pt-BR">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>DataConform API — Documentação Interativa (OpenAPI)</title>
+        <style>body { margin: 0; padding: 0; }</style>
+      </head>
+      <body>
+        <script id="api-reference" data-url="/openapi/v1.json" data-configuration='{"theme":"deepSpace"}'></script>
+        <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+      </body>
+    </html>
+    """,
+    "text/html; charset=utf-8")).ExcludeFromDescription();
+
+app.MapGet("/scalar", () => Results.Redirect("/docs")).ExcludeFromDescription();
+
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import type { FC } from 'react';
-import type { ImportFileDto } from '../types';
-import { FileStatusLabels } from '../types';
+import type { ErpPresetConfig, ImportFileDto } from '../types';
+import { FileStatusLabels, getErpPreset } from '../types';
 
 interface FileListProps {
   files: ImportFileDto[];
+  targetSystem?: string | null;
   onValidate: (fileId: string, requiredColumns?: string) => Promise<void>;
   onViewReport: (fileId: string) => void;
   onDeleteFile?: (fileId: string) => Promise<void>;
@@ -13,6 +14,7 @@ interface FileListProps {
 
 export const FileList: FC<FileListProps> = ({
   files,
+  targetSystem,
   onValidate,
   onViewReport,
   onDeleteFile,
@@ -22,6 +24,8 @@ export const FileList: FC<FileListProps> = ({
   const [requiredColumnsInput, setRequiredColumnsInput] = useState<string>('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const erpPreset: ErpPresetConfig = getErpPreset(targetSystem);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -50,6 +54,31 @@ export const FileList: FC<FileListProps> = ({
     }
   };
 
+  const handleToggleColumnChip = (colName: string): void => {
+    const currentParts: string[] = requiredColumnsInput
+      .split(',')
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.length > 0);
+
+    const exists: boolean = currentParts.some(
+      (p: string) => p.toLowerCase() === colName.toLowerCase()
+    );
+
+    if (exists) {
+      const next: string[] = currentParts.filter(
+        (p: string) => p.toLowerCase() !== colName.toLowerCase()
+      );
+      setRequiredColumnsInput(next.join(', '));
+    } else {
+      const next: string[] = [...currentParts, colName];
+      setRequiredColumnsInput(next.join(', '));
+    }
+  };
+
+  const handleApplyErpPresetAll = (): void => {
+    setRequiredColumnsInput(erpPreset.requiredColumns.join(', '));
+  };
+
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -66,19 +95,27 @@ export const FileList: FC<FileListProps> = ({
     });
   };
 
-  const getStatusBadgeClass = (status: number): string => {
-    switch (status) {
-      case 0:
-        return 'badge badge-pending';
-      case 1:
-        return 'badge badge-processing';
-      case 2:
-        return 'badge badge-completed';
-      case 3:
-        return 'badge badge-failed';
-      default:
-        return 'badge';
-    }
+  const getStatusBadgeClass = (status: number | string): string => {
+    const s: string = String(status).toLowerCase();
+    if (s === '0' || s === 'pending') return 'badge badge-pending';
+    if (s === '1' || s === 'processing') return 'badge badge-processing';
+    if (s === '2' || s === 'completed') return 'badge badge-completed';
+    if (s === '3' || s === 'failed') return 'badge badge-failed';
+    return 'badge';
+  };
+
+  const getStatusLabel = (status: number | string): string => {
+    const s: string = String(status).toLowerCase();
+    if (s === '0' || s === 'pending') return FileStatusLabels[0];
+    if (s === '1' || s === 'processing') return FileStatusLabels[1];
+    if (s === '2' || s === 'completed') return FileStatusLabels[2];
+    if (s === '3' || s === 'failed') return FileStatusLabels[3];
+    return String(status);
+  };
+
+  const isCompletedStatus = (status: number | string): boolean => {
+    const s: string = String(status).toLowerCase();
+    return s === '2' || s === 'completed';
   };
 
   const handleStartValidation = async (fileId: string): Promise<void> => {
@@ -90,8 +127,11 @@ export const FileList: FC<FileListProps> = ({
   if (files.length === 0) {
     return (
       <div className="empty-state">
-        <p>Nenhum arquivo enviado para este projeto ainda.</p>
-        <span className="empty-state-hint">Envie um arquivo CSV acima para iniciar a validação.</span>
+        <div className="empty-icon">📋</div>
+        <p>Nenhum arquivo anexado a este projeto até o momento.</p>
+        <span className="empty-state-hint">
+          Utilize a área de upload acima ou baixe o modelo oficial de {erpPreset.systemName} para testar a validação.
+        </span>
       </div>
     );
   }
@@ -102,19 +142,20 @@ export const FileList: FC<FileListProps> = ({
         <table className="data-table">
           <thead>
             <tr>
-              <th>Nome do Arquivo</th>
+              <th>Arquivo</th>
               <th>Tamanho</th>
-              <th>Enviado Em</th>
+              <th>Data de Envio</th>
               <th>Status</th>
-              <th>Linhas Totais</th>
-              <th>Válidas</th>
-              <th>Erros</th>
+              <th>Total Linhas</th>
+              <th>Conformidade</th>
+              <th>Inconsistências</th>
               <th className="text-right">Ações</th>
             </tr>
           </thead>
           <tbody>
             {files.map((file: ImportFileDto) => {
               const isValidatingThis: boolean = validatingFileId === file.id;
+              const isDone: boolean = isCompletedStatus(file.status);
 
               return (
                 <tr key={file.id}>
@@ -128,13 +169,13 @@ export const FileList: FC<FileListProps> = ({
                   <td>{formatDate(file.createdAt)}</td>
                   <td>
                     <span className={getStatusBadgeClass(file.status)}>
-                      {isValidatingThis ? 'Processando...' : FileStatusLabels[file.status]}
+                      {isValidatingThis ? 'Analisando...' : getStatusLabel(file.status)}
                     </span>
                   </td>
                   <td>{file.totalRows ?? '—'}</td>
                   <td>
                     {file.validRows !== null && file.validRows !== undefined ? (
-                      <span className="text-success font-medium">{file.validRows}</span>
+                      <span className="text-success font-medium">{file.validRows} válidas</span>
                     ) : (
                       '—'
                     )}
@@ -142,7 +183,7 @@ export const FileList: FC<FileListProps> = ({
                   <td>
                     {file.errorRows !== null && file.errorRows !== undefined ? (
                       <span className={file.errorRows > 0 ? 'text-error font-medium' : 'text-muted'}>
-                        {file.errorRows}
+                        {file.errorRows > 0 ? `${file.errorRows} c/ erro` : '0 erros'}
                       </span>
                     ) : (
                       '—'
@@ -150,13 +191,13 @@ export const FileList: FC<FileListProps> = ({
                   </td>
                   <td className="text-right">
                     <div className="table-actions">
-                      {file.status === 2 && (
+                      {isDone && (
                         <button
                           type="button"
                           className="btn btn-secondary btn-xs"
                           onClick={() => onViewReport(file.id)}
                         >
-                          Ver Relatório
+                          📊 Ver Laudo
                         </button>
                       )}
 
@@ -166,7 +207,7 @@ export const FileList: FC<FileListProps> = ({
                         onClick={() => setSelectedFileForRules(file.id)}
                         disabled={isValidatingThis || deletingId === file.id}
                       >
-                        {isValidatingThis ? 'Validando...' : file.status === 2 ? 'Revalidar' : 'Validar'}
+                        {isValidatingThis ? 'Validando...' : isDone ? '↻ Revalidar' : '▶ Validar Arquivo'}
                       </button>
 
                       {onDeleteFile && (
@@ -198,7 +239,7 @@ export const FileList: FC<FileListProps> = ({
                             disabled={isValidatingThis || deletingId === file.id}
                             onClick={() => setConfirmDeleteId(file.id)}
                           >
-                            🗑 Excluir
+                            🗑
                           </button>
                         )
                       )}
@@ -216,7 +257,7 @@ export const FileList: FC<FileListProps> = ({
           className="modal-backdrop"
           role="dialog"
           aria-modal="true"
-          onClick={(e) => {
+          onClick={(e: React.MouseEvent<HTMLDivElement>) => {
             if (e.target === e.currentTarget) {
               setSelectedFileForRules(null);
               setRequiredColumnsInput('');
@@ -225,7 +266,12 @@ export const FileList: FC<FileListProps> = ({
         >
           <div className="modal-card">
             <div className="modal-header">
-              <h3>Configurar Validação do Arquivo</h3>
+              <div>
+                <h3>Parametrizar Auditoria de Carga ({erpPreset.systemName})</h3>
+                <span className="modal-subtitle-inline">
+                  {erpPreset.moduleReference}
+                </span>
+              </div>
               <button
                 type="button"
                 className="btn-close"
@@ -238,19 +284,59 @@ export const FileList: FC<FileListProps> = ({
               </button>
             </div>
             <div className="modal-body">
+              <div className="validation-active-rules-summary">
+                <strong>✓ Verificações Automáticas Ativas para {erpPreset.systemName}:</strong>
+                <ul>
+                  <li>Consistência estrutural do lote, delimitadores e codificação de caracteres</li>
+                  <li>Prevenção de registros duplicados e colunas conflitantes</li>
+                  <li>Auditoria fiscal e financeira de documentos (CPF/CNPJ), e-mails, limites e datas</li>
+                </ul>
+              </div>
+
               <div className="form-group">
-                <label htmlFor="req-cols">Colunas Obrigatórias (Opcional)</label>
+                <div className="req-cols-header-row">
+                  <label htmlFor="req-cols">Campos Obrigatórios do Layout (Opcional)</label>
+                  <button
+                    type="button"
+                    className="btn-link text-xs"
+                    onClick={handleApplyErpPresetAll}
+                  >
+                    + Aplicar Dicionário {erpPreset.systemName}
+                  </button>
+                </div>
                 <input
                   id="req-cols"
                   type="text"
                   className="form-input"
-                  placeholder="Ex: Nome, Email, Documento (separadas por vírgula)"
+                  placeholder={`Ex: ${erpPreset.requiredColumns.slice(0, 3).join(', ')}`}
                   value={requiredColumnsInput}
-                  onChange={(e) => setRequiredColumnsInput(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRequiredColumnsInput(e.target.value)}
                 />
                 <span className="form-hint">
-                  Se informado, o validador marcará erro se o cabeçalho faltar ou se alguma linha estiver vazia nestas colunas.
+                  Selecione abaixo os campos obrigatórios do dicionário <strong>{erpPreset.systemName}</strong> ou digite colunas customizadas:
                 </span>
+
+                <div className="column-chips-row">
+                  {erpPreset.requiredColumns.map((chip: string) => {
+                    const isSelectedChip: boolean = requiredColumnsInput
+                      .toLowerCase()
+                      .split(',')
+                      .map((s: string) => s.trim())
+                      .includes(chip.toLowerCase());
+
+                    return (
+                      <button
+                        key={chip}
+                        type="button"
+                        className={`column-chip ${isSelectedChip ? 'column-chip-active' : ''}`}
+                        onClick={() => handleToggleColumnChip(chip)}
+                      >
+                        {isSelectedChip ? '✓ ' : '+ '}
+                        {chip}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
             <div className="modal-footer">
@@ -269,7 +355,7 @@ export const FileList: FC<FileListProps> = ({
                 className="btn btn-primary"
                 onClick={() => handleStartValidation(selectedFileForRules)}
               >
-                Executar Validação
+                ▶ Executar Auditoria de Dados
               </button>
             </div>
           </div>

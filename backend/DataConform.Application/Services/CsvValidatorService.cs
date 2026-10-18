@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using DataConform.Application.Common.Interfaces;
 using DataConform.Domain.Entities;
 using DataConform.Domain.Enums;
@@ -7,6 +9,20 @@ namespace DataConform.Application.Services;
 
 public class CsvValidatorService : ICsvValidatorService
 {
+    private static readonly Regex EmailRegex = new Regex(
+        @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    private static readonly string[] AcceptedDateFormats = new string[]
+    {
+        "yyyy-MM-dd",
+        "dd/MM/yyyy",
+        "yyyy/MM/dd",
+        "dd-MM-yyyy",
+        "yyyy-MM-ddTHH:mm:ss",
+        "dd/MM/yyyy HH:mm:ss"
+    };
+
     public async Task<FileValidationResult> ValidateCsvStreamAsync(
         Stream csvStream,
         Guid fileId,
@@ -36,7 +52,7 @@ public class CsvValidatorService : ICsvValidatorService
         }
 
         char delimiter = DetectDelimiter(headerLine);
-        string[] headers = headerLine.Split(delimiter).Select(h => h.Trim('"', ' ', '\r')).ToArray();
+        string[] headers = ParseCsvLine(headerLine, delimiter);
 
         Dictionary<string, int> headerIndexMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < headers.Length; i++)
@@ -102,13 +118,26 @@ public class CsvValidatorService : ICsvValidatorService
 
             if (string.IsNullOrWhiteSpace(line))
             {
-                continue; // Linha em branco ignorada
+                continue;
             }
 
             result.TotalRows++;
             bool rowHasError = false;
 
-            // Verificar duplicidade de linha inteira
+            if (line.Contains('\uFFFD'))
+            {
+                result.Issues.Add(new ValidationIssue
+                {
+                    FileId = fileId,
+                    RowNumber = currentRowIndex,
+                    IssueCode = "ENCODING_CORRUPTION",
+                    Message = "Foram detectados caracteres inválidos de codificação (converta a planilha para UTF-8).",
+                    Severity = IssueSeverity.Error,
+                    RawValue = line.Length > 120 ? line.Substring(0, 120) + "..." : line
+                });
+                rowHasError = true;
+            }
+
             string normalizedLine = line.Trim();
             if (!seenRows.Add(normalizedLine))
             {
@@ -124,7 +153,7 @@ public class CsvValidatorService : ICsvValidatorService
                 rowHasError = true;
             }
 
-            string[] cells = line.Split(delimiter).Select(c => c.Trim('"', ' ', '\r')).ToArray();
+            string[] cells = ParseCsvLine(line, delimiter);
 
             if (cells.Length != headers.Length)
             {
@@ -164,6 +193,130 @@ public class CsvValidatorService : ICsvValidatorService
                 }
             }
 
+            // Validações semânticas automáticas baseadas no padrão de colunas de ERP
+            int maxCols = Math.Min(cells.Length, headers.Length);
+            for (int colIdx = 0; colIdx < maxCols; colIdx++)
+            {
+                string colName = headers[colIdx];
+                string cellVal = cells[colIdx];
+
+                if (string.IsNullOrWhiteSpace(colName) || string.IsNullOrWhiteSpace(cellVal))
+                {
+                    continue;
+                }
+
+                string lowerCol = colName.ToLowerInvariant();
+
+                // 1. E-mail corporativo (Padrão + Dicionários ERP: A1_EMAIL, E_Mail, EMACLI)
+                if (lowerCol.Contains("email") || lowerCol.Contains("e-mail") || lowerCol.Contains("e_mail") ||
+                    lowerCol == "emacli")
+                {
+                    if (!EmailRegex.IsMatch(cellVal))
+                    {
+                        result.Issues.Add(new ValidationIssue
+                        {
+                            FileId = fileId,
+                            RowNumber = currentRowIndex,
+                            ColumnName = colName,
+                            IssueCode = "INVALID_EMAIL_FORMAT",
+                            Message = $"O valor '{cellVal}' na coluna '{colName}' não é um endereço de e-mail válido.",
+                            Severity = IssueSeverity.Error,
+                            RawValue = cellVal
+                        });
+                        rowHasError = true;
+                    }
+                }
+
+                // 2. CPF / CNPJ Fiscal (Padrão + Dicionários ERP: A1_CGC, A2_CGC, LicTradNum, TaxId0, CgcCpf, CGC_CPF)
+                if (lowerCol.Contains("cpf") || lowerCol.Contains("cnpj") ||
+                    lowerCol == "a1_cgc" || lowerCol == "a2_cgc" ||
+                    lowerCol == "lictradnum" || lowerCol == "taxid0" ||
+                    lowerCol == "cgccpf" || lowerCol == "cgc_cpf")
+                {
+                    if (!IsValidDocument(cellVal))
+                    {
+                        result.Issues.Add(new ValidationIssue
+                        {
+                            FileId = fileId,
+                            RowNumber = currentRowIndex,
+                            ColumnName = colName,
+                            IssueCode = "INVALID_DOCUMENT_FORMAT",
+                            Message = $"Documento fiscal '{cellVal}' inválido na coluna '{colName}' (esperado CPF de 11 dígitos ou CNPJ de 14 dígitos matematicamente válidos).",
+                            Severity = IssueSeverity.Error,
+                            RawValue = cellVal
+                        });
+                        rowHasError = true;
+                    }
+                }
+
+                // 3. Valores Financeiros, Limites de Crédito, Preços e Quantidades (Padrão + ERP: A1_LC, CreditLine, VlrLim, LIMCRED)
+                if (lowerCol.Contains("valor") || lowerCol.Contains("preco") || lowerCol.Contains("preço") ||
+                    lowerCol.Contains("limite") || lowerCol.Contains("custo") || lowerCol.Contains("quantidade") ||
+                    lowerCol == "a1_lc" || lowerCol == "creditline" || lowerCol == "vlrlim" || lowerCol == "limcred")
+                {
+                    string normalizedNumber = cellVal.Replace("R$", "", StringComparison.OrdinalIgnoreCase).Trim();
+                    if (normalizedNumber.Contains(',') && normalizedNumber.Contains('.'))
+                    {
+                        normalizedNumber = normalizedNumber.Replace(".", "").Replace(",", ".");
+                    }
+                    else if (normalizedNumber.Contains(','))
+                    {
+                        normalizedNumber = normalizedNumber.Replace(",", ".");
+                    }
+
+                    if (!decimal.TryParse(normalizedNumber, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal parsedAmount))
+                    {
+                        result.Issues.Add(new ValidationIssue
+                        {
+                            FileId = fileId,
+                            RowNumber = currentRowIndex,
+                            ColumnName = colName,
+                            IssueCode = "INVALID_NUMERIC_VALUE",
+                            Message = $"O valor '{cellVal}' na coluna '{colName}' não é um número decimal válido.",
+                            Severity = IssueSeverity.Error,
+                            RawValue = cellVal
+                        });
+                        rowHasError = true;
+                    }
+                    else if (parsedAmount < 0)
+                    {
+                        result.Issues.Add(new ValidationIssue
+                        {
+                            FileId = fileId,
+                            RowNumber = currentRowIndex,
+                            ColumnName = colName,
+                            IssueCode = "NEGATIVE_AMOUNT_NOT_ALLOWED",
+                            Message = $"Valor negativo ({cellVal}) não permitido na coluna financeira/quantitativa '{colName}'.",
+                            Severity = IssueSeverity.Error,
+                            RawValue = cellVal
+                        });
+                        rowHasError = true;
+                    }
+                }
+
+                // 4. Datas (Padrão + ERP: A1_DTNASC, DatNas, DTNASC, ValidFrom)
+                if (lowerCol.StartsWith("data") || lowerCol.StartsWith("dt_") ||
+                    lowerCol.Contains("nascimento") || lowerCol.Contains("vencimento") || lowerCol.Contains("emissao") ||
+                    lowerCol == "a1_dtnasc" || lowerCol == "datnas" || lowerCol == "dtnasc" || lowerCol == "validfrom")
+                {
+                    if (!DateTime.TryParseExact(cellVal, AcceptedDateFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out _) &&
+                        !DateTime.TryParse(cellVal, CultureInfo.GetCultureInfo("pt-BR"), DateTimeStyles.None, out _))
+                    {
+                        result.Issues.Add(new ValidationIssue
+                        {
+                            FileId = fileId,
+                            RowNumber = currentRowIndex,
+                            ColumnName = colName,
+                            IssueCode = "INVALID_DATE_FORMAT",
+                            Message = $"A data '{cellVal}' na coluna '{colName}' é inválida (use AAAA-MM-DD ou DD/MM/AAAA).",
+                            Severity = IssueSeverity.Error,
+                            RawValue = cellVal
+                        });
+                        rowHasError = true;
+                    }
+                }
+            }
+
             if (rowHasError)
             {
                 result.ErrorRows++;
@@ -177,11 +330,141 @@ public class CsvValidatorService : ICsvValidatorService
         return result;
     }
 
+    private static string[] ParseCsvLine(string line, char delimiter)
+    {
+        List<string> fields = new List<string>();
+        StringBuilder currentField = new StringBuilder();
+        bool inQuotes = false;
+
+        for (int i = 0; i < line.Length; i++)
+        {
+            char c = line[i];
+
+            if (c == '"')
+            {
+                if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
+                {
+                    currentField.Append('"');
+                    i++;
+                }
+                else
+                {
+                    inQuotes = !inQuotes;
+                }
+            }
+            else if (c == delimiter && !inQuotes)
+            {
+                fields.Add(currentField.ToString().Trim(' ', '\r'));
+                currentField.Clear();
+            }
+            else
+            {
+                currentField.Append(c);
+            }
+        }
+
+        fields.Add(currentField.ToString().Trim(' ', '\r'));
+        return fields.ToArray();
+    }
+
+    private static bool IsValidDocument(string rawDoc)
+    {
+        string digitsOnly = new string(rawDoc.Where(char.IsDigit).ToArray());
+
+        if (digitsOnly.Length != 11 && digitsOnly.Length != 14)
+        {
+            return false;
+        }
+
+        // Rejeitar sequências de dígitos todos iguais (ex: 00000000000, 11111111111)
+        if (digitsOnly.Distinct().Count() == 1)
+        {
+            return false;
+        }
+
+        if (digitsOnly.Length == 11)
+        {
+            return IsValidCpfChecksum(digitsOnly);
+        }
+
+        return IsValidCnpjChecksum(digitsOnly);
+    }
+
+    private static bool IsValidCpfChecksum(string cpf)
+    {
+        int sum1 = 0;
+        for (int i = 0; i < 9; i++)
+        {
+            sum1 += (cpf[i] - '0') * (10 - i);
+        }
+
+        int remainder1 = sum1 % 11;
+        int digit1 = remainder1 < 2 ? 0 : 11 - remainder1;
+        if (cpf[9] - '0' != digit1)
+        {
+            return false;
+        }
+
+        int sum2 = 0;
+        for (int i = 0; i < 10; i++)
+        {
+            sum2 += (cpf[i] - '0') * (11 - i);
+        }
+
+        int remainder2 = sum2 % 11;
+        int digit2 = remainder2 < 2 ? 0 : 11 - remainder2;
+        return cpf[10] - '0' == digit2;
+    }
+
+    private static bool IsValidCnpjChecksum(string cnpj)
+    {
+        int[] weights1 = new int[] { 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
+        int[] weights2 = new int[] { 6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2 };
+
+        int sum1 = 0;
+        for (int i = 0; i < 12; i++)
+        {
+            sum1 += (cnpj[i] - '0') * weights1[i];
+        }
+
+        int remainder1 = sum1 % 11;
+        int digit1 = remainder1 < 2 ? 0 : 11 - remainder1;
+        if (cnpj[12] - '0' != digit1)
+        {
+            return false;
+        }
+
+        int sum2 = 0;
+        for (int i = 0; i < 13; i++)
+        {
+            sum2 += (cnpj[i] - '0') * weights2[i];
+        }
+
+        int remainder2 = sum2 % 11;
+        int digit2 = remainder2 < 2 ? 0 : 11 - remainder2;
+        return cnpj[13] - '0' == digit2;
+    }
+
     private static char DetectDelimiter(string headerLine)
     {
-        int commaCount = headerLine.Count(c => c == ',');
-        int semicolonCount = headerLine.Count(c => c == ';');
-        int tabCount = headerLine.Count(c => c == '\t');
+        int commaCount = 0;
+        int semicolonCount = 0;
+        int tabCount = 0;
+        bool inQuotes = false;
+
+        foreach (char c in headerLine)
+        {
+            if (c == '"')
+            {
+                inQuotes = !inQuotes;
+            }
+            else if (!inQuotes)
+            {
+                if (c == ',') commaCount++;
+                else if (c == ';') semicolonCount++;
+                else if (c == '\t') tabCount++;
+            }
+        }
 
         if (semicolonCount > commaCount && semicolonCount > tabCount)
         {

@@ -1,28 +1,37 @@
 import { useEffect, useState } from 'react';
 import type { FC } from 'react';
 import type { WorkspaceDto, WorkspaceQuotaDto } from '../types';
-import { changeWorkspacePlan } from '../services/api';
+import { PlanTierLabels } from '../types';
+import { changeWorkspacePlan, confirmStripeCheckout } from '../services/api';
 
 interface ChangePlanModalProps {
   isOpen: boolean;
   workspace: WorkspaceDto | null;
+  isAuthenticated: boolean;
   onClose: () => void;
   onPlanChanged: (updatedQuota: WorkspaceQuotaDto) => void;
+  onRequireAuth: () => void;
 }
 
 interface PlanOption {
-  key: string;
+  key: 'Starter' | 'Professional' | 'Enterprise';
   name: string;
   price: string;
   monthlyFiles: number;
+  maxFileSize: string;
+  maxConcurrent: string;
   maxRows: string;
   description: string;
-  capacityGain?: string;
+  features: string[];
   highlight?: boolean;
 }
 
-const STRIPE_PRO_URL: string = (import.meta.env.VITE_STRIPE_PRO_URL as string | undefined) ?? '';
-const STRIPE_ENTERPRISE_URL: string = (import.meta.env.VITE_STRIPE_ENTERPRISE_URL as string | undefined) ?? '';
+const DEFAULT_STRIPE_PRO_TEST_URL: string = 'https://buy.stripe.com/test_3cIeVdbxq6962QW36Ef7i00';
+const STRIPE_PRO_URL: string =
+  ((import.meta.env.VITE_STRIPE_PRO_URL as string | undefined) ?? '').trim() || DEFAULT_STRIPE_PRO_TEST_URL;
+const STRIPE_ENTERPRISE_URL: string = ((import.meta.env.VITE_STRIPE_ENTERPRISE_URL as string | undefined) ?? '').trim();
+
+export const PENDING_CHECKOUT_STORAGE_KEY: string = 'dataconform_pending_checkout';
 
 const PLANS: PlanOption[] = [
   {
@@ -30,38 +39,71 @@ const PLANS: PlanOption[] = [
     name: 'Starter',
     price: 'Gratuito',
     monthlyFiles: 20,
-    maxRows: '1.000 linhas/arquivo',
-    description: 'Ideal para testes, validações esporádicas e pequenas planilhas.',
-    capacityGain: 'Entrada: 20 uploads/mês',
+    maxFileSize: 'Até 5 MB / arquivo',
+    maxConcurrent: 'Até 2 arquivos por lote',
+    maxRows: '1.000 linhas / arquivo',
+    description: 'Ideal para validação inicial de layouts, testes de homologação e pequenas cargas.',
+    features: [
+      '20 validações de arquivos por mês',
+      'Até 1.000 linhas e 5 MB por planilha',
+      'Dicionários nativos de ERPs inclusos',
+      'Exportação de laudo de inconsistências CSV',
+    ],
   },
   {
     key: 'Professional',
     name: 'Professional',
-    price: 'R$ 79 / mês *',
+    price: 'R$ 79,90 / mês',
     monthlyFiles: 500,
-    maxRows: '50.000 linhas/arquivo',
-    description: 'Para operações comerciais ativas com integrações ERP contínuas.',
-    capacityGain: '+480 uploads/mês (25x mais)',
+    maxFileSize: 'Até 25 MB / arquivo',
+    maxConcurrent: 'Até 5 arquivos por lote',
+    maxRows: '50.000 linhas / arquivo',
+    description: 'Para operações comerciais, consultorias de implantação e escritórios contábeis ativos.',
+    features: [
+      '500 validações de arquivos por mês (25x mais)',
+      'Até 50.000 linhas e 25 MB por planilha',
+      'Upload em lote de até 5 arquivos simultâneos',
+      'Trilha completa de auditoria e governança',
+    ],
     highlight: true,
   },
   {
     key: 'Enterprise',
     name: 'Enterprise',
-    price: 'R$ 249 / mês *',
+    price: 'R$ 249,00 / mês',
     monthlyFiles: 10000,
-    maxRows: '1.000.000 linhas/arquivo',
-    description: 'Volume massivo, alta prioridade de processamento e auditoria avançada.',
-    capacityGain: '+9.500 uploads/mês (Massivo)',
+    maxFileSize: 'Até 50 MB / arquivo',
+    maxConcurrent: 'Até 10 arquivos por lote',
+    maxRows: '1.000.000 linhas / arquivo',
+    description: 'Para alto volume de processamento, migrações massivas de bases legadas e BPO.',
+    features: [
+      '10.000 validações de arquivos por mês',
+      'Até 1.000.000 de linhas e 50 MB por planilha',
+      'Upload em lote de até 10 arquivos simultâneos',
+      'Governança corporativa e retenção estendida',
+    ],
   },
 ];
 
 export const ChangePlanModal: FC<ChangePlanModalProps> = ({
   isOpen,
   workspace,
+  isAuthenticated,
   onClose,
   onPlanChanged,
+  onRequireAuth,
 }) => {
-  const [selectedPlan, setSelectedPlan] = useState<string>('Professional');
+  const currentPlanLabel: string = workspace
+    ? (PlanTierLabels[String(workspace.plan)] ?? 'Starter')
+    : 'Starter';
+
+  const defaultTargetPlan: 'Starter' | 'Professional' | 'Enterprise' =
+    currentPlanLabel === 'Starter' ? 'Professional' : 'Enterprise';
+
+  const [selectedPlan, setSelectedPlan] = useState<'Starter' | 'Professional' | 'Enterprise'>(defaultTargetPlan);
+  const [confirmCancel, setConfirmCancel] = useState<boolean>(false);
+  const [manualSessionId, setManualSessionId] = useState<string>('');
+  const [showManualSession, setShowManualSession] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,19 +121,85 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen || !workspace) return null;
+  if (!isOpen) return null;
 
-  const currentPlanStr: string = String(workspace.plan);
+  const isSelectedCurrent: boolean =
+    Boolean(isAuthenticated && workspace) &&
+    selectedPlan.toLowerCase() === currentPlanLabel.toLowerCase();
 
-  const handleConfirmPlan = async (): Promise<void> => {
+  const isDowngradeToStarter: boolean =
+    Boolean(isAuthenticated && workspace) &&
+    selectedPlan === 'Starter' &&
+    currentPlanLabel !== 'Starter';
+
+  const handleProceedToStripe = (): void => {
+    if (!workspace) {
+      onClose();
+      onRequireAuth();
+      return;
+    }
+
+    setError(null);
+    const targetUrl: string =
+      selectedPlan === 'Professional'
+        ? STRIPE_PRO_URL
+        : STRIPE_ENTERPRISE_URL || STRIPE_PRO_URL;
+
+    if (!targetUrl) {
+      setError('Link de checkout do Stripe não configurado para este plano.');
+      return;
+    }
+
+    localStorage.setItem(
+      PENDING_CHECKOUT_STORAGE_KEY,
+      JSON.stringify({
+        workspaceId: workspace.id,
+        plan: selectedPlan,
+        timestamp: Date.now(),
+      })
+    );
+
+    window.location.href = targetUrl;
+  };
+
+  const handleManualSessionVerify = async (): Promise<void> => {
+    if (!workspace) return;
+    if (!manualSessionId.trim()) {
+      setError('Informe o ID da sessão do Stripe (ex: cs_test_...).');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const updated: WorkspaceQuotaDto = await changeWorkspacePlan(workspace.id, selectedPlan);
+      const updated: WorkspaceQuotaDto = await confirmStripeCheckout(workspace.id, {
+        sessionId: manualSessionId.trim(),
+        plan: selectedPlan === 'Starter' ? 'Professional' : selectedPlan,
+      });
+      localStorage.removeItem(PENDING_CHECKOUT_STORAGE_KEY);
       onPlanChanged(updated);
       onClose();
     } catch (err: unknown) {
-      const msg: string = err instanceof Error ? err.message : 'Erro ao alterar plano';
+      const msg: string = err instanceof Error ? err.message : 'Falha ao validar sessão de pagamento';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelSubscription = async (): Promise<void> => {
+    if (!workspace) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const updated: WorkspaceQuotaDto = await changeWorkspacePlan(
+        workspace.id,
+        'Starter',
+        'Cancelamento de assinatura realizado pelo titular no painel.'
+      );
+      onPlanChanged(updated);
+      onClose();
+    } catch (err: unknown) {
+      const msg: string = err instanceof Error ? err.message : 'Erro ao cancelar assinatura';
       setError(msg);
     } finally {
       setLoading(false);
@@ -111,29 +219,53 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
     >
       <div className="modal-dialog plan-modal-dialog">
         <div className="modal-header">
-          <h2>Gerenciar Plano Comercial & Cotas</h2>
-          <button type="button" className="btn-close" onClick={onClose}>
-            ×
+          <div>
+            <h2>Planos Comerciais & Capacidade Operacional</h2>
+            <span className="modal-subtitle-inline">
+              {isAuthenticated && workspace ? (
+                <>
+                  Organização: <strong>{workspace.name}</strong> • Plano Atual:{' '}
+                  <strong className="text-primary">{currentPlanLabel}</strong>
+                </>
+              ) : (
+                <>Compare as faixas de capacidade para homologação de dados em ERPs</>
+              )}
+            </span>
+          </div>
+          <button type="button" className="btn-close" onClick={onClose} aria-label="Fechar">
+            &times;
           </button>
         </div>
 
         <div className="modal-body">
-          {error && <div className="alert-toast alert-error">{error}</div>}
+          {!isAuthenticated && (
+            <div className="visitor-auth-callout">
+              <div>
+                <strong>Crie sua conta gratuita para começar no Plano Starter</strong>
+                <p>
+                  Ao registrar sua organização, você recebe imediatamente a cota gratuita do plano Starter e pode fazer upgrade a qualquer momento via Stripe.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => {
+                  onClose();
+                  onRequireAuth();
+                }}
+              >
+                Criar Conta Gratuita
+              </button>
+            </div>
+          )}
 
-          <p className="plan-modal-intro">
-            Selecione o plano ideal para a capacidade operacional do workspace <strong>{workspace.name}</strong>:
-          </p>
-
-          <div className="plan-disclaimer-box">
-            <span className="disclaimer-badge">Valores Ilustrativos</span>
-            <span className="disclaimer-text">
-              * Preços e limites acima são meramente demonstrativos para homologação e customizáveis por cada organização.
-            </span>
-          </div>
+          {error && <div className="inline-alert-error">{error}</div>}
 
           <div className="plans-grid">
             {PLANS.map((plan: PlanOption) => {
-              const isCurrent: boolean = currentPlanStr.toLowerCase() === plan.key.toLowerCase();
+              const isCurrent: boolean =
+                Boolean(isAuthenticated && workspace) &&
+                currentPlanLabel.toLowerCase() === plan.key.toLowerCase();
               const isSelected: boolean = selectedPlan.toLowerCase() === plan.key.toLowerCase();
 
               return (
@@ -142,41 +274,44 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
                   className={`plan-card ${plan.highlight ? 'plan-card-highlight' : ''} ${
                     isSelected ? 'plan-card-selected' : ''
                   }`}
-                  onClick={() => setSelectedPlan(plan.key)}
+                  onClick={() => {
+                    setSelectedPlan(plan.key);
+                    setConfirmCancel(false);
+                    setError(null);
+                  }}
                 >
-                  <div className="plan-card-top-badges">
-                    {plan.highlight && <span className="plan-badge-popular">Mais Popular</span>}
-                    {plan.capacityGain && (
-                      <span className="plan-badge-gain">{plan.capacityGain}</span>
-                    )}
-                  </div>
-                  <div className="plan-card-header">
+                  {plan.highlight && <div className="plan-popular-ribbon">Mais Escolhido</div>}
+
+                  <div className="plan-card-top">
                     <h3>{plan.name}</h3>
                     <div className="plan-price">{plan.price}</div>
+                    <p className="plan-desc">{plan.description}</p>
                   </div>
 
-                  <p className="plan-desc">{plan.description}</p>
-
-                  <ul className="plan-features">
-                    <li>✓ <strong>{plan.monthlyFiles.toLocaleString()}</strong> uploads / mês</li>
-                    <li>✓ Até <strong>{plan.maxRows}</strong></li>
-                    <li>✓ Validação de delimitador e colunas</li>
-                    <li>✓ Relatórios de inconsistências</li>
+                  <ul className="plan-features-list">
+                    {plan.features.map((feat: string) => (
+                      <li key={feat}>
+                        <span className="feat-check">✓</span>
+                        <span>{feat}</span>
+                      </li>
+                    ))}
                   </ul>
 
-                  <div className="plan-status-footer">
+                  <div className="plan-card-action">
                     {isCurrent ? (
-                      <span className="badge badge-active-plan">Plano Atual</span>
+                      <span className="badge badge-completed plan-current-badge">✓ Plano Atual Ativo</span>
                     ) : (
                       <button
                         type="button"
-                        className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-outline'}`}
+                        className={`btn btn-sm btn-full ${isSelected ? 'btn-primary' : 'btn-outline'}`}
                         onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
                           setSelectedPlan(plan.key);
+                          setConfirmCancel(false);
+                          setError(null);
                         }}
                       >
-                        {isSelected ? 'Selecionado' : 'Selecionar'}
+                        {isSelected ? '✓ Selecionado' : `Selecionar ${plan.name}`}
                       </button>
                     )}
                   </div>
@@ -184,38 +319,115 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
               );
             })}
           </div>
+
+          {/* Seção de Cancelamento / Downgrade quando seleciona Starter estando em plano pago */}
+          {isAuthenticated && isDowngradeToStarter && (
+            <div className="cancel-subscription-box">
+              <div>
+                <h4>Cancelar Assinatura Atual ({currentPlanLabel})?</h4>
+                <p>
+                  Ao retornar para o plano <strong>Starter (Gratuito)</strong>, o limite mensal da sua organização passará a ser de 20 arquivos/mês (máx. 1.000 linhas e 5 MB por arquivo). Seus projetos e relatórios já validados permanecem salvos.
+                </p>
+              </div>
+              {!confirmCancel ? (
+                <button
+                  type="button"
+                  className="btn btn-danger btn-sm"
+                  onClick={() => setConfirmCancel(true)}
+                >
+                  Solicitar Cancelamento
+                </button>
+              ) : (
+                <div className="cancel-confirm-actions">
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    disabled={loading}
+                    onClick={handleCancelSubscription}
+                  >
+                    {loading ? 'Processando...' : 'Confirmar Retorno ao Starter'}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    disabled={loading}
+                    onClick={() => setConfirmCancel(false)}
+                  >
+                    Manter Assinatura
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Verificação manual opcional de sessão do Stripe */}
+          {isAuthenticated && workspace && selectedPlan !== 'Starter' && !isSelectedCurrent && (
+            <div className="stripe-checkout-notice">
+              <div className="stripe-security-info">
+                <span>
+                  🔒 <strong>Checkout 100% Seguro via Stripe:</strong> A liberação do plano ocorre automaticamente após a conclusão do pagamento e retorno à plataforma.
+                </span>
+                <button
+                  type="button"
+                  className="btn-link text-xs"
+                  onClick={() => setShowManualSession((prev: boolean) => !prev)}
+                >
+                  {showManualSession ? 'Ocultar validação manual' : 'Já concluiu o pagamento em outra aba?'}
+                </button>
+              </div>
+
+              {showManualSession && (
+                <div className="manual-session-box">
+                  <input
+                    type="text"
+                    className="form-input form-input-sm"
+                    placeholder="Cole o ID da sessão do Stripe (ex: cs_test_...)"
+                    value={manualSessionId}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setManualSessionId(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    disabled={loading}
+                    onClick={handleManualSessionVerify}
+                  >
+                    {loading ? 'Verificando...' : 'Validar Pagamento'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="modal-footer">
           <button type="button" className="btn btn-secondary" onClick={onClose} disabled={loading}>
             Fechar
           </button>
-          {selectedPlan.toLowerCase() !== 'starter' &&
-            ((selectedPlan.toLowerCase() === 'professional' && STRIPE_PRO_URL) ||
-            (selectedPlan.toLowerCase() === 'enterprise' && STRIPE_ENTERPRISE_URL) ? (
-              <a
-                href={selectedPlan.toLowerCase() === 'professional' ? STRIPE_PRO_URL : STRIPE_ENTERPRISE_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+
+          {!isAuthenticated ? (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                onClose();
+                onRequireAuth();
+              }}
+            >
+              🚀 Criar Conta Gratuita para Começar
+            </button>
+          ) : (
+            selectedPlan !== 'Starter' &&
+            !isSelectedCurrent && (
+              <button
+                type="button"
                 className="btn btn-primary"
+                onClick={handleProceedToStripe}
+                disabled={loading}
               >
-                💳 Assinar {selectedPlan} (Cartão / Pix)
-              </a>
-            ) : null)}
-          <button
-            type="button"
-            className={
-              selectedPlan.toLowerCase() !== 'starter' &&
-              ((selectedPlan.toLowerCase() === 'professional' && STRIPE_PRO_URL) ||
-                (selectedPlan.toLowerCase() === 'enterprise' && STRIPE_ENTERPRISE_URL))
-                ? 'btn btn-outline'
-                : 'btn btn-primary'
-            }
-            onClick={handleConfirmPlan}
-            disabled={loading || selectedPlan.toLowerCase() === currentPlanStr.toLowerCase()}
-          >
-            {loading ? 'Atualizando...' : `Ativar Plano ${selectedPlan}`}
-          </button>
+                💳 Prosseguir para Pagamento Seguro ({selectedPlan})
+              </button>
+            )
+          )}
         </div>
       </div>
     </div>

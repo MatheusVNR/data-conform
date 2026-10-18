@@ -8,9 +8,22 @@ public class CreateWorkspaceRequest
     public string Slug { get; set; } = string.Empty;
 }
 
+public class UpdateWorkspaceRequest
+{
+    public string Name { get; set; } = string.Empty;
+}
+
 public class UpdatePlanRequest
 {
     public PlanTier Plan { get; set; }
+    public string? CheckoutSessionId { get; set; }
+    public string? Reason { get; set; }
+}
+
+public class ConfirmCheckoutRequest
+{
+    public string SessionId { get; set; } = string.Empty;
+    public PlanTier Plan { get; set; } = PlanTier.Professional;
 }
 
 public class WorkspaceDto

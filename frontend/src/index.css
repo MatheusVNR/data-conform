@@ -19,8 +19,8 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--bg-app, #f8fafc);
+  color: var(--text-main, #0f172a);
 }
 
 #root {

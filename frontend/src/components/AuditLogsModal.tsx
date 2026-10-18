@@ -62,13 +62,61 @@ export const AuditLogsModal: FC<AuditLogsModalProps> = ({ isOpen, workspace, onC
     };
   }, [isOpen, workspace]);
 
+  const getActionLabel = (action: string): string => {
+    switch (action.toLowerCase()) {
+      case 'uploadfile':
+        return 'Upload de Arquivo';
+      case 'validatefile':
+        return 'Auditoria Executada';
+      case 'deletefile':
+        return 'Exclusão de Arquivo';
+      case 'deleteproject':
+        return 'Exclusão de Projeto';
+      case 'changeplan':
+        return 'Alteração de Plano';
+      case 'stripecheckoutconfirmed':
+        return 'Pagamento Stripe';
+      case 'createworkspace':
+        return 'Criação de Ambiente';
+      case 'updateworkspace':
+        return 'Renomeação de Ambiente';
+      case 'createproject':
+        return 'Criação de Projeto';
+      case 'userregistered':
+        return 'Cadastro de Conta';
+      case 'userloggedin':
+        return 'Acesso (Login)';
+      default:
+        return action;
+    }
+  };
+
+  const getEntityLabel = (entityName: string): string => {
+    switch (entityName.toLowerCase()) {
+      case 'importfile':
+        return 'Planilha CSV';
+      case 'importproject':
+        return 'Projeto ERP';
+      case 'workspace':
+        return 'Organização';
+      case 'user':
+        return 'Usuário';
+      case 'stripesession':
+        return 'Faturamento';
+      default:
+        return entityName;
+    }
+  };
+
   const filteredLogs: AuditLogDto[] = useMemo(() => {
     if (!searchTerm.trim()) return logs;
     const term: string = searchTerm.toLowerCase();
     return logs.filter(
       (log: AuditLogDto) =>
         log.action.toLowerCase().includes(term) ||
+        getActionLabel(log.action).toLowerCase().includes(term) ||
         log.entityName.toLowerCase().includes(term) ||
+        getEntityLabel(log.entityName).toLowerCase().includes(term) ||
         (log.details?.toLowerCase().includes(term) ?? false)
     );
   }, [logs, searchTerm]);
@@ -80,33 +128,18 @@ export const AuditLogsModal: FC<AuditLogsModalProps> = ({ isOpen, workspace, onC
       case 'validatefile':
         return 'badge badge-action-validate';
       case 'deletefile':
+      case 'deleteproject':
         return 'badge badge-action-delete';
       case 'changeplan':
+      case 'stripecheckoutconfirmed':
         return 'badge badge-action-plan';
       case 'createworkspace':
+      case 'updateworkspace':
       case 'createproject':
+      case 'userregistered':
         return 'badge badge-action-create';
       default:
         return 'badge badge-action';
-    }
-  };
-
-  const getActionLabel = (action: string): string => {
-    switch (action.toLowerCase()) {
-      case 'uploadfile':
-        return 'Upload Arquivo';
-      case 'validatefile':
-        return 'Validação';
-      case 'deletefile':
-        return 'Exclusão Arquivo';
-      case 'changeplan':
-        return 'Mudança de Plano';
-      case 'createworkspace':
-        return 'Criação Workspace';
-      case 'createproject':
-        return 'Criação Projeto';
-      default:
-        return action;
     }
   };
 
@@ -125,25 +158,26 @@ export const AuditLogsModal: FC<AuditLogsModalProps> = ({ isOpen, workspace, onC
     >
       <div className="modal-dialog audit-modal-dialog">
         <div className="modal-header">
-          <h2>Trilha de Auditoria & Atividades</h2>
+          <div>
+            <h2>Trilha de Auditoria & Governança</h2>
+            <span className="modal-subtitle-inline">
+              Histórico imutável das últimas 50 operações na organização <strong>{workspace.name}</strong>
+            </span>
+          </div>
           <button type="button" className="btn-close" onClick={onClose}>
             ×
           </button>
         </div>
 
         <div className="modal-body">
-          <p className="text-muted text-sm" style={{ marginBottom: '1rem' }}>
-            Histórico das últimas 50 ações realizadas no workspace <strong>{workspace.name}</strong>.
-          </p>
-
-          {error && <div className="alert-toast alert-error">{error}</div>}
+          {error && <div className="inline-alert-error">{error}</div>}
 
           {/* Search Filter Bar */}
           <div className="audit-filter-bar">
             <input
               type="text"
               className="form-input form-input-sm"
-              placeholder="Buscar por ação, entidade ou detalhes..."
+              placeholder="Filtrar por operação, recurso ou descrição..."
               value={searchTerm}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
             />
@@ -157,22 +191,22 @@ export const AuditLogsModal: FC<AuditLogsModalProps> = ({ isOpen, workspace, onC
               </button>
             )}
             <span className="text-muted text-xs audit-count">
-              {filteredLogs.length} de {logs.length} ações
+              {filteredLogs.length} de {logs.length} registros
             </span>
           </div>
 
           {loading ? (
             <div className="loading-state">
               <div className="spinner"></div>
-              <p>Carregando histórico...</p>
+              <p>Carregando trilha de auditoria...</p>
             </div>
           ) : logs.length === 0 ? (
             <div className="empty-state">
-              <p>Nenhuma atividade registrada até o momento neste workspace.</p>
+              <p>Nenhuma atividade registrada até o momento nesta organização.</p>
             </div>
           ) : filteredLogs.length === 0 ? (
             <div className="empty-state">
-              <p>Nenhuma ação encontrada para os termos pesquisados.</p>
+              <p>Nenhuma operação encontrada para os termos pesquisados.</p>
             </div>
           ) : (
             <div className="table-responsive">
@@ -180,9 +214,9 @@ export const AuditLogsModal: FC<AuditLogsModalProps> = ({ isOpen, workspace, onC
                 <thead>
                   <tr>
                     <th>Data / Hora</th>
-                    <th>Ação</th>
-                    <th>Entidade</th>
-                    <th>Detalhes</th>
+                    <th>Operação</th>
+                    <th>Recurso</th>
+                    <th>Detalhamento</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -197,7 +231,7 @@ export const AuditLogsModal: FC<AuditLogsModalProps> = ({ isOpen, workspace, onC
                         </span>
                       </td>
                       <td>
-                        <span className="text-sm font-semibold">{log.entityName}</span>
+                        <span className="text-sm font-semibold">{getEntityLabel(log.entityName)}</span>
                       </td>
                       <td className="text-sm text-muted">{log.details || '-'}</td>
                     </tr>

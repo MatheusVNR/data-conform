@@ -5,14 +5,21 @@ import { login, register } from '../services/api';
 
 interface AuthModalProps {
   isOpen: boolean;
+  initialMode?: 'login' | 'register';
   onClose: () => void;
-  onSuccess: (authData: AuthResponseDto) => void;
+  onSuccess: (authData: AuthResponseDto) => Promise<void> | void;
 }
 
-export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [isRegister, setIsRegister] = useState<boolean>(false);
+export const AuthModal: FC<AuthModalProps> = ({
+  isOpen,
+  initialMode = 'login',
+  onClose,
+  onSuccess,
+}) => {
+  const [isRegister, setIsRegister] = useState<boolean>(initialMode === 'register');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [fullName, setFullName] = useState<string>('');
   const [workspaceName, setWorkspaceName] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -42,20 +49,20 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) =>
     try {
       if (isRegister) {
         const req: RegisterRequestDto = {
-          email,
+          email: email.trim(),
           password,
-          fullName,
+          fullName: fullName.trim(),
           workspaceName: workspaceName.trim() || undefined,
         };
         const authData: AuthResponseDto = await register(req);
-        onSuccess(authData);
+        await onSuccess(authData);
       } else {
         const req: LoginRequestDto = {
-          email,
+          email: email.trim(),
           password,
         };
         const authData: AuthResponseDto = await login(req);
-        onSuccess(authData);
+        await onSuccess(authData);
       }
       onClose();
     } catch (err: unknown) {
@@ -79,102 +86,137 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) =>
     >
       <div className="modal-dialog auth-modal-dialog">
         <div className="modal-header">
-          <h2>{isRegister ? 'Criar Conta Corporativa' : 'Entrar no DataConform'}</h2>
-          <button type="button" className="btn-close" onClick={onClose}>
-            ×
+          <div>
+            <h2>{isRegister ? 'Criar Conta Corporativa' : 'Acessar sua Organização'}</h2>
+            <span className="modal-subtitle">
+              {isRegister
+                ? 'Comece gratuitamente com 20 validações mensais no plano Starter'
+                : 'Entre com suas credenciais corporativas para gerenciar seus projetos'}
+            </span>
+          </div>
+          <button type="button" className="btn-close" onClick={onClose} aria-label="Fechar">
+            &times;
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} autoComplete="off">
           <div className="modal-body">
-            {error && <div className="alert-toast alert-error">{error}</div>}
+            <div className="auth-mode-tabs">
+              <button
+                type="button"
+                className={`auth-tab-btn ${!isRegister ? 'active' : ''}`}
+                onClick={() => {
+                  setIsRegister(false);
+                  setPassword('');
+                  setError(null);
+                }}
+              >
+                Entrar
+              </button>
+              <button
+                type="button"
+                className={`auth-tab-btn ${isRegister ? 'active' : ''}`}
+                onClick={() => {
+                  setIsRegister(true);
+                  setPassword('');
+                  setError(null);
+                }}
+              >
+                Criar Conta Gratuita
+              </button>
+            </div>
+
+            {error && <div className="inline-alert-error">{error}</div>}
 
             {isRegister && (
               <>
                 <div className="form-group">
-                  <label htmlFor="auth-name">Nome Completo</label>
+                  <label htmlFor="auth-name">Nome Completo *</label>
                   <input
                     id="auth-name"
+                    name="dc_fullname"
                     type="text"
                     className="form-control"
-                    placeholder="Ex: Matheus Teste"
+                    placeholder="Ex: Beatriz Ferreira"
                     value={fullName}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFullName(e.target.value)}
+                    autoComplete="name"
                     required
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="auth-ws">Nome da Organização / Workspace (Opcional)</label>
+                  <label htmlFor="auth-ws">
+                    Razão Social ou Nome da Organização
+                    <span className="label-optional"> (Opcional)</span>
+                  </label>
                   <input
                     id="auth-ws"
+                    name="dc_organization"
                     type="text"
                     className="form-control"
-                    placeholder="Ex: Minha Empresa Corp"
+                    placeholder="Ex: Horizonte Logística & Suprimentos Ltda"
                     value={workspaceName}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setWorkspaceName(e.target.value)}
+                    autoComplete="organization"
                   />
+                  <span className="form-hint">
+                    Define o nome do seu ambiente de trabalho (pode ser alterado depois).
+                  </span>
                 </div>
               </>
             )}
 
             <div className="form-group">
-              <label htmlFor="auth-email">E-mail Corporativo</label>
+              <label htmlFor="auth-email">E-mail Corporativo *</label>
               <input
                 id="auth-email"
+                name="dc_email"
                 type="email"
                 className="form-control"
-                placeholder="seu.email@empresa.com"
+                placeholder="nome@empresa.com.br"
                 value={email}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                autoComplete="username"
                 required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="auth-password">Senha (Mínimo 6 caracteres)</label>
-              <input
-                id="auth-password"
-                type="password"
-                className="form-control"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                minLength={6}
-                required
-              />
-            </div>
-
-            <div className="auth-toggle-link">
-              {isRegister ? (
-                <p>
-                  Já possui conta?{' '}
-                  <button
-                    type="button"
-                    className="btn-link"
-                    onClick={() => {
-                      setIsRegister(false);
-                      setError(null);
-                    }}
-                  >
-                    Fazer Login
-                  </button>
-                </p>
-              ) : (
-                <p>
-                  Ainda não tem conta?{' '}
-                  <button
-                    type="button"
-                    className="btn-link"
-                    onClick={() => {
-                      setIsRegister(true);
-                      setError(null);
-                    }}
-                  >
-                    Cadastre sua Organização
-                  </button>
-                </p>
-              )}
+              <label htmlFor="auth-password">Senha de Acesso *</label>
+              <div className="password-input-wrapper">
+                <input
+                  id="auth-password"
+                  name="dc_password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="form-control"
+                  placeholder="Digite sua senha (mín. 6 caracteres)"
+                  value={password}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                  minLength={6}
+                  autoComplete="new-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="btn-password-toggle"
+                  onClick={() => setShowPassword((prev: boolean) => !prev)}
+                  title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {showPassword ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -183,7 +225,7 @@ export const AuthModal: FC<AuthModalProps> = ({ isOpen, onClose, onSuccess }) =>
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Processando...' : isRegister ? 'Criar Conta' : 'Acessar'}
+              {loading ? 'Autenticando...' : isRegister ? 'Criar Conta e Acessar' : 'Entrar no Sistema'}
             </button>
           </div>
         </form>

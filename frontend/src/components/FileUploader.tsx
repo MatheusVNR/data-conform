@@ -1,75 +1,154 @@
 import { useRef, useState } from 'react';
 import type { DragEvent, FC } from 'react';
+import { getErpPreset, PLAN_LIMITS, PlanTierLabels } from '../types';
+import type { ErpPresetConfig, PlanLimitsConfig, PlanTier } from '../types';
 
 interface FileUploaderProps {
   onUpload: (file: File) => Promise<void>;
+  plan?: PlanTier;
+  targetSystem?: string | null;
   disabled?: boolean;
+  onOpenRules?: () => void;
 }
 
-export const FileUploader: FC<FileUploaderProps> = ({ onUpload, disabled = false }) => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+export const FileUploader: FC<FileUploaderProps> = ({
+  onUpload,
+  plan = 'Starter',
+  targetSystem,
+  disabled = false,
+  onOpenRules,
+}) => {
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [uploading, setUploading] = useState<boolean>(false);
+  const [uploadProgressText, setUploadProgressText] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const validateAndSetFile = (file: File): void => {
+  const planLabel: string = PlanTierLabels[String(plan)] ?? 'Starter';
+  const limits: PlanLimitsConfig = PLAN_LIMITS[planLabel] ?? PLAN_LIMITS.Starter;
+  const maxFileBytes: number = limits.maxFileSizeMb * 1024 * 1024;
+  const erpPreset: ErpPresetConfig = getErpPreset(targetSystem);
+
+  const validateAndAddFiles = (incomingFiles: FileList | File[]): void => {
     setError(null);
+    const fileArray: File[] = Array.from(incomingFiles);
     const validExtensions: string[] = ['.csv', '.txt'];
-    const fileName: string = file.name.toLowerCase();
-    const isValidExtension: boolean = validExtensions.some((ext) => fileName.endsWith(ext));
 
-    if (!isValidExtension) {
-      setError('Apenas arquivos .csv ou .txt são aceitos.');
+    const combinedCount: number = selectedFiles.length + fileArray.length;
+    if (combinedCount > limits.maxConcurrentFiles) {
+      setError(
+        `Seu plano (${planLabel}) permite anexar até ${limits.maxConcurrentFiles} ${
+          limits.maxConcurrentFiles === 1 ? 'arquivo' : 'arquivos'
+        } por lote de envio.`
+      );
       return;
     }
 
-    if (file.size > 20 * 1024 * 1024) {
-      setError('O arquivo excede o limite máximo permitido de 20 MB.');
-      return;
+    const validatedBatch: File[] = [];
+    for (const file of fileArray) {
+      const lowerName: string = file.name.toLowerCase();
+      const isValidExt: boolean = validExtensions.some((ext: string) => lowerName.endsWith(ext));
+
+      if (!isValidExt) {
+        setError(`O arquivo "${file.name}" não é suportado. Envie apenas arquivos .csv ou .txt.`);
+        return;
+      }
+
+      if (file.size === 0) {
+        setError(`O arquivo "${file.name}" está vazio (0 bytes).`);
+        return;
+      }
+
+      if (file.size > maxFileBytes) {
+        setError(
+          `O arquivo "${file.name}" (${formatFileSize(file.size)}) excede o limite de ${limits.maxFileSizeMb} MB por arquivo do plano ${planLabel}.`
+        );
+        return;
+      }
+
+      const alreadyQueued: boolean = selectedFiles.some(
+        (existing: File) => existing.name === file.name && existing.size === file.size
+      );
+      if (!alreadyQueued) {
+        validatedBatch.push(file);
+      }
     }
 
-    setSelectedFile(file);
+    setSelectedFiles((prev: File[]) => [...prev, ...validatedBatch]);
   };
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>): void => {
     e.preventDefault();
+    e.stopPropagation();
     if (!disabled && !uploading) {
       setIsDragging(true);
     }
   };
 
-  const handleDragLeave = (): void => {
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>): void => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
   };
 
   const handleDrop = (e: DragEvent<HTMLDivElement>): void => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
     if (disabled || uploading) return;
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      validateAndSetFile(e.dataTransfer.files[0]);
+      validateAndAddFiles(e.dataTransfer.files);
     }
   };
 
-  const handleUploadClick = async (): Promise<void> => {
-    if (!selectedFile) return;
+  const handleUploadQueue = async (): Promise<void> => {
+    if (selectedFiles.length === 0) return;
 
     try {
       setUploading(true);
       setError(null);
-      await onUpload(selectedFile);
-      setSelectedFile(null);
+
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const currentFile: File = selectedFiles[i];
+        setUploadProgressText(
+          `Enviando ${i + 1} de ${selectedFiles.length}: ${currentFile.name}...`
+        );
+        await onUpload(currentFile);
+      }
+
+      setSelectedFiles([]);
+      setUploadProgressText('');
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
     } catch (err: unknown) {
-      const msg: string = err instanceof Error ? err.message : 'Falha ao enviar arquivo';
+      const msg: string = err instanceof Error ? err.message : 'Falha ao enviar lote de arquivos';
       setError(msg);
     } finally {
       setUploading(false);
+      setUploadProgressText('');
     }
+  };
+
+  const handleRemoveFile = (indexToRemove: number): void => {
+    setSelectedFiles((prev: File[]) => prev.filter((_: File, idx: number) => idx !== indexToRemove));
+    setError(null);
+  };
+
+  const handleDownloadSampleCsv = (): void => {
+    const blob: Blob = new Blob(['\uFEFF' + erpPreset.sampleCsvContent], {
+      type: 'text/csv;charset=utf-8;',
+    });
+    const url: string = URL.createObjectURL(blob);
+    const link: HTMLAnchorElement = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', erpPreset.sampleFileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -80,6 +159,40 @@ export const FileUploader: FC<FileUploaderProps> = ({ onUpload, disabled = false
 
   return (
     <div className="file-uploader-card">
+      <div className="uploader-toolbar">
+        <div className="uploader-limits-pills">
+          <span className="limit-pill" title="Formatos de arquivo aceitos pelo motor de validação">
+            📄 Formatos: <strong>.CSV</strong> ou <strong>.TXT</strong>
+          </span>
+          <span className="limit-pill" title="Tamanho máximo individual permitido pelo seu plano atual">
+            ⚖️ Máx: <strong>{limits.maxFileSizeMb} MB / arquivo</strong>
+          </span>
+          <span className="limit-pill" title="Quantidade máxima de arquivos que podem ser anexados simultaneamente">
+            📚 Lote: <strong>Até {limits.maxConcurrentFiles} arquivos</strong>
+          </span>
+        </div>
+
+        <div className="uploader-toolbar-actions">
+          {onOpenRules && (
+            <button
+              type="button"
+              className="btn btn-outline btn-xs"
+              onClick={onOpenRules}
+            >
+              🛡️ Escopo de Auditoria
+            </button>
+          )}
+          <button
+            type="button"
+            className="btn btn-secondary btn-xs"
+            onClick={handleDownloadSampleCsv}
+            title={`Baixar planilha modelo homologada para ${erpPreset.systemName}`}
+          >
+            ⬇ Modelo {erpPreset.systemName} (.CSV)
+          </button>
+        </div>
+      </div>
+
       <div
         className={`dropzone ${isDragging ? 'dropzone-active' : ''} ${disabled ? 'dropzone-disabled' : ''}`}
         onDragOver={handleDragOver}
@@ -95,50 +208,116 @@ export const FileUploader: FC<FileUploaderProps> = ({ onUpload, disabled = false
           ref={fileInputRef}
           type="file"
           accept=".csv,.txt"
+          multiple
           style={{ display: 'none' }}
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             if (e.target.files && e.target.files.length > 0) {
-              validateAndSetFile(e.target.files[0]);
+              validateAndAddFiles(e.target.files);
+              e.target.value = '';
             }
           }}
           disabled={disabled || uploading}
         />
 
         <div className="dropzone-content">
-          <div className="dropzone-icon">📁</div>
-          <h4>Arraste sua planilha ou arquivo delimitado (.csv)</h4>
-          <p className="dropzone-subtitle">ou clique para selecionar do seu computador (máx. 20 MB)</p>
+          <div className="dropzone-svg-wrapper">
+            <svg width="44" height="44" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="4" y="4" width="40" height="40" rx="12" fill="currentColor" fillOpacity="0.1" />
+              <path
+                d="M24 32V17M24 17L18 23M24 17L30 23"
+                stroke="currentColor"
+                strokeWidth="2.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M15 34H33"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+
+          <h4>
+            {isDragging
+              ? 'Solte os arquivos aqui para anexar ao lote!'
+              : 'Arraste suas planilhas CSV para esta área ou clique para selecionar'}
+          </h4>
+          <p className="dropzone-subtitle">
+            Perfil ativo: <strong>{erpPreset.moduleReference}</strong> • Detecção automática de delimitador
+          </p>
+
+          <button
+            type="button"
+            className="btn btn-primary btn-sm dropzone-browse-btn"
+            disabled={disabled || uploading}
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+              e.stopPropagation();
+              if (!disabled && !uploading && fileInputRef.current) {
+                fileInputRef.current.click();
+              }
+            }}
+          >
+            Procurar Arquivos no Computador
+          </button>
         </div>
       </div>
 
-      {error && <div className="alert alert-error mt-2">{error}</div>}
+      {error && <div className="inline-alert-error">{error}</div>}
 
-      {selectedFile && (
-        <div className="file-preview-bar">
-          <div className="file-preview-info">
-            <span className="file-preview-name">{selectedFile.name}</span>
-            <span className="file-preview-size">({formatFileSize(selectedFile.size)})</span>
+      {selectedFiles.length > 0 && (
+        <div className="file-queue-panel">
+          <div className="file-queue-header">
+            <span>
+              <strong>Fila de Envio ({selectedFiles.length}/{limits.maxConcurrentFiles} arquivos prontos)</strong>
+            </span>
+            <button
+              type="button"
+              className="btn-link text-xs"
+              disabled={uploading}
+              onClick={() => setSelectedFiles([])}
+            >
+              Limpar fila
+            </button>
           </div>
 
-          <div className="file-preview-actions">
+          <div className="file-queue-list">
+            {selectedFiles.map((file: File, index: number) => (
+              <div key={`${file.name}-${index}`} className="file-preview-bar">
+                <div className="file-preview-info">
+                  <span className="file-icon">📊</span>
+                  <span className="file-preview-name">{file.name}</span>
+                  <span className="file-preview-size">({formatFileSize(file.size)})</span>
+                </div>
+
+                <button
+                  type="button"
+                  className="btn btn-ghost-danger btn-xs"
+                  onClick={() => handleRemoveFile(index)}
+                  disabled={uploading}
+                >
+                  ✕ Remover
+                </button>
+              </div>
+            ))}
+          </div>
+
+          <div className="file-queue-footer">
+            {uploadProgressText && (
+              <span className="text-sm text-muted">{uploadProgressText}</span>
+            )}
             <button
               type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => {
-                setSelectedFile(null);
-                if (fileInputRef.current) fileInputRef.current.value = '';
-              }}
+              className="btn btn-primary"
+              onClick={handleUploadQueue}
               disabled={uploading}
             >
-              Remover
-            </button>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={handleUploadClick}
-              disabled={uploading}
-            >
-              {uploading ? 'Enviando...' : 'Fazer Upload'}
+              {uploading
+                ? 'Enviando lote...'
+                : `Enviar ${selectedFiles.length} ${
+                    selectedFiles.length === 1 ? 'Arquivo para o Projeto' : 'Arquivos para o Projeto'
+                  }`}
             </button>
           </div>
         </div>
