@@ -189,12 +189,10 @@ public static class ProjectEndpoints
         Guid projectId,
         ClaimsPrincipal claimsPrincipal,
         IApplicationDbContext dbContext,
-        IFileStorageService fileStorage,
         IAuditService auditService,
         CancellationToken cancellationToken)
     {
         ImportProject? project = await dbContext.ImportProjects
-            .Include(p => p.Files)
             .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
 
         if (project == null)
@@ -202,26 +200,12 @@ public static class ProjectEndpoints
             return Results.NotFound(new { error = "Projeto de importação não encontrado." });
         }
 
-        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, project.WorkspaceId, dbContext, cancellationToken);
-        if (!canAccess)
-        {
-            return TenantAuthorizationHelper.ForbiddenTenantResult();
-        }
-
         Guid workspaceId = project.WorkspaceId;
         string projectName = project.Name;
 
-        List<string> storedFileNames = project.Files
-            .Select(f => f.StoredFileName)
-            .ToList();
-
+        // DataConformDbContext.SaveChangesAsync remove automaticamente todos os arquivos físicos vinculados após o commit
         dbContext.ImportProjects.Remove(project);
         await dbContext.SaveChangesAsync(cancellationToken);
-
-        foreach (string storedFileName in storedFileNames)
-        {
-            await fileStorage.DeleteFileAsync(storedFileName, cancellationToken);
-        }
 
         Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
 

@@ -1,11 +1,15 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using DataConform.Api.Endpoints;
+using DataConform.Api.Filters;
+using DataConform.Api.Services;
 using DataConform.Application;
+using DataConform.Application.Common.Interfaces;
 using DataConform.Infrastructure;
 using DataConform.Infrastructure.Persistence;
 
@@ -16,6 +20,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 });
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -37,7 +43,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
         };
     });
-builder.Services.AddAuthorization();
+
+// Default-Deny Security Architecture: toda rota exige usuário autenticado por padrão (a menos que declare .AllowAnonymous())
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 builder.Services.AddRateLimiter(options =>
 {
@@ -176,7 +189,7 @@ app.Use(async (context, next) =>
 });
 
 // Configure the HTTP request pipeline.
-app.MapOpenApi();
+app.MapOpenApi().AllowAnonymous();
 
 app.MapGet("/docs", () => Results.Content(
     """
@@ -194,22 +207,30 @@ app.MapGet("/docs", () => Results.Content(
       </body>
     </html>
     """,
-    "text/html; charset=utf-8")).ExcludeFromDescription();
+    "text/html; charset=utf-8"))
+    .AllowAnonymous()
+    .ExcludeFromDescription();
 
-app.MapGet("/scalar", () => Results.Redirect("/docs")).ExcludeFromDescription();
+app.MapGet("/scalar", () => Results.Redirect("/docs"))
+    .AllowAnonymous()
+    .ExcludeFromDescription();
 
 app.UseCors("AllowFrontend");
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Map Health & Functional Endpoints
-app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "DataConform.Api", timestamp = DateTime.UtcNow }));
+// Map Health & Functional Endpoints (Protected by Global FallbackPolicy + TenantIsolationEndpointFilter)
+app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "DataConform.Api", timestamp = DateTime.UtcNow }))
+    .AllowAnonymous();
 
-app.MapAuthEndpoints();
-app.MapWorkspaceEndpoints();
-app.MapProjectEndpoints();
-app.MapFileEndpoints();
-app.MapAuditEndpoints();
+RouteGroupBuilder apiGroup = app.MapGroup("")
+    .AddEndpointFilter<TenantIsolationEndpointFilter>();
+
+apiGroup.MapAuthEndpoints();
+apiGroup.MapWorkspaceEndpoints();
+apiGroup.MapProjectEndpoints();
+apiGroup.MapFileEndpoints();
+apiGroup.MapAuditEndpoints();
 
 app.Run();

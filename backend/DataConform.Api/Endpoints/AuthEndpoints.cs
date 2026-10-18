@@ -18,6 +18,7 @@ public static class AuthEndpoints
 
         group.MapPost("/register", Register)
             .WithName("Register")
+            .AllowAnonymous()
             .RequireRateLimiting("AuthPolicy")
             .Produces<AuthResponseDto>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
@@ -26,6 +27,7 @@ public static class AuthEndpoints
 
         group.MapPost("/login", Login)
             .WithName("Login")
+            .AllowAnonymous()
             .RequireRateLimiting("AuthPolicy")
             .Produces<AuthResponseDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)

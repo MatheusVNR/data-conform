@@ -432,7 +432,6 @@ public static class FileEndpoints
         Guid fileId,
         ClaimsPrincipal claimsPrincipal,
         IApplicationDbContext dbContext,
-        IFileStorageService fileStorage,
         IAuditService auditService,
         CancellationToken cancellationToken)
     {
@@ -446,19 +445,11 @@ public static class FileEndpoints
         }
 
         Guid workspaceId = importFile.Project.WorkspaceId;
-        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, workspaceId, dbContext, cancellationToken);
-        if (!canAccess)
-        {
-            return TenantAuthorizationHelper.ForbiddenTenantResult();
-        }
-
         string fileName = importFile.OriginalFileName;
-        string storedFileName = importFile.StoredFileName;
 
+        // DataConformDbContext.SaveChangesAsync remove automaticamente o arquivo físico em disco após o commit da transação
         dbContext.ImportFiles.Remove(importFile);
         await dbContext.SaveChangesAsync(cancellationToken);
-
-        await fileStorage.DeleteFileAsync(storedFileName, cancellationToken);
 
         Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
 

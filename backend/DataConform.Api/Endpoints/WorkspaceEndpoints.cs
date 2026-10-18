@@ -102,6 +102,7 @@ public static class WorkspaceEndpoints
         string normalizedSlug = request.Slug.Trim().ToLowerInvariant();
 
         bool slugExists = await dbContext.Workspaces
+            .IgnoreQueryFilters()
             .AnyAsync(w => w.Slug == normalizedSlug, cancellationToken);
 
         if (slugExists)
@@ -202,12 +203,6 @@ public static class WorkspaceEndpoints
             return Results.NotFound(new { error = "Organização / Workspace não encontrado." });
         }
 
-        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, id, dbContext, cancellationToken);
-        if (!canAccess)
-        {
-            return TenantAuthorizationHelper.ForbiddenTenantResult();
-        }
-
         WorkspaceDto dto = new WorkspaceDto
         {
             Id = workspace.Id,
@@ -247,12 +242,6 @@ public static class WorkspaceEndpoints
             return Results.NotFound(new { error = "Organização / Workspace não encontrado." });
         }
 
-        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, id, dbContext, cancellationToken);
-        if (!canAccess)
-        {
-            return TenantAuthorizationHelper.ForbiddenTenantResult();
-        }
-
         string oldName = workspace.Name;
         workspace.Name = request.Name.Trim();
         workspace.UpdatedAt = DateTimeOffset.UtcNow;
@@ -289,25 +278,15 @@ public static class WorkspaceEndpoints
 
     private static async Task<IResult> DeleteWorkspace(
         Guid id,
-        ClaimsPrincipal claimsPrincipal,
         IApplicationDbContext dbContext,
-        IFileStorageService fileStorage,
         CancellationToken cancellationToken)
     {
         Workspace? workspace = await dbContext.Workspaces
-            .Include(w => w.Projects)
-                .ThenInclude(p => p.Files)
             .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
 
         if (workspace == null)
         {
             return Results.NotFound(new { error = "Organização / Workspace não encontrado." });
-        }
-
-        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, id, dbContext, cancellationToken);
-        if (!canAccess)
-        {
-            return TenantAuthorizationHelper.ForbiddenTenantResult();
         }
 
         bool hasBoundUsers = await dbContext.Users.AnyAsync(u => u.WorkspaceId == id, cancellationToken);
@@ -316,23 +295,9 @@ public static class WorkspaceEndpoints
             return Results.BadRequest(new { error = "Esta é a organização matriz vinculada à sua conta e não pode ser removida. Você pode renomeá-la livremente acima." });
         }
 
-        // Excluir arquivos físicos de todos os projetos do workspace
-        List<string> storedFileNames = new List<string>();
-        foreach (ImportProject project in workspace.Projects)
-        {
-            foreach (ImportFile file in project.Files)
-            {
-                storedFileNames.Add(file.StoredFileName);
-            }
-        }
-
+        // DataConformDbContext.SaveChangesAsync remove automaticamente todos os arquivos físicos vinculados após o commit da transação
         dbContext.Workspaces.Remove(workspace);
         await dbContext.SaveChangesAsync(cancellationToken);
-
-        foreach (string storedFileName in storedFileNames)
-        {
-            await fileStorage.DeleteFileAsync(storedFileName, cancellationToken);
-        }
 
         return Results.NoContent();
     }
