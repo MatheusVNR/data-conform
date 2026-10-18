@@ -367,11 +367,14 @@ public static class FileEndpoints
 
             return Results.Ok(report);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             importFile.Status = FileStatus.Failed;
             await dbContext.SaveChangesAsync(cancellationToken);
-            return Results.Problem(detail: $"Falha ao processar o arquivo: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
+            return Results.Problem(
+                title: "Falha ao processar o arquivo",
+                detail: "Não foi possível concluir a leitura do arquivo enviado. Verifique se a planilha está íntegra e no formato CSV esperado.",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 

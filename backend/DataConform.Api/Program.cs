@@ -89,6 +89,7 @@ builder.Services.AddCors(options =>
 });
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
 
 WebApplication app = builder.Build();
@@ -122,14 +123,56 @@ using (IServiceScope scope = app.Services.CreateScope())
     }
 }
 
-// Security Headers Middleware
+// Security Headers & Global Exception Handling Middleware (RFC 7807 ProblemDetails / CWE-209)
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
     context.Response.Headers.Append("X-Frame-Options", "DENY");
     context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
     context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
-    await next();
+
+    try
+    {
+        await next();
+    }
+    catch (BadHttpRequestException badRequestEx)
+    {
+        ILogger<Program> reqLogger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        reqLogger.LogWarning(badRequestEx, "Requisição HTTP malformada em {Path}", context.Request.Path);
+
+        if (!context.Response.HasStarted)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            context.Response.ContentType = "application/problem+json; charset=utf-8";
+            await context.Response.WriteAsJsonAsync(new
+            {
+                type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                title = "Requisição Inválida",
+                status = StatusCodes.Status400BadRequest,
+                detail = "O corpo da requisição (JSON) ou os parâmetros enviados estão malformados ou inválidos.",
+                error = "O corpo da requisição (JSON) ou os parâmetros enviados estão malformados ou inválidos."
+            });
+        }
+    }
+    catch (Exception unhandledEx)
+    {
+        ILogger<Program> errLogger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        errLogger.LogError(unhandledEx, "Erro interno não tratado em {Path}", context.Request.Path);
+
+        if (!context.Response.HasStarted)
+        {
+            context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+            context.Response.ContentType = "application/problem+json; charset=utf-8";
+            await context.Response.WriteAsJsonAsync(new
+            {
+                type = "https://tools.ietf.org/html/rfc9110#section-15.6.1",
+                title = "Erro Interno no Servidor",
+                status = StatusCodes.Status500InternalServerError,
+                detail = "Ocorreu um erro inesperado ao processar sua solicitação. Tente novamente em instantes.",
+                error = "Ocorreu um erro inesperado ao processar sua solicitação. Tente novamente em instantes."
+            });
+        }
+    }
 });
 
 // Configure the HTTP request pipeline.
