@@ -66,6 +66,7 @@ export const App: FC = () => {
   const [activeReport, setActiveReport] = useState<ValidationReportDto | null>(null);
 
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadingProjects, setLoadingProjects] = useState<boolean>(false);
   const [validatingFileId, setValidatingFileId] = useState<string | null>(null);
   const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState<boolean>(false);
   const [isCreateProjOpen, setIsCreateProjOpen] = useState<boolean>(false);
@@ -115,6 +116,7 @@ export const App: FC = () => {
 
   const loadProjectsForWorkspace = useCallback(async (workspaceId: string): Promise<void> => {
     try {
+      setLoadingProjects(true);
       const list: ImportProjectDto[] = await getProjects(workspaceId);
       setProjects(list);
       if (list.length > 0) {
@@ -127,6 +129,8 @@ export const App: FC = () => {
     } catch (err: unknown) {
       const msg: string = err instanceof Error ? err.message : 'Erro ao carregar projetos';
       showAlert(msg, 'error');
+    } finally {
+      setLoadingProjects(false);
     }
   }, [loadFilesForProject, showAlert]);
 
@@ -718,6 +722,7 @@ export const App: FC = () => {
             <ProjectList
               projects={projects}
               activeProject={activeProject}
+              isLoading={loadingProjects}
               onSelectProject={handleSelectProject}
               onOpenCreateProject={() => setIsCreateProjOpen(true)}
               onDeleteProject={handleDeleteProject}

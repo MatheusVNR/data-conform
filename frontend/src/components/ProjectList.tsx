@@ -5,6 +5,7 @@ import type { ImportProjectDto } from '../types';
 interface ProjectListProps {
   projects: ImportProjectDto[];
   activeProject: ImportProjectDto | null;
+  isLoading?: boolean;
   onSelectProject: (project: ImportProjectDto) => void;
   onOpenCreateProject: () => void;
   onDeleteProject?: (projectId: string) => Promise<void>;
@@ -13,6 +14,7 @@ interface ProjectListProps {
 export const ProjectList: FC<ProjectListProps> = ({
   projects,
   activeProject,
+  isLoading = false,
   onSelectProject,
   onOpenCreateProject,
   onDeleteProject,
@@ -52,13 +54,20 @@ export const ProjectList: FC<ProjectListProps> = ({
         <button
           type="button"
           className="btn btn-primary"
+          disabled={isLoading}
           onClick={onOpenCreateProject}
         >
           + Novo Projeto
         </button>
       </div>
 
-      {projects.length === 0 ? (
+      {isLoading ? (
+        <div className="empty-state card">
+          <div className="spinner" style={{ margin: '0 auto 0.75rem auto' }}></div>
+          <h3>Carregando projetos da organização...</h3>
+          <p>Sincronizando dicionários ERP e histórico de homologação do ambiente selecionado.</p>
+        </div>
+      ) : projects.length === 0 ? (
         <div className="empty-state card">
           <div className="empty-icon">🗂️</div>
           <h3>Comece sua primeira homologação em 3 passos simples</h3>

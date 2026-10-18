@@ -15,6 +15,7 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({ report, 
   const [severityFilter, setSeverityFilter] = useState<'all' | '1' | '0'>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [copiedSummary, setCopiedSummary] = useState<boolean>(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -108,6 +109,42 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({ report, 
 
   const errorCount: number = report.issues.filter((i: ValidationIssueDto) => isErrorSeverity(i.severity)).length;
   const warningCount: number = report.issues.filter((i: ValidationIssueDto) => isWarningSeverity(i.severity)).length;
+
+  const handleCopySummary = async (): Promise<void> => {
+    const topIssues: string =
+      filteredIssues.length === 0
+        ? 'Nenhuma inconsistência detectada (100% em conformidade).'
+        : filteredIssues
+            .slice(0, 10)
+            .map(
+              (issue: ValidationIssueDto) =>
+                `- [Linha #${issue.rowNumber ?? 'Geral'} | ${issue.columnName ?? 'Geral'}] ${issue.issueCode}: ${issue.message}${issue.rawValue ? ` (Valor: "${issue.rawValue}")` : ''}`
+            )
+            .join('\n');
+
+    const summaryText: string = [
+      `📊 LAUDO TÉCNICO DE HOMOLOGAÇÃO — DATACONFORM`,
+      `Arquivo: ${report.originalFileName}`,
+      `Total de Registros: ${report.totalRows} | Válidos: ${report.validRows} | Com Inconsistência: ${report.errorRows}`,
+      `Taxa de Conformidade: ${conformityRate}% (${errorCount} erros, ${warningCount} avisos)`,
+      ``,
+      `Principais Apontamentos:`,
+      topIssues,
+      filteredIssues.length > 10 ? `\n(...e mais ${filteredIssues.length - 10} apontamentos no relatório completo)` : '',
+    ]
+      .filter((line: string) => line !== '')
+      .join('\n');
+
+    try {
+      await navigator.clipboard.writeText(summaryText);
+      setCopiedSummary(true);
+      setTimeout(() => {
+        setCopiedSummary(false);
+      }, 2500);
+    } catch {
+      // Fallback if clipboard API is restricted
+    }
+  };
 
   return (
     <div
@@ -278,6 +315,14 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({ report, 
         </div>
 
         <div className="modal-footer report-modal-footer">
+          <button
+            type="button"
+            className="btn btn-outline btn-copy-summary"
+            onClick={handleCopySummary}
+            title="Copiar resumo formatado do laudo para colar em chamados, Slack, Teams ou e-mail"
+          >
+            {copiedSummary ? '✓ Resumo Copiado!' : '📋 Copiar Resumo Técnico'}
+          </button>
           {filteredIssues.length > 0 && (
             <button
               type="button"
