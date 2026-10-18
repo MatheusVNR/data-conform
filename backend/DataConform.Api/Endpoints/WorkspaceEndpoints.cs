@@ -317,16 +317,22 @@ public static class WorkspaceEndpoints
         }
 
         // Excluir arquivos físicos de todos os projetos do workspace
+        List<string> storedFileNames = new List<string>();
         foreach (ImportProject project in workspace.Projects)
         {
             foreach (ImportFile file in project.Files)
             {
-                await fileStorage.DeleteFileAsync(file.StoredFileName, cancellationToken);
+                storedFileNames.Add(file.StoredFileName);
             }
         }
 
         dbContext.Workspaces.Remove(workspace);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        foreach (string storedFileName in storedFileNames)
+        {
+            await fileStorage.DeleteFileAsync(storedFileName, cancellationToken);
+        }
 
         return Results.NoContent();
     }

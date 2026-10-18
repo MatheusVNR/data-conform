@@ -118,7 +118,30 @@ public static class FileEndpoints
             });
         }
 
-        DataConform.Application.Common.Models.QuotaCheckResult quotaCheck = await quotaService.CheckUploadQuotaAsync(project.WorkspaceId, 0, cancellationToken);
+        int dataRowCount = 0;
+        using (Stream countStream = file.OpenReadStream())
+        using (StreamReader countReader = new StreamReader(countStream, leaveOpen: false))
+        {
+            bool isHeaderLine = true;
+            string? currentLine;
+            while ((currentLine = await countReader.ReadLineAsync(cancellationToken)) != null)
+            {
+                if (string.IsNullOrWhiteSpace(currentLine))
+                {
+                    continue;
+                }
+
+                if (isHeaderLine)
+                {
+                    isHeaderLine = false;
+                    continue;
+                }
+
+                dataRowCount++;
+            }
+        }
+
+        DataConform.Application.Common.Models.QuotaCheckResult quotaCheck = await quotaService.CheckUploadQuotaAsync(project.WorkspaceId, dataRowCount, cancellationToken);
         if (!quotaCheck.IsAllowed)
         {
             return Results.Problem(
@@ -137,6 +160,7 @@ public static class FileEndpoints
             StoredFileName = storedFileName,
             ContentType = file.ContentType ?? "text/csv",
             ByteSize = file.Length,
+            TotalRows = dataRowCount,
             Status = FileStatus.Pending
         };
 
@@ -247,6 +271,11 @@ public static class FileEndpoints
         if (!canAccess)
         {
             return TenantAuthorizationHelper.ForbiddenTenantResult();
+        }
+
+        if (importFile.Status == FileStatus.Processing)
+        {
+            return Results.Conflict(new { error = "Este arquivo já está sendo processado no momento. Aguarde a conclusão." });
         }
 
         importFile.Status = FileStatus.Processing;
@@ -421,10 +450,12 @@ public static class FileEndpoints
         }
 
         string fileName = importFile.OriginalFileName;
+        string storedFileName = importFile.StoredFileName;
 
-        await fileStorage.DeleteFileAsync(importFile.StoredFileName, cancellationToken);
         dbContext.ImportFiles.Remove(importFile);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        await fileStorage.DeleteFileAsync(storedFileName, cancellationToken);
 
         Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
 

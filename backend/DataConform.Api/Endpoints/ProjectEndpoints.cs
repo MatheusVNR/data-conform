@@ -211,13 +211,17 @@ public static class ProjectEndpoints
         Guid workspaceId = project.WorkspaceId;
         string projectName = project.Name;
 
-        foreach (ImportFile file in project.Files)
-        {
-            await fileStorage.DeleteFileAsync(file.StoredFileName, cancellationToken);
-        }
+        List<string> storedFileNames = project.Files
+            .Select(f => f.StoredFileName)
+            .ToList();
 
         dbContext.ImportProjects.Remove(project);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        foreach (string storedFileName in storedFileNames)
+        {
+            await fileStorage.DeleteFileAsync(storedFileName, cancellationToken);
+        }
 
         Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
 

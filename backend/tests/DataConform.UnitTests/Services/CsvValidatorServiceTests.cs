@@ -161,4 +161,16 @@ public class CsvValidatorServiceTests
         Assert.Contains(result.Issues, i => i.ColumnName == "E_Mail" && i.IssueCode == "INVALID_EMAIL_FORMAT");
         Assert.Contains(result.Issues, i => i.ColumnName == "CreditLine" && i.IssueCode == "NEGATIVE_AMOUNT_NOT_ALLOWED");
     }
+
+    [Fact]
+    public async Task ValidateCsvStreamAsync_CorruptedHeaderEncoding_ShouldReportEncodingCorruptionOnRow1()
+    {
+        byte[] latin1Bytes = Encoding.Latin1.GetBytes("Código,Razão_Social\n1001,Empresa Teste\n");
+        using MemoryStream stream = new MemoryStream(latin1Bytes);
+        Guid fileId = Guid.NewGuid();
+
+        FileValidationResult result = await _validator.ValidateCsvStreamAsync(stream, fileId);
+
+        Assert.Contains(result.Issues, i => i.IssueCode == "ENCODING_CORRUPTION" && i.RowNumber == 1);
+    }
 }

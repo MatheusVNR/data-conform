@@ -51,6 +51,19 @@ public class CsvValidatorService : ICsvValidatorService
             return result;
         }
 
+        if (headerLine.Contains('\uFFFD'))
+        {
+            result.Issues.Add(new ValidationIssue
+            {
+                FileId = fileId,
+                RowNumber = 1,
+                IssueCode = "ENCODING_CORRUPTION",
+                Message = "Foram detectados caracteres inválidos de codificação no cabeçalho (converta a planilha para UTF-8).",
+                Severity = IssueSeverity.Error,
+                RawValue = headerLine.Length > 120 ? headerLine.Substring(0, 120) + "..." : headerLine
+            });
+        }
+
         char delimiter = DetectDelimiter(headerLine);
         string[] headers = ParseCsvLine(headerLine, delimiter);
 
