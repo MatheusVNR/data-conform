@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { FC } from 'react';
 import type { AuthResponseDto, WorkspaceDto } from '../types';
 import { PlanTierLabels } from '../types';
@@ -27,17 +28,23 @@ export const Navbar: FC<NavbarProps> = ({
   onOpenAuditModal,
   onOpenRulesModal,
 }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+
   const planName: string = activeWorkspace
     ? (PlanTierLabels[String(activeWorkspace.plan)] ?? 'Starter')
     : 'Starter';
 
+  const closeMobileMenu = (): void => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <header className="navbar">
       <div className="navbar-container">
-        {/* Brand Logo with Interlocking "DC" Monogram + Checkmark */}
+        {/* Brand Logo & Name */}
         <div className="navbar-brand">
           <div className="brand-logo-svg" aria-hidden="true">
-            <svg width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="34" height="34" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#dcNavBgGrad)" />
               <rect x="3" y="3" width="58" height="58" rx="15" stroke="url(#dcNavBorderGrad)" strokeOpacity="0.4" strokeWidth="1.5" />
               <path
@@ -89,61 +96,58 @@ export const Navbar: FC<NavbarProps> = ({
             </svg>
           </div>
           <div className="brand-text">
-            <div className="brand-title-row">
-              <span className="brand-title">DataConform</span>
-              <span className="brand-env-pill">ERP Data Governance</span>
-            </div>
-            <span className="brand-subtitle">Saneamento e Homologação Prévia para Cargas ERP</span>
+            <span className="brand-title">DataConform</span>
           </div>
         </div>
 
-        {/* Navigation & Controls */}
-        <div className="navbar-workspace-controls">
+        {/* Desktop Navigation Links & Controls */}
+        <div className="navbar-workspace-controls navbar-desktop-nav">
           <button
             type="button"
-            className="btn btn-outline btn-sm"
+            className="nav-link-btn"
             onClick={onOpenRulesModal}
-            title="Consultar pilares de governança, mitigação de riscos fiscais e homologação ERP"
+            title="Pilares de governança, validações fiscais e homologação ERP"
           >
-            🛡️ Garantias & Governança
+            Governança
           </button>
 
-          {currentUser && activeWorkspace && (
-            <button
-              type="button"
-              className="btn btn-outline btn-sm ws-switcher-pill"
-              onClick={onOpenWorkspaceModal}
-              title="Gerenciar suas organizações ou alternar ambiente"
-            >
-              <span className="ws-pill-dot" />
-              <span className="ws-pill-name">{activeWorkspace.name}</span>
-              <span className="ws-pill-gear">⚙</span>
-            </button>
-          )}
-
           <button
             type="button"
-            className="btn btn-outline btn-sm btn-plan-trigger"
+            className="nav-link-btn"
             onClick={onOpenPlanModal}
             title="Consultar planos comerciais e capacidade operacional"
           >
             {currentUser && activeWorkspace ? (
-              <>
-                ★ Plano: <strong>{planName}</strong>
-              </>
+              <span>
+                Plano: <strong>{planName}</strong>
+              </span>
             ) : (
-              <>★ Planos & Preços</>
+              <span>Planos & Preços</span>
             )}
           </button>
 
           {currentUser && activeWorkspace && (
             <button
               type="button"
-              className="btn btn-outline btn-sm"
+              className="nav-link-btn"
               onClick={onOpenAuditModal}
               title="Trilha de auditoria e governança da organização"
             >
-              📋 Auditoria
+              Auditoria
+            </button>
+          )}
+
+          <div className="nav-divider" />
+
+          {currentUser && activeWorkspace && (
+            <button
+              type="button"
+              className="ws-switcher-pill"
+              onClick={onOpenWorkspaceModal}
+              title="Alternar organização ativa ou gerenciar equipe"
+            >
+              <span className="ws-pill-dot" />
+              <span className="ws-pill-name">{activeWorkspace.name}</span>
             </button>
           )}
 
@@ -161,13 +165,10 @@ export const Navbar: FC<NavbarProps> = ({
             {currentUser ? (
               <div className="user-profile-badge">
                 <span className="user-avatar">{currentUser.fullName.charAt(0).toUpperCase()}</span>
-                <div className="user-info">
-                  <span className="user-name">{currentUser.fullName}</span>
-                  <span className="user-role-tag">{currentUser.role}</span>
-                </div>
+                <span className="user-name">{currentUser.fullName}</span>
                 <button
                   type="button"
-                  className="btn btn-xs btn-secondary"
+                  className="btn btn-xs btn-outline"
                   onClick={onLogout}
                   title="Encerrar sessão com segurança"
                 >
@@ -188,13 +189,145 @@ export const Navbar: FC<NavbarProps> = ({
                   className="btn btn-primary btn-sm"
                   onClick={() => onOpenAuth('register')}
                 >
-                  Criar Conta Gratuita
+                  Criar Conta
                 </button>
               </div>
             )}
           </div>
         </div>
+
+        {/* Mobile Action Controls (Always visible on mobile) */}
+        <div className="navbar-mobile-actions">
+          <button
+            type="button"
+            className="btn btn-outline btn-sm btn-theme-toggle"
+            onClick={onToggleTheme}
+            title={theme === 'dark' ? 'Modo Claro' : 'Modo Noturno'}
+            aria-label="Alternar tema visual"
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+
+          <button
+            type="button"
+            className={`btn btn-outline btn-sm mobile-menu-toggle ${isMobileMenuOpen ? 'active' : ''}`}
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
+          >
+            {isMobileMenuOpen ? '✕' : '☰'}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile Drawer Overlay */}
+      {isMobileMenuOpen && (
+        <div className="navbar-mobile-drawer">
+          {currentUser && activeWorkspace ? (
+            <div className="mobile-user-card">
+              <div className="mobile-user-header">
+                <span className="user-avatar">{currentUser.fullName.charAt(0).toUpperCase()}</span>
+                <div className="user-info">
+                  <span className="user-name">{currentUser.fullName}</span>
+                  <span className="user-role-tag">{currentUser.role}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="ws-switcher-pill mobile-ws-pill"
+                onClick={() => {
+                  closeMobileMenu();
+                  onOpenWorkspaceModal();
+                }}
+              >
+                <span className="ws-pill-dot" />
+                <span className="ws-pill-name">{activeWorkspace.name}</span>
+                <span className="mobile-plan-tag">{planName}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="mobile-guest-hero">
+              <span className="mobile-guest-title">Governança & Homologação ERP</span>
+              <p className="mobile-guest-desc">Validação de conformidade prévia antes de carregar no seu ERP.</p>
+            </div>
+          )}
+
+          <div className="mobile-menu-links">
+            <button
+              type="button"
+              className="mobile-nav-link"
+              onClick={() => {
+                closeMobileMenu();
+                onOpenRulesModal();
+              }}
+            >
+              <span>🛡️ Governança & Regras Fiscais</span>
+            </button>
+
+            <button
+              type="button"
+              className="mobile-nav-link"
+              onClick={() => {
+                closeMobileMenu();
+                onOpenPlanModal();
+              }}
+            >
+              <span>★ Planos & Capacidade</span>
+              {currentUser && activeWorkspace && <span className="badge badge-info">{planName}</span>}
+            </button>
+
+            {currentUser && activeWorkspace && (
+              <button
+                type="button"
+                className="mobile-nav-link"
+                onClick={() => {
+                  closeMobileMenu();
+                  onOpenAuditModal();
+                }}
+              >
+                <span>📋 Trilha de Auditoria</span>
+              </button>
+            )}
+          </div>
+
+          <div className="mobile-auth-actions">
+            {currentUser ? (
+              <button
+                type="button"
+                className="btn btn-outline btn-block text-danger"
+                onClick={() => {
+                  closeMobileMenu();
+                  onLogout();
+                }}
+              >
+                Encerrar Sessão
+              </button>
+            ) : (
+              <div className="mobile-guest-buttons">
+                <button
+                  type="button"
+                  className="btn btn-primary btn-block"
+                  onClick={() => {
+                    closeMobileMenu();
+                    onOpenAuth('register');
+                  }}
+                >
+                  Criar Conta Gratuita
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-block"
+                  onClick={() => {
+                    closeMobileMenu();
+                    onOpenAuth('login');
+                  }}
+                >
+                  Entrar na Conta
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 };

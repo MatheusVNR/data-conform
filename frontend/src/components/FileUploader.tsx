@@ -151,6 +151,28 @@ export const FileUploader: FC<FileUploaderProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const handleLoadDemoData = async (): Promise<void> => {
+    if (disabled || uploading) return;
+    try {
+      setUploading(true);
+      setError(null);
+      setUploadProgressText(`Carregando lote demonstrativo para ${erpPreset.systemName}...`);
+      const demoBlob: Blob = new Blob(['\uFEFF' + erpPreset.sampleCsvContent], {
+        type: 'text/csv;charset=utf-8;',
+      });
+      const demoFile: File = new File([demoBlob], erpPreset.sampleFileName, {
+        type: 'text/csv',
+      });
+      await onUpload(demoFile);
+    } catch (err: unknown) {
+      const msg: string = err instanceof Error ? err.message : 'Falha ao carregar lote de teste';
+      setError(msg);
+    } finally {
+      setUploading(false);
+      setUploadProgressText('');
+    }
+  };
+
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -188,7 +210,16 @@ export const FileUploader: FC<FileUploaderProps> = ({
             onClick={handleDownloadSampleCsv}
             title={`Baixar planilha modelo homologada para ${erpPreset.systemName}`}
           >
-            ⬇ Modelo {erpPreset.systemName} (.CSV)
+            ⬇ Modelo {erpPreset.systemName}
+          </button>
+          <button
+            type="button"
+            className="btn btn-accent btn-xs"
+            onClick={handleLoadDemoData}
+            disabled={disabled || uploading}
+            title={`Carregar imediatamente arquivo de teste com registros válidos e com falhas para ${erpPreset.systemName}`}
+          >
+            ⚡ Testar com Amostra
           </button>
         </div>
       </div>
@@ -242,25 +273,44 @@ export const FileUploader: FC<FileUploaderProps> = ({
           <h4>
             {isDragging
               ? 'Solte os arquivos aqui para anexar ao lote!'
-              : 'Arraste suas planilhas CSV para esta área ou clique para selecionar'}
+              : 'Arraste suas planilhas CSV para cá ou selecione os arquivos'}
           </h4>
           <p className="dropzone-subtitle">
-            Perfil ativo: <strong>{erpPreset.moduleReference}</strong> • Detecção automática de delimitador
+            Perfil ativo: <strong>{erpPreset.moduleReference}</strong> • Detecção automática de delimitadores
           </p>
 
-          <button
-            type="button"
-            className="btn btn-primary btn-sm dropzone-browse-btn"
-            disabled={disabled || uploading}
-            onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-              e.stopPropagation();
-              if (!disabled && !uploading && fileInputRef.current) {
-                fileInputRef.current.click();
-              }
-            }}
-          >
-            Procurar Arquivos no Computador
-          </button>
+          <div className="dropzone-actions-group">
+            <button
+              type="button"
+              className="btn btn-primary btn-sm dropzone-browse-btn"
+              disabled={disabled || uploading}
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                e.stopPropagation();
+                if (!disabled && !uploading && fileInputRef.current) {
+                  fileInputRef.current.click();
+                }
+              }}
+            >
+              Procurar Arquivos no Computador
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm dropzone-demo-btn"
+              disabled={disabled || uploading}
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                e.stopPropagation();
+                void handleLoadDemoData();
+              }}
+              title={`Carregar arquivo de demonstração oficial do ${erpPreset.systemName}`}
+            >
+              ⚡ Testar com Amostra do {erpPreset.systemName}
+            </button>
+          </div>
+
+          <p className="dropzone-quick-hint">
+            💡 Sem planilha em mãos? Clique em <strong>Testar com Amostra</strong> para validar dados pré-configurados do {erpPreset.systemName} instantaneamente.
+          </p>
         </div>
       </div>
 
