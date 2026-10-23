@@ -102,12 +102,10 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
 
   const [selectedPlan, setSelectedPlan] = useState<'Starter' | 'Professional' | 'Enterprise'>(defaultTargetPlan);
   const [confirmCancel, setConfirmCancel] = useState<boolean>(false);
+  const [cancelReason, setCancelReason] = useState<string>('outro');
+  const [cancelFeedbackText, setCancelFeedbackText] = useState<string>('');
   const [manualSessionId, setManualSessionId] = useState<string>('');
   const [showManualSession, setShowManualSession] = useState<boolean>(false);
-  const [showB2bBilling, setShowB2bBilling] = useState<boolean>(false);
-  const [b2bCnpj, setB2bCnpj] = useState<string>('');
-  const [b2bEmail, setB2bEmail] = useState<string>('');
-  const [b2bSubmitted, setB2bSubmitted] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const actionSectionRef = useRef<HTMLDivElement>(null);
@@ -205,10 +203,40 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
     setLoading(true);
     setError(null);
     try {
+      const reasonLabel: Record<string, string> = {
+        'erp-ausente': 'Faltou suporte a determinado ERP ou formato',
+        'volume-baixo': 'Volume de arquivos foi baixo este mês',
+        'duvida-tecnica': 'Dúvidas ou dificuldades na homologação',
+        'orcamento': 'Restrição orçamentária temporária',
+        'outro': 'Outro motivo',
+      };
+
+      const readableReason: string = reasonLabel[cancelReason] ?? cancelReason;
+      const auditNote: string = `Cancelamento solicitado. Motivo: ${readableReason}.${
+        cancelFeedbackText.trim() ? ` Feedback: "${cancelFeedbackText.trim()}".` : ''
+      }`;
+
+      // Persiste histórico de churn localmente para auditoria e inteligência de produto
+      try {
+        const storedFeedbacks: unknown[] = JSON.parse(
+          localStorage.getItem('dataconform_churn_surveys') ?? '[]'
+        );
+        storedFeedbacks.push({
+          workspaceId: workspace.id,
+          previousPlan: currentPlanLabel,
+          reason: readableReason,
+          feedbackText: cancelFeedbackText.trim(),
+          timestamp: new Date().toISOString(),
+        });
+        localStorage.setItem('dataconform_churn_surveys', JSON.stringify(storedFeedbacks));
+      } catch {
+        // Ignora eventual restrição de storage
+      }
+
       const updated: WorkspaceQuotaDto = await changeWorkspacePlan(
         workspace.id,
         'Starter',
-        'Cancelamento de assinatura realizado pelo titular no painel.'
+        auditNote
       );
       onPlanChanged(updated);
       onClose();
@@ -379,47 +407,122 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
             </div>
           )}
 
-          {/* Seção de Cancelamento / Downgrade quando seleciona Starter estando em plano pago */}
+          {/* Seção de Cancelamento / Downgrade com Pesquisa Preventiva de Churn */}
           {isAuthenticated && isDowngradeToStarter && (
             <div className="cancel-subscription-box">
               <div>
-                <h4>Cancelar Assinatura Atual ({currentPlanLabel})?</h4>
+                <h4>Retornar ao Plano Starter (Gratuito)?</h4>
                 <p>
-                  Ao retornar para o plano <strong>Starter (Gratuito)</strong>, o limite mensal da sua organização passará a ser de 20 arquivos/mês (máx. 1.000 linhas e 5 MB por arquivo). Seus projetos e relatórios já validados permanecem salvos.
+                  Ao retornar para o plano <strong>Starter</strong>, sua organização passará ao limite de 20 arquivos/mês (máx. 1.000 linhas e 5 MB por arquivo). Seus projetos e laudos históricos permanecem 100% seguros.
                 </p>
               </div>
+
               {!confirmCancel ? (
                 <button
                   type="button"
-                  className="btn btn-danger btn-sm"
+                  className="btn btn-outline btn-sm text-danger"
                   onClick={() => setConfirmCancel(true)}
                 >
-                  Solicitar Cancelamento
+                  Solicitar Retorno ao Gratuito
                 </button>
               ) : (
-                <div className="cancel-confirm-actions">
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-sm"
-                    disabled={loading}
-                    onClick={handleCancelSubscription}
-                  >
-                    {loading ? 'Processando...' : 'Confirmar Retorno ao Starter'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    disabled={loading}
-                    onClick={() => setConfirmCancel(false)}
-                  >
-                    Manter Assinatura
-                  </button>
+                <div className="churn-survey-box">
+                  <div className="churn-survey-header">
+                    <strong>💬 Sentiremos sua falta! Ajude-nos a melhorar:</strong>
+                    <span className="churn-survey-sub">
+                      Qual foi o principal motivo para optar pelo cancelamento?
+                    </span>
+                  </div>
+
+                  <div className="churn-reasons-list">
+                    <label className="churn-radio-label">
+                      <input
+                        type="radio"
+                        name="churn-reason"
+                        value="erp-ausente"
+                        checked={cancelReason === 'erp-ausente'}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCancelReason(e.target.value)}
+                      />
+                      <span>Faltou suporte a determinado layout ou ERP</span>
+                    </label>
+
+                    <label className="churn-radio-label">
+                      <input
+                        type="radio"
+                        name="churn-reason"
+                        value="volume-baixo"
+                        checked={cancelReason === 'volume-baixo'}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCancelReason(e.target.value)}
+                      />
+                      <span>Volume de arquivos foi baixo neste período</span>
+                    </label>
+
+                    <label className="churn-radio-label">
+                      <input
+                        type="radio"
+                        name="churn-reason"
+                        value="duvida-tecnica"
+                        checked={cancelReason === 'duvida-tecnica'}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCancelReason(e.target.value)}
+                      />
+                      <span>Dúvidas técnicas ou usabilidade</span>
+                    </label>
+
+                    <label className="churn-radio-label">
+                      <input
+                        type="radio"
+                        name="churn-reason"
+                        value="orcamento"
+                        checked={cancelReason === 'orcamento'}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCancelReason(e.target.value)}
+                      />
+                      <span>Restrição orçamentária temporária</span>
+                    </label>
+
+                    <label className="churn-radio-label">
+                      <input
+                        type="radio"
+                        name="churn-reason"
+                        value="outro"
+                        checked={cancelReason === 'outro'}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCancelReason(e.target.value)}
+                      />
+                      <span>Outro motivo</span>
+                    </label>
+                  </div>
+
+                  <input
+                    type="text"
+                    className="form-input form-input-sm"
+                    placeholder="O que poderíamos ter feito melhor para manter você? (Opcional)"
+                    value={cancelFeedbackText}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCancelFeedbackText(e.target.value)}
+                  />
+
+                  <div className="cancel-confirm-actions">
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      disabled={loading}
+                      onClick={() => setConfirmCancel(false)}
+                    >
+                      ✓ Manter Meu Plano Ativo
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm text-danger"
+                      disabled={loading}
+                      onClick={handleCancelSubscription}
+                    >
+                      {loading ? 'Processando...' : 'Confirmar Retorno ao Starter'}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Verificação manual opcional de sessão do Stripe */}
+          {/* Checkout Seguro via Stripe */}
           {isAuthenticated && workspace && selectedPlan !== 'Starter' && !isSelectedCurrent && (
             <div className="stripe-checkout-notice">
               <div className="stripe-security-info">
@@ -456,83 +559,6 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
               )}
             </div>
           )}
-
-          {/* Faturamento Corporativo B2B Brasil (PIX, Boleto e Nota Fiscal NFS-e) */}
-          <div className="b2b-corporate-billing-box">
-            <div className="b2b-billing-header">
-              <div className="b2b-billing-info">
-                <strong>🏢 Precisa de Faturamento Corporativo (PIX, Boleto ou Nota Fiscal NFS-e)?</strong>
-                <span>
-                  Atendemos consultorias de implantação e médias/grandes empresas com emissão de NFS-e, cadastro de fornecedor e faturamento PJ.
-                </span>
-              </div>
-              <button
-                type="button"
-                className="btn btn-outline btn-xs"
-                onClick={() => {
-                  setShowB2bBilling((prev: boolean) => !prev);
-                  setB2bSubmitted(false);
-                }}
-              >
-                {showB2bBilling ? 'Ocultar formulário B2B' : 'Solicitar Faturamento PJ / PIX'}
-              </button>
-            </div>
-
-            {showB2bBilling && (
-              <div className="b2b-billing-form-area">
-                {b2bSubmitted ? (
-                  <div className="b2b-billing-success">
-                    <strong>✓ Solicitação Corporativa Gerada!</strong>
-                    <p>
-                      Os dados para faturamento do plano <strong>{selectedPlan === 'Starter' ? 'Professional' : selectedPlan}</strong> (CNPJ: <strong>{b2bCnpj}</strong>) foram copiados para sua área de transferência e formatados para nosso canal comercial (<code>comercial@dataconform.com.br</code>).
-                    </p>
-                  </div>
-                ) : (
-                  <div className="b2b-inputs-row">
-                    <input
-                      type="text"
-                      className="form-input form-input-sm"
-                      placeholder="CNPJ da Empresa (ex: 12.345.678/0001-95)"
-                      value={b2bCnpj}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setB2bCnpj(e.target.value)}
-                    />
-                    <input
-                      type="email"
-                      className="form-input form-input-sm"
-                      placeholder="E-mail do Financeiro / Compras"
-                      value={b2bEmail}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setB2bEmail(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => {
-                        if (!b2bCnpj.trim() || !b2bEmail.trim()) {
-                          setError('Informe o CNPJ e o e-mail financeiro para solicitar faturamento B2B.');
-                          return;
-                        }
-                        setError(null);
-                        const targetPlanName: string = selectedPlan === 'Starter' ? 'Professional' : selectedPlan;
-                        const subject: string = encodeURIComponent(
-                          `[Faturamento B2B DataConform] Plano ${targetPlanName} - CNPJ ${b2bCnpj.trim()}`
-                        );
-                        const body: string = encodeURIComponent(
-                          `Olá Equipe Comercial DataConform,\n\nSolicito proposta e faturamento corporativo (PIX / Boleto + Emissão de NFS-e):\n\n- Plano Desejado: ${targetPlanName}\n- Organização: ${workspace?.name ?? 'Nova Organização'}\n- CNPJ para Faturamento: ${b2bCnpj.trim()}\n- E-mail Financeiro: ${b2bEmail.trim()}\n\nAguardo retorno com os dados para pagamento e emissão da Nota Fiscal.`
-                        );
-                        void navigator.clipboard?.writeText(
-                          `Solicitação B2B DataConform | Plano: ${targetPlanName} | CNPJ: ${b2bCnpj.trim()} | Financeiro: ${b2bEmail.trim()}`
-                        );
-                        setB2bSubmitted(true);
-                        window.open(`mailto:comercial@dataconform.com.br?subject=${subject}&body=${body}`, '_blank');
-                      }}
-                    >
-                      Gerar Pedido PJ (PIX / NFS-e)
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
 
         <div className="modal-footer">
@@ -560,7 +586,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
                 onClick={handleProceedToStripe}
                 disabled={loading}
               >
-                💳 Prosseguir para Pagamento Seguro ({selectedPlan})
+                💳 Prosseguir para Pagamento Seguro via Stripe ({selectedPlan})
               </button>
             )
           )}

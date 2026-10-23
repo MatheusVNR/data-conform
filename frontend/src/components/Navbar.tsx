@@ -14,6 +14,7 @@ interface NavbarProps {
   onOpenPlanModal: () => void;
   onOpenAuditModal: () => void;
   onOpenRulesModal: () => void;
+  onOpenFeedbackModal: () => void;
 }
 
 export const Navbar: FC<NavbarProps> = ({
@@ -27,6 +28,7 @@ export const Navbar: FC<NavbarProps> = ({
   onOpenPlanModal,
   onOpenAuditModal,
   onOpenRulesModal,
+  onOpenFeedbackModal,
 }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
 
@@ -136,6 +138,15 @@ export const Navbar: FC<NavbarProps> = ({
               Auditoria
             </button>
           )}
+
+          <button
+            type="button"
+            className="nav-link-btn"
+            onClick={onOpenFeedbackModal}
+            title="Enviar sugestão de melhoria ou solicitar novo template de ERP"
+          >
+            💬 Feedback
+          </button>
 
           <div className="nav-divider" />
 
@@ -287,6 +298,17 @@ export const Navbar: FC<NavbarProps> = ({
                 <span>📋 Trilha de Auditoria</span>
               </button>
             )}
+
+            <button
+              type="button"
+              className="mobile-nav-link"
+              onClick={() => {
+                closeMobileMenu();
+                onOpenFeedbackModal();
+              }}
+            >
+              <span>💬 Sugerir Melhoria / Feedback</span>
+            </button>
           </div>
 
           <div className="mobile-auth-actions">

@@ -12,6 +12,7 @@ import { ProjectList } from './components/ProjectList';
 import { ValidationReportModal } from './components/ValidationReportModal';
 import { VisitorInteractiveSandbox } from './components/VisitorInteractiveSandbox';
 import { WorkspaceModal } from './components/WorkspaceModal';
+import { FeedbackModal } from './components/FeedbackModal';
 import {
   confirmStripeCheckout,
   createProject,
@@ -77,6 +78,7 @@ export const App: FC = () => {
   const [isPlanOpen, setIsPlanOpen] = useState<boolean>(false);
   const [isAuditOpen, setIsAuditOpen] = useState<boolean>(false);
   const [isRulesOpen, setIsRulesOpen] = useState<boolean>(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState<boolean>(false);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -511,6 +513,7 @@ export const App: FC = () => {
         onOpenPlanModal={() => setIsPlanOpen(true)}
         onOpenAuditModal={() => setIsAuditOpen(true)}
         onOpenRulesModal={() => setIsRulesOpen(true)}
+        onOpenFeedbackModal={() => setIsFeedbackOpen(true)}
       />
 
       <main className="main-content">
@@ -857,6 +860,9 @@ export const App: FC = () => {
                 Trilha de Auditoria
               </button>
             )}
+            <button type="button" className="footer-link-btn" onClick={() => setIsFeedbackOpen(true)}>
+              💬 Enviar Feedback / Sugestão
+            </button>
           </div>
         </div>
         <div className="footer-bottom">
@@ -923,6 +929,13 @@ export const App: FC = () => {
       <ComplianceRulesModal
         isOpen={isRulesOpen}
         onClose={() => setIsRulesOpen(false)}
+      />
+
+      <FeedbackModal
+        isOpen={isFeedbackOpen}
+        currentUser={currentUser}
+        activeWorkspace={activeWorkspace}
+        onClose={() => setIsFeedbackOpen(false)}
       />
     </div>
   );
