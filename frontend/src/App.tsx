@@ -846,6 +846,9 @@ export const App: FC = () => {
 
       <ValidationReportModal
         report={activeReport}
+        projectName={activeProject?.name}
+        targetSystem={activeProject?.targetSystem}
+        workspaceName={activeWorkspace?.name}
         onClose={() => setActiveReport(null)}
       />
 
