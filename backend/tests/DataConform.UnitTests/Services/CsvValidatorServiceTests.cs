@@ -173,4 +173,100 @@ public class CsvValidatorServiceTests
 
         Assert.Contains(result.Issues, i => i.IssueCode == "ENCODING_CORRUPTION" && i.RowNumber == 1);
     }
+
+    [Fact]
+    public async Task ValidateCsvStreamAsync_BrazilianUfRules_ShouldValidateValidUfsAndRejectInvalid()
+    {
+        string csvContent = "A1_COD,A1_NOME,A1_EST,UF\n" +
+                            "001,Cliente SP,SP,PR\n" +
+                            "002,Cliente Invalido,XX,Sao Paulo";
+        byte[] bytes = Encoding.UTF8.GetBytes(csvContent);
+        using MemoryStream stream = new MemoryStream(bytes);
+        Guid fileId = Guid.NewGuid();
+
+        FileValidationResult result = await _validator.ValidateCsvStreamAsync(stream, fileId);
+
+        Assert.Equal(2, result.TotalRows);
+        Assert.Equal(1, result.ValidRows);
+        Assert.Equal(1, result.ErrorRows);
+        Assert.Contains(result.Issues, i => i.ColumnName == "A1_EST" && i.IssueCode == "INVALID_UF_CODE" && i.RowNumber == 3);
+        Assert.Contains(result.Issues, i => i.ColumnName == "UF" && i.IssueCode == "INVALID_UF_CODE" && i.RowNumber == 3);
+    }
+
+    [Fact]
+    public async Task ValidateCsvStreamAsync_BrazilianCepRules_ShouldValidate8DigitsAndRejectInvalid()
+    {
+        string csvContent = "codigo,cep,zipcode\n" +
+                            "101,01001-000,80020100\n" +
+                            "102,1234,00000000";
+        byte[] bytes = Encoding.UTF8.GetBytes(csvContent);
+        using MemoryStream stream = new MemoryStream(bytes);
+        Guid fileId = Guid.NewGuid();
+
+        FileValidationResult result = await _validator.ValidateCsvStreamAsync(stream, fileId);
+
+        Assert.Equal(2, result.TotalRows);
+        Assert.Equal(1, result.ValidRows);
+        Assert.Equal(1, result.ErrorRows);
+        Assert.Contains(result.Issues, i => i.ColumnName == "cep" && i.IssueCode == "INVALID_CEP_FORMAT" && i.RowNumber == 3);
+        Assert.Contains(result.Issues, i => i.ColumnName == "zipcode" && i.IssueCode == "INVALID_CEP_FORMAT" && i.RowNumber == 3);
+    }
+
+    [Fact]
+    public async Task ValidateCsvStreamAsync_NcmProductRules_ShouldValidate8DigitsAndRejectInvalid()
+    {
+        string csvContent = "B1_COD,B1_DESC,B1_POSIPI,NCM\n" +
+                            "PRD01,Computador Desktop,8471.30.12,84713012\n" +
+                            "PRD02,Monitor Led,8471,123";
+        byte[] bytes = Encoding.UTF8.GetBytes(csvContent);
+        using MemoryStream stream = new MemoryStream(bytes);
+        Guid fileId = Guid.NewGuid();
+
+        FileValidationResult result = await _validator.ValidateCsvStreamAsync(stream, fileId);
+
+        Assert.Equal(2, result.TotalRows);
+        Assert.Equal(1, result.ValidRows);
+        Assert.Equal(1, result.ErrorRows);
+        Assert.Contains(result.Issues, i => i.ColumnName == "B1_POSIPI" && i.IssueCode == "INVALID_NCM_FORMAT" && i.RowNumber == 3);
+        Assert.Contains(result.Issues, i => i.ColumnName == "NCM" && i.IssueCode == "INVALID_NCM_FORMAT" && i.RowNumber == 3);
+    }
+
+    [Fact]
+    public async Task ValidateCsvStreamAsync_PhoneRules_ShouldValidatePhoneWithDddAndRejectInvalid()
+    {
+        string csvContent = "Nome,Telefone,A1_TEL\n" +
+                            "Joao Silva,(11) 98765-4321,4132221234\n" +
+                            "Maria Erro,987654321,0012345678";
+        byte[] bytes = Encoding.UTF8.GetBytes(csvContent);
+        using MemoryStream stream = new MemoryStream(bytes);
+        Guid fileId = Guid.NewGuid();
+
+        FileValidationResult result = await _validator.ValidateCsvStreamAsync(stream, fileId);
+
+        Assert.Equal(2, result.TotalRows);
+        Assert.Equal(1, result.ValidRows);
+        Assert.Equal(1, result.ErrorRows);
+        Assert.Contains(result.Issues, i => i.ColumnName == "Telefone" && i.IssueCode == "INVALID_PHONE_FORMAT" && i.RowNumber == 3);
+        Assert.Contains(result.Issues, i => i.ColumnName == "A1_TEL" && i.IssueCode == "INVALID_PHONE_FORMAT" && i.RowNumber == 3);
+    }
+
+    [Fact]
+    public async Task ValidateCsvStreamAsync_ProtheusSuppliersAndProducts_ShouldValidateA2AndB1Columns()
+    {
+        string csvContent = "A2_COD,A2_NOME,A2_CGC,A2_LC,A2_EST\n" +
+                            "FOR01,Distribuidora Beta,12.345.678/0001-95,150000.00,MG\n" +
+                            "FOR02,Fornecedor Invalido,12.345.678/0001-00,-500.00,ZZ";
+        byte[] bytes = Encoding.UTF8.GetBytes(csvContent);
+        using MemoryStream stream = new MemoryStream(bytes);
+        Guid fileId = Guid.NewGuid();
+
+        FileValidationResult result = await _validator.ValidateCsvStreamAsync(stream, fileId);
+
+        Assert.Equal(2, result.TotalRows);
+        Assert.Equal(1, result.ValidRows);
+        Assert.Equal(1, result.ErrorRows);
+        Assert.Contains(result.Issues, i => i.ColumnName == "A2_CGC" && i.IssueCode == "INVALID_DOCUMENT_FORMAT");
+        Assert.Contains(result.Issues, i => i.ColumnName == "A2_LC" && i.IssueCode == "NEGATIVE_AMOUNT_NOT_ALLOWED");
+        Assert.Contains(result.Issues, i => i.ColumnName == "A2_EST" && i.IssueCode == "INVALID_UF_CODE");
+    }
 }

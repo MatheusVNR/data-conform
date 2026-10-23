@@ -407,9 +407,10 @@ export const FileList: FC<FileListProps> = ({
               <div className="validation-active-rules-summary">
                 <strong>✓ Verificações Automáticas Ativas para {erpPreset.systemName}:</strong>
                 <ul>
-                  <li>Consistência estrutural do lote, delimitadores e codificação de caracteres</li>
-                  <li>Prevenção de registros duplicados e colunas conflitantes</li>
-                  <li>Auditoria fiscal e financeira de documentos (CPF/CNPJ), e-mails, limites e datas</li>
+                  <li>Consistência estrutural do lote, delimitadores RFC 4180 e codificação UTF-8</li>
+                  <li>Prevenção de duplicatas de registros e colunas conflitantes</li>
+                  <li>Auditoria fiscal de CPF/CNPJ (Módulo 11), UFs (27 Estados + EX) e CEP (8 dígitos)</li>
+                  <li>Validação semântica de e-mails, NCM de produtos, telefones com DDD, limites e datas</li>
                 </ul>
               </div>
 

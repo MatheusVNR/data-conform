@@ -23,6 +23,13 @@ public class CsvValidatorService : ICsvValidatorService
         "dd/MM/yyyy HH:mm:ss"
     };
 
+    private static readonly HashSet<string> ValidBrazilianUfs = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
+        "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
+        "RS", "RO", "RR", "SC", "SP", "SE", "TO", "EX"
+    };
+
     public async Task<FileValidationResult> ValidateCsvStreamAsync(
         Stream csvStream,
         Guid fileId,
@@ -244,7 +251,9 @@ public class CsvValidatorService : ICsvValidatorService
                 if (lowerCol.Contains("cpf") || lowerCol.Contains("cnpj") ||
                     lowerCol == "a1_cgc" || lowerCol == "a2_cgc" ||
                     lowerCol == "lictradnum" || lowerCol == "taxid0" ||
-                    lowerCol == "cgccpf" || lowerCol == "cgc_cpf")
+                    lowerCol == "cgccpf" || lowerCol == "cgc_cpf" ||
+                    lowerCol == "nu_cpf" || lowerCol == "nu_cnpj" ||
+                    lowerCol == "cpf_cnpj" || lowerCol == "cnpj_cpf")
                 {
                     if (!IsValidDocument(cellVal))
                     {
@@ -262,10 +271,11 @@ public class CsvValidatorService : ICsvValidatorService
                     }
                 }
 
-                // 3. Valores Financeiros, Limites de Crédito, Preços e Quantidades (Padrão + ERP: A1_LC, CreditLine, VlrLim, LIMCRED)
+                // 3. Valores Financeiros, Limites de Crédito, Preços e Quantidades (Padrão + ERP: A1_LC, A2_LC, CreditLine, VlrLim, LIMCRED, B1_PRV1, Price)
                 if (lowerCol.Contains("valor") || lowerCol.Contains("preco") || lowerCol.Contains("preço") ||
                     lowerCol.Contains("limite") || lowerCol.Contains("custo") || lowerCol.Contains("quantidade") ||
-                    lowerCol == "a1_lc" || lowerCol == "creditline" || lowerCol == "vlrlim" || lowerCol == "limcred")
+                    lowerCol == "a1_lc" || lowerCol == "a2_lc" || lowerCol == "creditline" || lowerCol == "vlrlim" ||
+                    lowerCol == "limcred" || lowerCol == "b1_prv1" || lowerCol == "price")
                 {
                     string normalizedNumber = cellVal.Replace("R$", "", StringComparison.OrdinalIgnoreCase).Trim();
                     if (normalizedNumber.Contains(',') && normalizedNumber.Contains('.'))
@@ -322,6 +332,95 @@ public class CsvValidatorService : ICsvValidatorService
                             ColumnName = colName,
                             IssueCode = "INVALID_DATE_FORMAT",
                             Message = $"A data '{cellVal}' na coluna '{colName}' é inválida (use AAAA-MM-DD ou DD/MM/AAAA).",
+                            Severity = IssueSeverity.Error,
+                            RawValue = cellVal
+                        });
+                        rowHasError = true;
+                    }
+                }
+
+                // 5. UF / Estado Federativo (Padrão + ERP: A1_EST, A2_EST, UF, Estado, CodEst, State)
+                if ((lowerCol == "uf" || lowerCol == "estado" || lowerCol == "codest" || lowerCol == "state" ||
+                     lowerCol == "a1_est" || lowerCol == "a2_est" || lowerCol.EndsWith("_est") || lowerCol.StartsWith("uf_")) &&
+                    lowerCol != "status")
+                {
+                    string trimmedUf = cellVal.Trim();
+                    if (!ValidBrazilianUfs.Contains(trimmedUf))
+                    {
+                        result.Issues.Add(new ValidationIssue
+                        {
+                            FileId = fileId,
+                            RowNumber = currentRowIndex,
+                            ColumnName = colName,
+                            IssueCode = "INVALID_UF_CODE",
+                            Message = $"Sigla de UF '{cellVal}' inválida na coluna '{colName}'. Esperado uma das 27 Unidades Federativas do Brasil (ex: SP, RJ, MG) ou 'EX' (Exterior).",
+                            Severity = IssueSeverity.Error,
+                            RawValue = cellVal
+                        });
+                        rowHasError = true;
+                    }
+                }
+
+                // 6. CEP (Padrão + ERP: A1_CEP, A2_CEP, CEP, ZipCode, Cod_Cep)
+                if (lowerCol == "cep" || lowerCol == "zipcode" || lowerCol == "a1_cep" || lowerCol == "a2_cep" ||
+                    lowerCol.StartsWith("cep_") || lowerCol.EndsWith("_cep"))
+                {
+                    string cepDigits = new string(cellVal.Where(char.IsDigit).ToArray());
+                    if (cepDigits.Length != 8 || cepDigits == "00000000")
+                    {
+                        result.Issues.Add(new ValidationIssue
+                        {
+                            FileId = fileId,
+                            RowNumber = currentRowIndex,
+                            ColumnName = colName,
+                            IssueCode = "INVALID_CEP_FORMAT",
+                            Message = $"CEP '{cellVal}' inválido na coluna '{colName}'. O CEP deve conter exatamente 8 dígitos numéricos válidos (ex: 01001-000 ou 01001000).",
+                            Severity = IssueSeverity.Error,
+                            RawValue = cellVal
+                        });
+                        rowHasError = true;
+                    }
+                }
+
+                // 7. NCM Fiscal de Produtos (Padrão + ERP: B1_POSIPI, NCM, NcmCode)
+                if (lowerCol == "ncm" || lowerCol == "ncmcode" || lowerCol == "b1_posipi" ||
+                    lowerCol.StartsWith("ncm_") || lowerCol.EndsWith("_ncm") || lowerCol.Contains("posipi"))
+                {
+                    string ncmDigits = new string(cellVal.Where(char.IsDigit).ToArray());
+                    if (ncmDigits.Length != 8)
+                    {
+                        result.Issues.Add(new ValidationIssue
+                        {
+                            FileId = fileId,
+                            RowNumber = currentRowIndex,
+                            ColumnName = colName,
+                            IssueCode = "INVALID_NCM_FORMAT",
+                            Message = $"Código NCM '{cellVal}' inválido na coluna '{colName}'. O NCM fiscal deve possuir exatamente 8 dígitos numéricos (ex: 8471.30.12).",
+                            Severity = IssueSeverity.Error,
+                            RawValue = cellVal
+                        });
+                        rowHasError = true;
+                    }
+                }
+
+                // 8. Telefones e Celulares (Padrão + ERP: A1_TEL, A2_TEL, Telefone, Celular, Phone1, Fone)
+                if (lowerCol.Contains("telefone") || lowerCol.Contains("celular") ||
+                    lowerCol == "a1_tel" || lowerCol == "a2_tel" || lowerCol == "phone1" || lowerCol == "fone" ||
+                    lowerCol.StartsWith("tel_") || lowerCol.EndsWith("_tel"))
+                {
+                    string phoneDigits = new string(cellVal.Where(char.IsDigit).ToArray());
+                    bool isValidPhone = (phoneDigits.Length == 10 || phoneDigits.Length == 11) &&
+                                        int.TryParse(phoneDigits.Substring(0, 2), out int ddd) && ddd >= 11 && ddd <= 99;
+
+                    if (!isValidPhone)
+                    {
+                        result.Issues.Add(new ValidationIssue
+                        {
+                            FileId = fileId,
+                            RowNumber = currentRowIndex,
+                            ColumnName = colName,
+                            IssueCode = "INVALID_PHONE_FORMAT",
+                            Message = $"Telefone '{cellVal}' inválido na coluna '{colName}'. O número deve conter 10 ou 11 dígitos com DDD válido (ex: 11987654321 ou 1133224455).",
                             Severity = IssueSeverity.Error,
                             RawValue = cellVal
                         });

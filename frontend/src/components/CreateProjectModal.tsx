@@ -113,12 +113,15 @@ export const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClos
                 onChange={(e) => setTargetSystem(e.target.value)}
                 disabled={loading}
               >
-                <option value="TOTVS Protheus">TOTVS Protheus (SX3 / SA1 / SA2)</option>
-                <option value="SAP Business One">SAP Business One (DTW / OCRD)</option>
-                <option value="SAP S/4HANA">SAP S/4HANA (Migration Cockpit / BP)</option>
-                <option value="Senior ERP">Senior ERP (Sapiens / E085CLI)</option>
-                <option value="Sankhya">Sankhya Om (Parceiros / TGFPAR)</option>
-                <option value="Omie">Omie ERP (Planilha Oficial)</option>
+                <option value="TOTVS Protheus">TOTVS Protheus (Clientes — SA1)</option>
+                <option value="TOTVS Protheus - Fornecedores">TOTVS Protheus (Fornecedores — SA2)</option>
+                <option value="TOTVS Protheus - Produtos">TOTVS Protheus (Catálogo de Produtos — SB1)</option>
+                <option value="SAP Business One">SAP Business One (Business Partners — OCRD)</option>
+                <option value="SAP Business One - Itens">SAP Business One (Catálogo de Itens — OITM)</option>
+                <option value="SAP S/4HANA">SAP S/4HANA (Migration Cockpit — BP)</option>
+                <option value="Senior ERP">Senior ERP (Sapiens — E085CLI)</option>
+                <option value="Sankhya">Sankhya Om (Parceiros — TGFPAR)</option>
+                <option value="Omie">Omie ERP (Planilha Oficial Clientes)</option>
                 <option value="ContaAzul">ContaAzul (Importação Cadastral)</option>
                 <option value="Genérico / CSV">Genérico / Layout Customizado</option>
               </select>
