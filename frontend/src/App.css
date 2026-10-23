@@ -3972,3 +3972,335 @@ input::-ms-clear {
   font-weight: 700;
   box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
 }
+
+/* ==========================================================
+   Visitor Interactive Sandbox (Zero-Click Live Demo)
+   ========================================================== */
+
+.visitor-sandbox-section {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2.25rem;
+}
+
+.sandbox-header-bar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1.25rem;
+}
+
+.sandbox-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--primary);
+  display: inline-block;
+  margin-bottom: 0.35rem;
+}
+
+.sandbox-header-bar h2 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.35rem;
+  color: var(--text-main);
+}
+
+.sandbox-erp-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sandbox-tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 0.55rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-subtle);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.sandbox-tab-btn strong {
+  font-size: 0.82rem;
+}
+
+.sandbox-tab-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.sandbox-tab-btn:hover {
+  border-color: var(--primary-border);
+}
+
+.sandbox-tab-btn.active {
+  background-color: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.sandbox-tab-btn.active .sandbox-tab-sub {
+  color: var(--primary);
+  opacity: 0.85;
+}
+
+.sandbox-split-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.sandbox-pane {
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.sandbox-pane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pane-step-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-main);
+  letter-spacing: 0.03em;
+}
+
+.pane-filename {
+  font-size: 0.75rem;
+  color: var(--primary);
+  background-color: var(--bg-card);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.sandbox-code-box {
+  background-color: #0F172A;
+  color: #E2E8F0;
+  border-radius: var(--radius-sm);
+  padding: 0.85rem;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.74rem;
+  overflow-x: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.csv-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.csv-line-num {
+  color: #64748B;
+  font-weight: 700;
+  min-width: 28px;
+  user-select: none;
+}
+
+.csv-line-header {
+  color: #93C5FD;
+  font-weight: 700;
+  border-bottom: 1px solid #1E293B;
+}
+
+.csv-line-valid {
+  background-color: rgba(16, 185, 129, 0.12);
+  color: #A7F3D0;
+}
+
+.csv-line-error {
+  background-color: rgba(239, 68, 68, 0.16);
+  color: #FECACA;
+}
+
+.sandbox-input-legend {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-valid {
+  background-color: var(--success);
+}
+
+.dot-error {
+  background-color: var(--danger);
+}
+
+.sandbox-mini-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.mini-kpi {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.65rem;
+  text-align: center;
+}
+
+.mini-kpi span {
+  display: block;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.mini-kpi strong {
+  font-size: 1rem;
+  color: var(--text-main);
+}
+
+.mini-kpi-ok strong {
+  color: var(--success);
+}
+
+.mini-kpi-err strong {
+  color: var(--danger);
+}
+
+.mini-kpi-rate strong {
+  color: var(--primary);
+}
+
+.sandbox-issues-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.sandbox-issue-item {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--danger);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.sandbox-issue-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sandbox-col-name {
+  font-size: 0.8rem;
+  color: var(--text-main);
+}
+
+.sandbox-issue-msg {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.sandbox-issue-raw {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.sandbox-issue-raw code {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.sandbox-footer-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background-color: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+}
+
+.sandbox-footer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.sandbox-footer-info strong {
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.sandbox-footer-info span {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.sandbox-footer-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .sandbox-split-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sandbox-mini-kpis {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

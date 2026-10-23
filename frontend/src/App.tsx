@@ -10,6 +10,7 @@ import { FileUploader } from './components/FileUploader';
 import { Navbar } from './components/Navbar';
 import { ProjectList } from './components/ProjectList';
 import { ValidationReportModal } from './components/ValidationReportModal';
+import { VisitorInteractiveSandbox } from './components/VisitorInteractiveSandbox';
 import { WorkspaceModal } from './components/WorkspaceModal';
 import {
   confirmStripeCheckout,
@@ -64,6 +65,7 @@ export const App: FC = () => {
   const [activeProject, setActiveProject] = useState<ImportProjectDto | null>(null);
   const [files, setFiles] = useState<ImportFileDto[]>([]);
   const [activeReport, setActiveReport] = useState<ValidationReportDto | null>(null);
+  const [demoErpName, setDemoErpName] = useState<string | null>(null);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingProjects, setLoadingProjects] = useState<boolean>(false);
@@ -604,6 +606,14 @@ export const App: FC = () => {
               </div>
             </section>
 
+            <VisitorInteractiveSandbox
+              onOpenReportModal={(report: ValidationReportDto, erpName: string) => {
+                setDemoErpName(erpName);
+                setActiveReport(report);
+              }}
+              onOpenRegister={() => handleOpenAuth('register')}
+            />
+
             <section className="visitor-erp-presets-section">
               <div className="section-header">
                 <div>
@@ -846,10 +856,13 @@ export const App: FC = () => {
 
       <ValidationReportModal
         report={activeReport}
-        projectName={activeProject?.name}
-        targetSystem={activeProject?.targetSystem}
-        workspaceName={activeWorkspace?.name}
-        onClose={() => setActiveReport(null)}
+        projectName={activeProject?.name ?? (demoErpName ? 'Simulação Interativa de Homologação' : undefined)}
+        targetSystem={activeProject?.targetSystem ?? demoErpName}
+        workspaceName={activeWorkspace?.name ?? 'Ambiente de Demonstração DataConform'}
+        onClose={() => {
+          setActiveReport(null);
+          setDemoErpName(null);
+        }}
       />
 
       <AuthModal
