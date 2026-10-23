@@ -22,26 +22,36 @@ export const FileList: FC<FileListProps> = ({
 }) => {
   const [selectedFileForRules, setSelectedFileForRules] = useState<string | null>(null);
   const [requiredColumnsInput, setRequiredColumnsInput] = useState<string>('');
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [fileToDelete, setFileToDelete] = useState<ImportFileDto | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize: number = 8;
 
   const erpPreset: ErpPresetConfig = getErpPreset(targetSystem);
+  const totalFiles: number = files.length;
+  const totalPages: number = Math.max(1, Math.ceil(totalFiles / pageSize));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') {
         setSelectedFileForRules(null);
         setRequiredColumnsInput('');
-        setConfirmDeleteId(null);
+        setFileToDelete(null);
       }
     };
-    if (selectedFileForRules || confirmDeleteId) {
+    if (selectedFileForRules || fileToDelete) {
       window.addEventListener('keydown', handleKeyDown);
     }
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedFileForRules, confirmDeleteId]);
+  }, [selectedFileForRules, fileToDelete]);
 
   const handleDelete = async (fileId: string): Promise<void> => {
     if (!onDeleteFile) return;
@@ -50,7 +60,7 @@ export const FileList: FC<FileListProps> = ({
       await onDeleteFile(fileId);
     } finally {
       setDeletingId(null);
-      setConfirmDeleteId(null);
+      setFileToDelete(null);
     }
   };
 
@@ -136,6 +146,10 @@ export const FileList: FC<FileListProps> = ({
     );
   }
 
+  const startIndex: number = (currentPage - 1) * pageSize;
+  const displayedFiles: ImportFileDto[] = files.slice(startIndex, startIndex + pageSize);
+  const endIndex: number = Math.min(startIndex + pageSize, totalFiles);
+
   return (
     <div className="file-list-card">
       <div className="table-responsive">
@@ -153,7 +167,7 @@ export const FileList: FC<FileListProps> = ({
             </tr>
           </thead>
           <tbody>
-            {files.map((file: ImportFileDto) => {
+            {displayedFiles.map((file: ImportFileDto) => {
               const isValidatingThis: boolean = validatingFileId === file.id;
               const isDone: boolean = isCompletedStatus(file.status);
 
@@ -211,37 +225,15 @@ export const FileList: FC<FileListProps> = ({
                       </button>
 
                       {onDeleteFile && (
-                        confirmDeleteId === file.id ? (
-                          <div className="inline-delete-confirm">
-                            <span className="confirm-prompt text-xs font-semibold text-error">Excluir?</span>
-                            <button
-                              type="button"
-                              className="btn btn-danger btn-xs"
-                              disabled={deletingId === file.id}
-                              onClick={() => handleDelete(file.id)}
-                            >
-                              {deletingId === file.id ? '...' : 'Sim'}
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-xs"
-                              disabled={deletingId === file.id}
-                              onClick={() => setConfirmDeleteId(null)}
-                            >
-                              Não
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            className="btn btn-ghost-danger btn-xs"
-                            title="Excluir arquivo e histórico"
-                            disabled={isValidatingThis || deletingId === file.id}
-                            onClick={() => setConfirmDeleteId(file.id)}
-                          >
-                            🗑
-                          </button>
-                        )
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-xs btn-file-delete-trigger"
+                          title="Excluir arquivo e histórico de conformidade"
+                          disabled={isValidatingThis || deletingId === file.id}
+                          onClick={() => setFileToDelete(file)}
+                        >
+                          ✕ Excluir
+                        </button>
                       )}
                     </div>
                   </td>
@@ -251,6 +243,134 @@ export const FileList: FC<FileListProps> = ({
           </tbody>
         </table>
       </div>
+
+      {totalFiles > pageSize && (
+        <div className="table-pagination-bar">
+          <div className="pagination-info">
+            Mostrando <strong>{startIndex + 1}</strong>–<strong>{endIndex}</strong> de <strong>{totalFiles}</strong> arquivos
+          </div>
+          <div className="pagination-controls">
+            <button
+              type="button"
+              className="btn btn-outline btn-xs"
+              onClick={() => setCurrentPage((p: number) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >
+              ← Anterior
+            </button>
+            <div className="pagination-pages">
+              {Array.from({ length: totalPages }, (_: unknown, i: number) => i + 1).map((pageNum: number) => (
+                <button
+                  key={pageNum}
+                  type="button"
+                  className={`btn btn-xs ${currentPage === pageNum ? 'btn-primary' : 'btn-outline'}`}
+                  onClick={() => setCurrentPage(pageNum)}
+                >
+                  {pageNum}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="btn btn-outline btn-xs"
+              onClick={() => setCurrentPage((p: number) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >
+              Próxima →
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação de Exclusão de Arquivo */}
+      {fileToDelete && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+            if (e.target === e.currentTarget && deletingId === null) {
+              setFileToDelete(null);
+            }
+          }}
+        >
+          <div className="modal-card modal-delete-confirm-card">
+            <div className="modal-header">
+              <div className="modal-delete-title-row">
+                <span className="modal-delete-icon">🗑️</span>
+                <div>
+                  <h3>Excluir Arquivo do Projeto</h3>
+                  <span className="modal-subtitle-inline">Esta ação é irreversível</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setFileToDelete(null)}
+                disabled={deletingId !== null}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <p className="delete-confirm-text">
+                Você tem certeza que deseja remover o arquivo <strong>{fileToDelete.originalFileName}</strong> do projeto?
+              </p>
+
+              <div className="delete-file-meta-box">
+                <div className="delete-meta-row">
+                  <span className="meta-label">Nome:</span>
+                  <strong className="meta-val">{fileToDelete.originalFileName}</strong>
+                </div>
+                <div className="delete-meta-row">
+                  <span className="meta-label">Tamanho:</span>
+                  <span className="meta-val">{formatFileSize(fileToDelete.byteSize)}</span>
+                </div>
+                <div className="delete-meta-row">
+                  <span className="meta-label">Data de Envio:</span>
+                  <span className="meta-val">{formatDate(fileToDelete.createdAt)}</span>
+                </div>
+                <div className="delete-meta-row">
+                  <span className="meta-label">Status:</span>
+                  <span className={getStatusBadgeClass(fileToDelete.status)}>
+                    {getStatusLabel(fileToDelete.status)}
+                  </span>
+                </div>
+                {fileToDelete.totalRows !== null && fileToDelete.totalRows !== undefined && (
+                  <div className="delete-meta-row">
+                    <span className="meta-label">Total de Registros:</span>
+                    <span className="meta-val">{fileToDelete.totalRows} linhas</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="delete-warning-note">
+                ⚠️ O arquivo físico armazenado e todos os relatórios de inconsistências vinculados serão removidos permanentemente. A exclusão será registrada na trilha de auditoria corporativa.
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setFileToDelete(null)}
+                disabled={deletingId !== null}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={() => handleDelete(fileToDelete.id)}
+                disabled={deletingId !== null}
+              >
+                {deletingId === fileToDelete.id ? 'Excluindo...' : 'Sim, Excluir Arquivo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedFileForRules && (
         <div

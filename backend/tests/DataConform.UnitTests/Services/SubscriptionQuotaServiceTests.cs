@@ -67,7 +67,7 @@ public class SubscriptionQuotaServiceTests
         QuotaCheckResult result = await service.CheckUploadQuotaAsync(workspace.Id, 100);
 
         Assert.False(result.IsAllowed);
-        Assert.Contains("Monthly file upload limit reached", result.Reason);
+        Assert.Contains("Limite mensal de envio", result.Reason);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class SubscriptionQuotaServiceTests
         QuotaCheckResult result = await service.CheckUploadQuotaAsync(workspace.Id, 2500);
 
         Assert.False(result.IsAllowed);
-        Assert.Contains("exceeding your plan's limit", result.Reason);
+        Assert.Contains("excedendo o teto", result.Reason);
     }
 
     [Fact]

@@ -86,7 +86,7 @@ export const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClos
           </button>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="modal-card-form">
           <div className="modal-body">
             {error && <div className="inline-alert-error">{error}</div>}
 

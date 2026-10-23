@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FC } from 'react';
 import type { WorkspaceDto, WorkspaceQuotaDto } from '../types';
 import { PlanTierLabels } from '../types';
@@ -106,6 +106,16 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
   const [showManualSession, setShowManualSession] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const actionSectionRef = useRef<HTMLDivElement>(null);
+
+  const handleSelectPlan = (planKey: 'Starter' | 'Professional' | 'Enterprise'): void => {
+    setSelectedPlan(planKey);
+    setConfirmCancel(false);
+    setError(null);
+    setTimeout(() => {
+      actionSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 60);
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -275,9 +285,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
                     isSelected ? 'plan-card-selected' : ''
                   }`}
                   onClick={() => {
-                    setSelectedPlan(plan.key);
-                    setConfirmCancel(false);
-                    setError(null);
+                    handleSelectPlan(plan.key);
                   }}
                 >
                   {plan.highlight && <div className="plan-popular-ribbon">Mais Escolhido</div>}
@@ -300,18 +308,34 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
                   <div className="plan-card-action">
                     {isCurrent ? (
                       <span className="badge badge-completed plan-current-badge">✓ Plano Atual Ativo</span>
+                    ) : isSelected ? (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-full btn-primary btn-plan-direct-action"
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          if (plan.key !== 'Starter') {
+                            handleProceedToStripe();
+                          } else {
+                            setConfirmCancel(true);
+                            setTimeout(() => {
+                              actionSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+                            }, 50);
+                          }
+                        }}
+                      >
+                        {plan.key !== 'Starter' ? '💳 Assinar via Stripe' : '⬇ Solicitar Downgrade'}
+                      </button>
                     ) : (
                       <button
                         type="button"
-                        className={`btn btn-sm btn-full ${isSelected ? 'btn-primary' : 'btn-outline'}`}
+                        className="btn btn-sm btn-full btn-outline"
                         onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
-                          setSelectedPlan(plan.key);
-                          setConfirmCancel(false);
-                          setError(null);
+                          handleSelectPlan(plan.key);
                         }}
                       >
-                        {isSelected ? '✓ Selecionado' : `Selecionar ${plan.name}`}
+                        Selecionar {plan.name}
                       </button>
                     )}
                   </div>
@@ -319,6 +343,37 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
               );
             })}
           </div>
+
+          {/* Barra de Ação Dinâmica / Destaque do Plano Selecionado */}
+          {isAuthenticated && workspace && !isSelectedCurrent && (
+            <div ref={actionSectionRef} className="plan-selection-summary-bar">
+              <div className="summary-bar-text">
+                <span className="summary-bar-label">Plano selecionado para alteração:</span>
+                <span className="summary-bar-target">
+                  <strong>{selectedPlan}</strong> ({PLANS.find((p: PlanOption) => p.key === selectedPlan)?.price})
+                </span>
+              </div>
+              {selectedPlan !== 'Starter' ? (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm btn-pulse-checkout"
+                  onClick={handleProceedToStripe}
+                  disabled={loading}
+                >
+                  💳 Ir para Checkout Seguro ({selectedPlan})
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm text-danger"
+                  onClick={() => setConfirmCancel(true)}
+                  disabled={loading}
+                >
+                  Confirmar Retorno ao Gratuito
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Seção de Cancelamento / Downgrade quando seleciona Starter estando em plano pago */}
           {isAuthenticated && isDowngradeToStarter && (

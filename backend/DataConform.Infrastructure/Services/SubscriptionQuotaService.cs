@@ -22,19 +22,19 @@ public class SubscriptionQuotaService : ISubscriptionQuotaService
 
         if (workspace == null)
         {
-            return QuotaCheckResult.Denied("Workspace not found.");
+            return QuotaCheckResult.Denied("Organização (Workspace) não encontrada.");
         }
 
         if (workspace.MonthlyFilesUploaded >= workspace.MonthlyFilesQuota)
         {
             return QuotaCheckResult.Denied(
-                $"Monthly file upload limit reached ({workspace.MonthlyFilesUploaded}/{workspace.MonthlyFilesQuota} files). Upgrade your plan to continue uploading.");
+                $"Limite mensal de envio de arquivos atingido ({workspace.MonthlyFilesUploaded}/{workspace.MonthlyFilesQuota} arquivos). Faça upgrade do seu plano para continuar enviando.");
         }
 
         if (rowCount > workspace.MaxRowsPerFile)
         {
             return QuotaCheckResult.Denied(
-                $"File contains {rowCount} rows, exceeding your plan's limit of {workspace.MaxRowsPerFile} rows per file. Upgrade your plan to validate larger datasets.");
+                $"O arquivo contém {rowCount:N0} linhas, excedendo o teto de {workspace.MaxRowsPerFile:N0} linhas por arquivo do plano atual ({workspace.Plan}). Para validar bases com esse volume, faça upgrade para o plano Professional ou Enterprise.");
         }
 
         return QuotaCheckResult.Success();
