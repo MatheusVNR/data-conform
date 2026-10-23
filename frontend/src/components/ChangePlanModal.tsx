@@ -104,6 +104,10 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
   const [confirmCancel, setConfirmCancel] = useState<boolean>(false);
   const [manualSessionId, setManualSessionId] = useState<string>('');
   const [showManualSession, setShowManualSession] = useState<boolean>(false);
+  const [showB2bBilling, setShowB2bBilling] = useState<boolean>(false);
+  const [b2bCnpj, setB2bCnpj] = useState<string>('');
+  const [b2bEmail, setB2bEmail] = useState<string>('');
+  const [b2bSubmitted, setB2bSubmitted] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const actionSectionRef = useRef<HTMLDivElement>(null);
@@ -452,6 +456,83 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
               )}
             </div>
           )}
+
+          {/* Faturamento Corporativo B2B Brasil (PIX, Boleto e Nota Fiscal NFS-e) */}
+          <div className="b2b-corporate-billing-box">
+            <div className="b2b-billing-header">
+              <div className="b2b-billing-info">
+                <strong>🏢 Precisa de Faturamento Corporativo (PIX, Boleto ou Nota Fiscal NFS-e)?</strong>
+                <span>
+                  Atendemos consultorias de implantação e médias/grandes empresas com emissão de NFS-e, cadastro de fornecedor e faturamento PJ.
+                </span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-outline btn-xs"
+                onClick={() => {
+                  setShowB2bBilling((prev: boolean) => !prev);
+                  setB2bSubmitted(false);
+                }}
+              >
+                {showB2bBilling ? 'Ocultar formulário B2B' : 'Solicitar Faturamento PJ / PIX'}
+              </button>
+            </div>
+
+            {showB2bBilling && (
+              <div className="b2b-billing-form-area">
+                {b2bSubmitted ? (
+                  <div className="b2b-billing-success">
+                    <strong>✓ Solicitação Corporativa Gerada!</strong>
+                    <p>
+                      Os dados para faturamento do plano <strong>{selectedPlan === 'Starter' ? 'Professional' : selectedPlan}</strong> (CNPJ: <strong>{b2bCnpj}</strong>) foram copiados para sua área de transferência e formatados para nosso canal comercial (<code>comercial@dataconform.com.br</code>).
+                    </p>
+                  </div>
+                ) : (
+                  <div className="b2b-inputs-row">
+                    <input
+                      type="text"
+                      className="form-input form-input-sm"
+                      placeholder="CNPJ da Empresa (ex: 12.345.678/0001-95)"
+                      value={b2bCnpj}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setB2bCnpj(e.target.value)}
+                    />
+                    <input
+                      type="email"
+                      className="form-input form-input-sm"
+                      placeholder="E-mail do Financeiro / Compras"
+                      value={b2bEmail}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setB2bEmail(e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        if (!b2bCnpj.trim() || !b2bEmail.trim()) {
+                          setError('Informe o CNPJ e o e-mail financeiro para solicitar faturamento B2B.');
+                          return;
+                        }
+                        setError(null);
+                        const targetPlanName: string = selectedPlan === 'Starter' ? 'Professional' : selectedPlan;
+                        const subject: string = encodeURIComponent(
+                          `[Faturamento B2B DataConform] Plano ${targetPlanName} - CNPJ ${b2bCnpj.trim()}`
+                        );
+                        const body: string = encodeURIComponent(
+                          `Olá Equipe Comercial DataConform,\n\nSolicito proposta e faturamento corporativo (PIX / Boleto + Emissão de NFS-e):\n\n- Plano Desejado: ${targetPlanName}\n- Organização: ${workspace?.name ?? 'Nova Organização'}\n- CNPJ para Faturamento: ${b2bCnpj.trim()}\n- E-mail Financeiro: ${b2bEmail.trim()}\n\nAguardo retorno com os dados para pagamento e emissão da Nota Fiscal.`
+                        );
+                        void navigator.clipboard?.writeText(
+                          `Solicitação B2B DataConform | Plano: ${targetPlanName} | CNPJ: ${b2bCnpj.trim()} | Financeiro: ${b2bEmail.trim()}`
+                        );
+                        setB2bSubmitted(true);
+                        window.open(`mailto:comercial@dataconform.com.br?subject=${subject}&body=${body}`, '_blank');
+                      }}
+                    >
+                      Gerar Pedido PJ (PIX / NFS-e)
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="modal-footer">
