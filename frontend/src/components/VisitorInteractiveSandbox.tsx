@@ -251,8 +251,13 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
         {/* Lado Esquerdo: Planilha CSV de Entrada */}
         <div className="sandbox-pane sandbox-input-pane">
           <div className="sandbox-pane-header">
-            <span className="pane-step-badge">1. Entrada Bruta (.CSV)</span>
-            <code className="pane-filename">{report.originalFileName}</code>
+            <div className="pane-header-title-wrap">
+              <span className="pane-step-badge">1. Entrada Bruta (.CSV)</span>
+              <span className="pane-mobile-swipe-hint">⟷ Arraste p/ ver colunas</span>
+            </div>
+            <code className="pane-filename" title={report.originalFileName}>
+              {report.originalFileName}
+            </code>
           </div>
           <div className="sandbox-code-box">
             {scenario.sampleCsvLines.map((line: string, lineIdx: number) => {
@@ -273,14 +278,16 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
           </div>
           <div className="sandbox-input-legend">
             <span className="legend-item"><span className="dot dot-valid" /> Linha #1: Íntegra</span>
-            <span className="legend-item"><span className="dot dot-error" /> Demais linhas: Erros ocultos que travariam o {scenario.erpLabel}</span>
+            <span className="legend-item"><span className="dot dot-error" /> Demais: Erros bloqueados</span>
           </div>
         </div>
 
         {/* Lado Direito: Diagnóstico Automático */}
         <div className="sandbox-pane sandbox-output-pane">
           <div className="sandbox-pane-header">
-            <span className="pane-step-badge pane-badge-output">2. Laudo Instantâneo DataConform</span>
+            <div className="pane-header-title-wrap">
+              <span className="pane-step-badge pane-badge-output">2. Laudo Instantâneo DataConform</span>
+            </div>
             <span className="badge badge-failed">{report.issues.length} desvios bloqueados</span>
           </div>
 
