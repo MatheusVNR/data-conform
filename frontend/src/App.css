@@ -4710,3 +4710,19 @@ input::-ms-clear {
   max-width: 440px;
   margin: 0;
 }
+
+.feedback-success-actions {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.feedback-success-actions .btn {
+  min-width: 200px;
+  padding: 0.65rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  justify-content: center;
+}

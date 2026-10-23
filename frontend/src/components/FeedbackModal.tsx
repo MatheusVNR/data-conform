@@ -169,7 +169,7 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
             <p>
               Registramos sua sugestão com sucesso. Nossa equipe analisa cada contribuição para evoluir os dicionários, as regras de negócio e a experiência do produto.
             </p>
-            <div className="modal-footer" style={{ borderTop: 'none', padding: '1rem 0 0 0' }}>
+            <div className="feedback-success-actions">
               <button type="button" className="btn btn-primary" onClick={handleResetAndClose}>
                 Voltar à Plataforma
               </button>
