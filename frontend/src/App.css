@@ -3178,6 +3178,17 @@ input::-ms-clear {
   border-radius: 4px;
 }
 
+.visitor-erp-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
 /* ==========================================================
    ERP Preset Preview Box (Create Project Modal)
    ========================================================== */

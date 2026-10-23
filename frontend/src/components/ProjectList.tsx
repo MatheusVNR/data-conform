@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FC } from 'react';
 import type { ImportProjectDto } from '../types';
 
@@ -19,8 +19,22 @@ export const ProjectList: FC<ProjectListProps> = ({
   onOpenCreateProject,
   onDeleteProject,
 }) => {
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<ImportProjectDto | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape' && deletingId === null) {
+        setProjectToDelete(null);
+      }
+    };
+    if (projectToDelete) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [projectToDelete, deletingId]);
 
   const handleDelete = async (e: React.MouseEvent, projectId: string): Promise<void> => {
     e.stopPropagation();
@@ -28,7 +42,7 @@ export const ProjectList: FC<ProjectListProps> = ({
     try {
       setDeletingId(projectId);
       await onDeleteProject(projectId);
-      setConfirmDeleteId(null);
+      setProjectToDelete(null);
     } finally {
       setDeletingId(null);
     }
@@ -143,34 +157,15 @@ export const ProjectList: FC<ProjectListProps> = ({
                   </span>
                   <div className="project-card-actions" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                     {onDeleteProject && (
-                      confirmDeleteId === proj.id ? (
-                        <div className="inline-delete-confirm">
-                          <button
-                            type="button"
-                            className="btn btn-danger btn-xs"
-                            disabled={deletingId === proj.id}
-                            onClick={(e: React.MouseEvent) => handleDelete(e, proj.id)}
-                          >
-                            {deletingId === proj.id ? '...' : 'Excluir'}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-xs"
-                            onClick={() => setConfirmDeleteId(null)}
-                          >
-                            Não
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          className="btn btn-ghost-danger btn-xs"
-                          title="Excluir projeto"
-                          onClick={() => setConfirmDeleteId(proj.id)}
-                        >
-                          🗑
-                        </button>
-                      )
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-xs btn-file-delete-trigger"
+                        title="Excluir projeto e histórico"
+                        disabled={deletingId === proj.id}
+                        onClick={() => setProjectToDelete(proj)}
+                      >
+                        ✕ Excluir
+                      </button>
                     )}
                     <button
                       type="button"
@@ -184,6 +179,88 @@ export const ProjectList: FC<ProjectListProps> = ({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Modal Corporativo de Confirmação de Exclusão de Projeto */}
+      {projectToDelete && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+            if (e.target === e.currentTarget && deletingId === null) {
+              setProjectToDelete(null);
+            }
+          }}
+        >
+          <div className="modal-card modal-delete-confirm-card">
+            <div className="modal-header">
+              <div className="modal-delete-title-row">
+                <span className="modal-delete-icon">⚠️</span>
+                <div>
+                  <h3>Excluir Projeto de Importação</h3>
+                  <span className="modal-subtitle-inline">Esta ação é irreversível</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setProjectToDelete(null)}
+                disabled={deletingId !== null}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <p className="delete-confirm-text">
+                Você tem certeza que deseja excluir o projeto <strong>{projectToDelete.name}</strong>?
+              </p>
+
+              <div className="delete-file-meta-box">
+                <div className="delete-meta-row">
+                  <span className="meta-label">Nome do Projeto:</span>
+                  <strong className="meta-val">{projectToDelete.name}</strong>
+                </div>
+                <div className="delete-meta-row">
+                  <span className="meta-label">Sistema / ERP:</span>
+                  <span className="meta-val">{projectToDelete.targetSystem || 'Genérico'}</span>
+                </div>
+                <div className="delete-meta-row">
+                  <span className="meta-label">Arquivos Vinculados:</span>
+                  <span className="meta-val">{projectToDelete.filesCount} arquivo(s)</span>
+                </div>
+                <div className="delete-meta-row">
+                  <span className="meta-label">Data de Criação:</span>
+                  <span className="meta-val">{new Date(projectToDelete.createdAt).toLocaleDateString('pt-BR')}</span>
+                </div>
+              </div>
+
+              <div className="delete-warning-note">
+                ⚠️ A exclusão deste projeto removerá permanentemente todos os lotes de arquivos anexados e seus respectivos laudos técnicos de auditoria. O evento será registrado na trilha de auditoria corporativa.
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setProjectToDelete(null)}
+                disabled={deletingId !== null}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={(e: React.MouseEvent) => handleDelete(e, projectToDelete.id)}
+                disabled={deletingId !== null}
+              >
+                {deletingId === projectToDelete.id ? 'Excluindo...' : 'Sim, Excluir Projeto'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

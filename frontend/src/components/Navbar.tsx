@@ -113,7 +113,7 @@ export const Navbar: FC<NavbarProps> = ({
 
           <button
             type="button"
-            className="nav-link-btn"
+            className="nav-link-btn btn-plan-trigger"
             onClick={onOpenPlanModal}
             title="Consultar planos comerciais e capacidade operacional"
           >

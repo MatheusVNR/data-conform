@@ -641,6 +641,37 @@ export const App: FC = () => {
                           </span>
                         ))}
                       </div>
+                      <div className="visitor-erp-card-actions">
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-xs"
+                          onClick={() => {
+                            const blob: Blob = new Blob(['\uFEFF' + preset.sampleCsvContent], {
+                              type: 'text/csv;charset=utf-8;',
+                            });
+                            const url: string = URL.createObjectURL(blob);
+                            const link: HTMLAnchorElement = document.createElement('a');
+                            link.href = url;
+                            link.setAttribute('download', preset.sampleFileName);
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            URL.revokeObjectURL(url);
+                          }}
+                          title={`Baixar planilha modelo homologada para ${preset.systemName}`}
+                        >
+                          ⬇ Baixar Modelo CSV
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-xs"
+                          onClick={() => {
+                            document.querySelector('.visitor-sandbox-section')?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                        >
+                          ⚡ Testar no Simulador ↑
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
