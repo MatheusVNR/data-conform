@@ -33,6 +33,7 @@ public class DataConformDbContext : DbContext, IApplicationDbContext
     public DbSet<ValidationIssue> ValidationIssues => Set<ValidationIssue>();
     public DbSet<User> Users => Set<User>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<CustomerFeedback> CustomerFeedbacks => Set<CustomerFeedback>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

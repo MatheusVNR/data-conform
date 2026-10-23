@@ -351,3 +351,23 @@ export interface ValidationReportDto {
   processedAt?: string | null;
   issues: ValidationIssueDto[];
 }
+
+export interface CreateCustomerFeedbackRequest {
+  workspaceId?: string;
+  category: string;
+  rating: number;
+  subject: string;
+  message: string;
+  contactEmail?: string;
+}
+
+export interface CustomerFeedbackDto {
+  id: string;
+  workspaceId?: string | null;
+  category: string;
+  rating: number;
+  subject: string;
+  message: string;
+  contactEmail?: string | null;
+  createdAt: string;
+}

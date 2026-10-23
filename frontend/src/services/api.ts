@@ -2,8 +2,10 @@ import type {
   AuditLogDto,
   AuthResponseDto,
   ConfirmCheckoutRequest,
+  CreateCustomerFeedbackRequest,
   CreateImportProjectRequest,
   CreateWorkspaceRequest,
+  CustomerFeedbackDto,
   ImportFileDto,
   ImportProjectDto,
   LoginRequestDto,
@@ -331,4 +333,33 @@ export async function deleteFile(fileId: string): Promise<void> {
     const errorData = (await response.json().catch(() => ({}))) as { error?: string };
     throw new Error(errorData.error || 'Erro ao excluir arquivo');
   }
+}
+
+export async function createCustomerFeedback(
+  data: CreateCustomerFeedbackRequest
+): Promise<CustomerFeedbackDto> {
+  const response: Response = await fetch(`${API_BASE_URL}/feedbacks`, {
+    method: 'POST',
+    headers: getHeaders(true),
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
+    throw new Error(errorData.error || 'Erro ao enviar feedback para o servidor.');
+  }
+
+  return (await response.json()) as CustomerFeedbackDto;
+}
+
+export async function getCustomerFeedbacks(): Promise<CustomerFeedbackDto[]> {
+  const response: Response = await fetch(`${API_BASE_URL}/feedbacks`, {
+    headers: getHeaders(false),
+  });
+
+  if (!response.ok) {
+    throw new Error('Falha ao carregar lista de feedbacks.');
+  }
+
+  return (await response.json()) as CustomerFeedbackDto[];
 }

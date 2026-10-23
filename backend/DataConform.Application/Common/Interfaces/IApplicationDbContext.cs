@@ -11,6 +11,7 @@ public interface IApplicationDbContext
     DbSet<ValidationIssue> ValidationIssues { get; }
     DbSet<User> Users { get; }
     DbSet<AuditLog> AuditLogs { get; }
+    DbSet<CustomerFeedback> CustomerFeedbacks { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

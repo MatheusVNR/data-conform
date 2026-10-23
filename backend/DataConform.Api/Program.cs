@@ -232,5 +232,6 @@ apiGroup.MapWorkspaceEndpoints();
 apiGroup.MapProjectEndpoints();
 apiGroup.MapFileEndpoints();
 apiGroup.MapAuditEndpoints();
+apiGroup.MapFeedbackEndpoints();
 
 app.Run();

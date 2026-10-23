@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FC, FormEvent } from 'react';
 import type { AuthResponseDto, WorkspaceDto } from '../types';
+import { createCustomerFeedback } from '../services/api';
 
 interface FeedbackModalProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
   const [message, setMessage] = useState<string>('');
   const [contactEmail, setContactEmail] = useState<string>(currentUser?.email ?? '');
   const [submitted, setSubmitted] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -59,14 +61,27 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: FormEvent): void => {
+  const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!message.trim()) {
       setError('Por favor, descreva seu feedback ou sugestão.');
       return;
     }
 
+    setIsSubmitting(true);
+    setError(null);
+
     try {
+      await createCustomerFeedback({
+        workspaceId: activeWorkspace?.id,
+        category,
+        rating,
+        subject: subject.trim() || 'Feedback Geral',
+        message: message.trim(),
+        contactEmail: contactEmail.trim() || undefined,
+      });
+
+      // Salva também localmente para histórico do usuário
       const newFeedback: FeedbackSubmission = {
         id: `fbk-${Date.now()}`,
         category,
@@ -87,7 +102,31 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
       setSubmitted(true);
       setError(null);
     } catch {
-      setError('Não foi possível gravar o feedback localmente.');
+      // Fallback local se estiver offline
+      try {
+        const newFeedback: FeedbackSubmission = {
+          id: `fbk-${Date.now()}`,
+          category,
+          rating,
+          subject: subject.trim() || 'Feedback Geral',
+          message: message.trim(),
+          contactEmail: contactEmail.trim(),
+          workspaceName: activeWorkspace?.name,
+          workspaceId: activeWorkspace?.id,
+          createdAt: new Date().toISOString(),
+        };
+
+        const existingRaw: string | null = localStorage.getItem(FEEDBACK_STORAGE_KEY);
+        const existing: FeedbackSubmission[] = existingRaw ? (JSON.parse(existingRaw) as FeedbackSubmission[]) : [];
+        existing.unshift(newFeedback);
+        localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(existing));
+
+        setSubmitted(true);
+      } catch {
+        setError('Não foi possível gravar o feedback. Tente novamente.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -246,11 +285,11 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
             </div>
 
             <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" onClick={handleResetAndClose}>
+              <button type="button" className="btn btn-secondary" onClick={handleResetAndClose} disabled={isSubmitting}>
                 Cancelar
               </button>
-              <button type="submit" className="btn btn-primary">
-                🚀 Enviar Feedback
+              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                {isSubmitting ? 'Enviando...' : '🚀 Enviar Feedback'}
               </button>
             </div>
           </form>

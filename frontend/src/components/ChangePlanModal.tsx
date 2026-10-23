@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { FC } from 'react';
 import type { WorkspaceDto, WorkspaceQuotaDto } from '../types';
 import { PlanTierLabels } from '../types';
-import { changeWorkspacePlan, confirmStripeCheckout } from '../services/api';
+import { changeWorkspacePlan, confirmStripeCheckout, createCustomerFeedback } from '../services/api';
 
 interface ChangePlanModalProps {
   isOpen: boolean;
@@ -216,7 +216,19 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
         cancelFeedbackText.trim() ? ` Feedback: "${cancelFeedbackText.trim()}".` : ''
       }`;
 
-      // Persiste histórico de churn localmente para auditoria e inteligência de produto
+      // Persiste histórico de churn no banco de dados e localmente para auditoria e inteligência de produto
+      try {
+        await createCustomerFeedback({
+          workspaceId: workspace.id,
+          category: 'churn-survey',
+          rating: 0,
+          subject: `Cancelamento de Assinatura (${currentPlanLabel} -> Starter)`,
+          message: `Motivo: ${readableReason}.${cancelFeedbackText.trim() ? ` Detalhes: "${cancelFeedbackText.trim()}".` : ''}`,
+        });
+      } catch {
+        // Ignora erro de rede para não travar o cancelamento
+      }
+
       try {
         const storedFeedbacks: unknown[] = JSON.parse(
           localStorage.getItem('dataconform_churn_surveys') ?? '[]'
