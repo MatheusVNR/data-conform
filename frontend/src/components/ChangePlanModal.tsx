@@ -167,11 +167,11 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
       JSON.stringify({
         workspaceId: workspace.id,
         plan: selectedPlan,
-        timestamp: Date.now(),
+        timestamp: new Date().getTime(),
       })
     );
 
-    window.location.href = targetUrl;
+    window.location.assign(targetUrl);
   };
 
   const handleManualSessionVerify = async (): Promise<void> => {

@@ -1,10 +1,7 @@
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
 using DataConform.Application.Common.Interfaces;
 using DataConform.Application.Common.Models;
 using DataConform.Application.Workspaces.Dtos;
-using DataConform.Domain.Entities;
-using DataConform.Domain.Enums;
 
 namespace DataConform.Api.Endpoints;
 
@@ -85,341 +82,124 @@ public static class WorkspaceEndpoints
     private static async Task<IResult> CreateWorkspace(
         CreateWorkspaceRequest request,
         ClaimsPrincipal claimsPrincipal,
-        IApplicationDbContext dbContext,
-        IAuditService auditService,
+        IWorkspaceService workspaceService,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return Results.BadRequest(new { error = "O nome da organização / workspace é obrigatório." });
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Slug))
-        {
-            return Results.BadRequest(new { error = "O identificador (slug) do workspace é obrigatório." });
-        }
-
-        string normalizedSlug = request.Slug.Trim().ToLowerInvariant();
-
-        bool slugExists = await dbContext.Workspaces
-            .IgnoreQueryFilters()
-            .AnyAsync(w => w.Slug == normalizedSlug, cancellationToken);
-
-        if (slugExists)
-        {
-            return Results.Conflict(new { error = $"Já existe uma organização registrada com o identificador '{normalizedSlug}'." });
-        }
-
-        Workspace workspace = new Workspace
-        {
-            Name = request.Name.Trim(),
-            Slug = normalizedSlug,
-            Plan = PlanTier.Starter,
-            MonthlyFilesQuota = 20,
-            MaxRowsPerFile = 1000
-        };
-
-        dbContext.Workspaces.Add(workspace);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
         Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
-
-        await auditService.LogAsync(
-            workspace.Id,
+        ServiceResult<WorkspaceDto> result = await workspaceService.CreateWorkspaceAsync(
+            request,
             currentUserId,
-            "CreateWorkspace",
-            "Workspace",
-            workspace.Id.ToString(),
-            $"Organização '{workspace.Name}' ({workspace.Slug}) criada no plano Starter.",
             cancellationToken);
 
-        WorkspaceDto dto = new WorkspaceDto
-        {
-            Id = workspace.Id,
-            Name = workspace.Name,
-            Slug = workspace.Slug,
-            CreatedAt = workspace.CreatedAt,
-            UpdatedAt = workspace.UpdatedAt,
-            ProjectsCount = 0,
-            Plan = workspace.Plan,
-            MonthlyFilesUploaded = workspace.MonthlyFilesUploaded,
-            MonthlyFilesQuota = workspace.MonthlyFilesQuota,
-            MaxRowsPerFile = workspace.MaxRowsPerFile
-        };
-
-        return Results.Created($"/api/workspaces/{workspace.Id}", dto);
+        return result.ToHttpResult(result.Data != null ? $"/api/workspaces/{result.Data.Id}" : null);
     }
 
     private static async Task<IResult> GetWorkspaces(
         ClaimsPrincipal claimsPrincipal,
-        IApplicationDbContext dbContext,
+        IWorkspaceService workspaceService,
         CancellationToken cancellationToken)
     {
-        HashSet<Guid> allowedWorkspaceIds = await TenantAuthorizationHelper.GetAllowedWorkspaceIdsAsync(
-            claimsPrincipal,
-            dbContext,
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
+
+        List<WorkspaceDto> list = await workspaceService.GetWorkspacesAsync(
+            userId,
+            primaryWorkspaceId,
             cancellationToken);
-
-        // Isolamento Multi-tenant estrito: visitantes não autenticados não visualizam organizações de terceiros
-        if (allowedWorkspaceIds.Count == 0)
-        {
-            List<WorkspaceDto> emptyList = new List<WorkspaceDto>();
-            return Results.Ok(emptyList);
-        }
-
-        List<WorkspaceDto> list = await dbContext.Workspaces
-            .Where(w => allowedWorkspaceIds.Contains(w.Id))
-            .OrderByDescending(w => w.CreatedAt)
-            .Select(w => new WorkspaceDto
-            {
-                Id = w.Id,
-                Name = w.Name,
-                Slug = w.Slug,
-                CreatedAt = w.CreatedAt,
-                UpdatedAt = w.UpdatedAt,
-                ProjectsCount = w.Projects.Count,
-                Plan = w.Plan,
-                MonthlyFilesUploaded = w.MonthlyFilesUploaded,
-                MonthlyFilesQuota = w.MonthlyFilesQuota,
-                MaxRowsPerFile = w.MaxRowsPerFile
-            })
-            .ToListAsync(cancellationToken);
 
         return Results.Ok(list);
     }
 
     private static async Task<IResult> GetWorkspaceById(
         Guid id,
-        ClaimsPrincipal claimsPrincipal,
-        IApplicationDbContext dbContext,
+        IWorkspaceService workspaceService,
         CancellationToken cancellationToken)
     {
-        Workspace? workspace = await dbContext.Workspaces
-            .Include(w => w.Projects)
-            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
-
-        if (workspace == null)
-        {
-            return Results.NotFound(new { error = "Organização / Workspace não encontrado." });
-        }
-
-        WorkspaceDto dto = new WorkspaceDto
-        {
-            Id = workspace.Id,
-            Name = workspace.Name,
-            Slug = workspace.Slug,
-            CreatedAt = workspace.CreatedAt,
-            UpdatedAt = workspace.UpdatedAt,
-            ProjectsCount = workspace.Projects.Count,
-            Plan = workspace.Plan,
-            MonthlyFilesUploaded = workspace.MonthlyFilesUploaded,
-            MonthlyFilesQuota = workspace.MonthlyFilesQuota,
-            MaxRowsPerFile = workspace.MaxRowsPerFile
-        };
-
-        return Results.Ok(dto);
+        ServiceResult<WorkspaceDto> result = await workspaceService.GetWorkspaceByIdAsync(id, cancellationToken);
+        return result.ToHttpResult();
     }
 
     private static async Task<IResult> UpdateWorkspace(
         Guid id,
         UpdateWorkspaceRequest request,
         ClaimsPrincipal claimsPrincipal,
-        IApplicationDbContext dbContext,
-        IAuditService auditService,
+        IWorkspaceService workspaceService,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            return Results.BadRequest(new { error = "O novo nome da organização é obrigatório." });
-        }
-
-        Workspace? workspace = await dbContext.Workspaces
-            .Include(w => w.Projects)
-            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
-
-        if (workspace == null)
-        {
-            return Results.NotFound(new { error = "Organização / Workspace não encontrado." });
-        }
-
-        string oldName = workspace.Name;
-        workspace.Name = request.Name.Trim();
-        workspace.UpdatedAt = DateTimeOffset.UtcNow;
-
-        await dbContext.SaveChangesAsync(cancellationToken);
-
         Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
-
-        await auditService.LogAsync(
-            workspace.Id,
+        ServiceResult<WorkspaceDto> result = await workspaceService.UpdateWorkspaceAsync(
+            id,
+            request,
             currentUserId,
-            "UpdateWorkspace",
-            "Workspace",
-            workspace.Id.ToString(),
-            $"Nome da organização alterado de '{oldName}' para '{workspace.Name}'.",
             cancellationToken);
 
-        WorkspaceDto dto = new WorkspaceDto
-        {
-            Id = workspace.Id,
-            Name = workspace.Name,
-            Slug = workspace.Slug,
-            CreatedAt = workspace.CreatedAt,
-            UpdatedAt = workspace.UpdatedAt,
-            ProjectsCount = workspace.Projects.Count,
-            Plan = workspace.Plan,
-            MonthlyFilesUploaded = workspace.MonthlyFilesUploaded,
-            MonthlyFilesQuota = workspace.MonthlyFilesQuota,
-            MaxRowsPerFile = workspace.MaxRowsPerFile
-        };
-
-        return Results.Ok(dto);
+        return result.ToHttpResult();
     }
 
     private static async Task<IResult> DeleteWorkspace(
         Guid id,
-        IApplicationDbContext dbContext,
+        IWorkspaceService workspaceService,
         CancellationToken cancellationToken)
     {
-        Workspace? workspace = await dbContext.Workspaces
-            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
-
-        if (workspace == null)
-        {
-            return Results.NotFound(new { error = "Organização / Workspace não encontrado." });
-        }
-
-        bool hasBoundUsers = await dbContext.Users.AnyAsync(u => u.WorkspaceId == id, cancellationToken);
-        if (hasBoundUsers)
-        {
-            return Results.BadRequest(new { error = "Esta é a organização matriz vinculada à sua conta e não pode ser removida. Você pode renomeá-la livremente acima." });
-        }
-
-        // DataConformDbContext.SaveChangesAsync remove automaticamente todos os arquivos físicos vinculados após o commit da transação
-        dbContext.Workspaces.Remove(workspace);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return Results.NoContent();
+        ServiceResult result = await workspaceService.DeleteWorkspaceAsync(id, cancellationToken);
+        return result.ToHttpResult();
     }
 
     private static async Task<IResult> GetWorkspaceQuota(
         Guid id,
         ClaimsPrincipal claimsPrincipal,
-        IApplicationDbContext dbContext,
-        ISubscriptionQuotaService quotaService,
+        IWorkspaceService workspaceService,
         CancellationToken cancellationToken)
     {
-        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, id, dbContext, cancellationToken);
-        if (!canAccess)
-        {
-            return TenantAuthorizationHelper.ForbiddenTenantResult();
-        }
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
 
-        try
-        {
-            WorkspaceQuotaDto quota = await quotaService.GetWorkspaceQuotaAsync(id, cancellationToken);
-            return Results.Ok(quota);
-        }
-        catch (KeyNotFoundException)
-        {
-            return Results.NotFound(new { error = "Workspace não encontrado." });
-        }
+        ServiceResult<WorkspaceQuotaDto> result = await workspaceService.GetWorkspaceQuotaAsync(
+            id,
+            userId,
+            primaryWorkspaceId,
+            cancellationToken);
+
+        return result.ToHttpResult();
     }
 
     private static async Task<IResult> ChangeWorkspacePlan(
         Guid id,
         UpdatePlanRequest request,
         ClaimsPrincipal claimsPrincipal,
-        IApplicationDbContext dbContext,
-        ISubscriptionQuotaService quotaService,
-        IAuditService auditService,
+        IWorkspaceService workspaceService,
         CancellationToken cancellationToken)
     {
-        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, id, dbContext, cancellationToken);
-        if (!canAccess)
-        {
-            return TenantAuthorizationHelper.ForbiddenTenantResult();
-        }
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
 
-        if (request.Plan != PlanTier.Starter)
-        {
-            return Results.BadRequest(new
-            {
-                error = "A ativação dos planos comerciais Professional e Enterprise requer confirmação de pagamento via Stripe."
-            });
-        }
+        ServiceResult<WorkspaceQuotaDto> result = await workspaceService.ChangeWorkspacePlanAsync(
+            id,
+            request,
+            userId,
+            primaryWorkspaceId,
+            cancellationToken);
 
-        try
-        {
-            WorkspaceQuotaDto updated = await quotaService.UpdatePlanAsync(id, request.Plan, cancellationToken);
-            string actionDetail = $"Assinatura retornada ao plano gratuito Starter.{(string.IsNullOrWhiteSpace(request.Reason) ? "" : $" Motivo: {request.Reason}")}";
-
-            Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
-            await auditService.LogAsync(id, currentUserId, "ChangePlan", "Workspace", id.ToString(), actionDetail, cancellationToken);
-            return Results.Ok(updated);
-        }
-        catch (KeyNotFoundException)
-        {
-            return Results.NotFound(new { error = "Workspace não encontrado." });
-        }
+        return result.ToHttpResult();
     }
 
     private static async Task<IResult> ConfirmStripeCheckout(
         Guid id,
         ConfirmCheckoutRequest request,
         ClaimsPrincipal claimsPrincipal,
-        IApplicationDbContext dbContext,
-        ISubscriptionQuotaService quotaService,
-        IAuditService auditService,
+        IWorkspaceService workspaceService,
         CancellationToken cancellationToken)
     {
-        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, id, dbContext, cancellationToken);
-        if (!canAccess)
-        {
-            return TenantAuthorizationHelper.ForbiddenTenantResult();
-        }
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
 
-        if (string.IsNullOrWhiteSpace(request.SessionId) ||
-            (!request.SessionId.StartsWith("cs_test_", StringComparison.OrdinalIgnoreCase) &&
-             !request.SessionId.StartsWith("cs_live_", StringComparison.OrdinalIgnoreCase)) ||
-            request.SessionId.Length < 16)
-        {
-            return Results.BadRequest(new { error = "Sessão de checkout do Stripe inválida ou ausente." });
-        }
+        ServiceResult<WorkspaceQuotaDto> result = await workspaceService.ConfirmStripeCheckoutAsync(
+            id,
+            request,
+            userId,
+            primaryWorkspaceId,
+            cancellationToken);
 
-        if (request.Plan == PlanTier.Starter)
-        {
-            return Results.BadRequest(new { error = "O checkout de pagamento destina-se apenas aos planos Professional ou Enterprise." });
-        }
-
-        string trimmedSessionId = request.SessionId.Trim();
-
-        // Garantir idempotência: verificar se o session_id já foi utilizado anteriormente
-        bool alreadyProcessed = await dbContext.AuditLogs
-            .AnyAsync(a => a.Action == "StripeCheckoutConfirmed" && a.EntityId == trimmedSessionId, cancellationToken);
-
-        try
-        {
-            WorkspaceQuotaDto updated = await quotaService.UpdatePlanAsync(id, request.Plan, cancellationToken);
-
-            if (!alreadyProcessed)
-            {
-                Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
-                await auditService.LogAsync(
-                    id,
-                    currentUserId,
-                    "StripeCheckoutConfirmed",
-                    "StripeSession",
-                    trimmedSessionId,
-                    $"Pagamento confirmado via Stripe (Sessão: {trimmedSessionId[..Math.Min(18, trimmedSessionId.Length)]}...). Plano ativado: {request.Plan}.",
-                    cancellationToken);
-            }
-
-            return Results.Ok(updated);
-        }
-        catch (KeyNotFoundException)
-        {
-            return Results.NotFound(new { error = "Workspace não encontrado." });
-        }
+        return result.ToHttpResult();
     }
 }

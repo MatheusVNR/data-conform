@@ -1,6 +1,4 @@
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
-using DataConform.Application.Common.Interfaces;
 
 namespace DataConform.Api.Endpoints;
 
@@ -24,62 +22,6 @@ public static class TenantAuthorizationHelper
             return parsedWorkspaceId;
         }
         return null;
-    }
-
-    public static async Task<HashSet<Guid>> GetAllowedWorkspaceIdsAsync(
-        ClaimsPrincipal principal,
-        IApplicationDbContext dbContext,
-        CancellationToken cancellationToken)
-    {
-        HashSet<Guid> allowedWorkspaceIds = new HashSet<Guid>();
-
-        Guid? userId = GetAuthenticatedUserId(principal);
-        Guid? primaryWorkspaceId = GetPrimaryWorkspaceId(principal);
-
-        if (userId == null && primaryWorkspaceId == null)
-        {
-            return allowedWorkspaceIds;
-        }
-
-        if (primaryWorkspaceId.HasValue)
-        {
-            allowedWorkspaceIds.Add(primaryWorkspaceId.Value);
-        }
-
-        if (userId.HasValue)
-        {
-            Guid? userDbWorkspaceId = await dbContext.Users
-                .Where(u => u.Id == userId.Value)
-                .Select(u => (Guid?)u.WorkspaceId)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (userDbWorkspaceId.HasValue)
-            {
-                allowedWorkspaceIds.Add(userDbWorkspaceId.Value);
-            }
-
-            List<Guid> createdWorkspaceIds = await dbContext.AuditLogs
-                .Where(a => a.UserId == userId.Value && a.Action == "CreateWorkspace")
-                .Select(a => a.WorkspaceId)
-                .ToListAsync(cancellationToken);
-
-            foreach (Guid createdId in createdWorkspaceIds)
-            {
-                allowedWorkspaceIds.Add(createdId);
-            }
-        }
-
-        return allowedWorkspaceIds;
-    }
-
-    public static async Task<bool> CanAccessWorkspaceAsync(
-        ClaimsPrincipal principal,
-        Guid workspaceId,
-        IApplicationDbContext dbContext,
-        CancellationToken cancellationToken)
-    {
-        HashSet<Guid> allowedWorkspaceIds = await GetAllowedWorkspaceIdsAsync(principal, dbContext, cancellationToken);
-        return allowedWorkspaceIds.Contains(workspaceId);
     }
 
     public static IResult ForbiddenTenantResult()

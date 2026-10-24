@@ -1,17 +1,13 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using DataConform.Application.Common.Interfaces;
+using DataConform.Application.Common.Models;
 using DataConform.Application.Files.Dtos;
-using DataConform.Domain.Entities;
-using DataConform.Domain.Enums;
 
 namespace DataConform.Api.Endpoints;
 
 public static class FileEndpoints
 {
-    private const long MaxFileSizeBytes = 50 * 1024 * 1024; // 50 MB teto global
-
     public static RouteGroupBuilder MapFileEndpoints(this IEndpointRouteBuilder routes)
     {
         RouteGroupBuilder group = routes.MapGroup("/api")
@@ -54,414 +50,95 @@ public static class FileEndpoints
         return group;
     }
 
-    private static Guid? TryGetAuthenticatedUserId(ClaimsPrincipal principal)
-    {
-        return TenantAuthorizationHelper.GetAuthenticatedUserId(principal);
-    }
-
     private static async Task<IResult> UploadFile(
         Guid projectId,
         IFormFile? file,
         ClaimsPrincipal claimsPrincipal,
-        IApplicationDbContext dbContext,
-        IFileStorageService fileStorage,
-        ISubscriptionQuotaService quotaService,
-        IAuditService auditService,
+        IFileService fileService,
         CancellationToken cancellationToken)
     {
-        if (file == null || file.Length == 0)
-        {
-            return Results.BadRequest(new { error = "Nenhum arquivo foi enviado ou o arquivo está vazio." });
-        }
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
 
-        if (file.Length > MaxFileSizeBytes)
-        {
-            return Results.BadRequest(new { error = $"O tamanho do arquivo excede o teto máximo permitido de {MaxFileSizeBytes / (1024 * 1024)} MB." });
-        }
+        using Stream? stream = file != null && file.Length > 0 ? file.OpenReadStream() : null;
 
-        string originalFileName = Path.GetFileName(file.FileName);
-        string extension = Path.GetExtension(originalFileName).ToLowerInvariant();
-
-        if (extension != ".csv" && extension != ".txt")
-        {
-            return Results.BadRequest(new { error = "Formato de arquivo não suportado. Por favor, envie um arquivo delimitado .csv ou .txt." });
-        }
-
-        ImportProject? project = await dbContext.ImportProjects
-            .Include(p => p.Workspace)
-            .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
-
-        if (project == null)
-        {
-            return Results.NotFound(new { error = "Projeto de importação informado não foi encontrado." });
-        }
-
-        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, project.WorkspaceId, dbContext, cancellationToken);
-        if (!canAccess)
-        {
-            return TenantAuthorizationHelper.ForbiddenTenantResult();
-        }
-
-        long maxPlanSizeBytes = project.Workspace.Plan switch
-        {
-            PlanTier.Enterprise => 50L * 1024L * 1024L,
-            PlanTier.Professional => 25L * 1024L * 1024L,
-            _ => 5L * 1024L * 1024L
-        };
-
-        if (file.Length > maxPlanSizeBytes)
-        {
-            long maxMb = maxPlanSizeBytes / (1024L * 1024L);
-            return Results.BadRequest(new
-            {
-                error = $"O arquivo enviado ({file.Length / 1024} KB) excede o limite de {maxMb} MB por arquivo do seu plano ({project.Workspace.Plan}). Faça upgrade para enviar lotes maiores."
-            });
-        }
-
-        int dataRowCount = 0;
-        using (Stream countStream = file.OpenReadStream())
-        using (StreamReader countReader = new StreamReader(countStream, leaveOpen: false))
-        {
-            bool isHeaderLine = true;
-            string? currentLine;
-            while ((currentLine = await countReader.ReadLineAsync(cancellationToken)) != null)
-            {
-                if (string.IsNullOrWhiteSpace(currentLine))
-                {
-                    continue;
-                }
-
-                if (isHeaderLine)
-                {
-                    isHeaderLine = false;
-                    continue;
-                }
-
-                dataRowCount++;
-            }
-        }
-
-        DataConform.Application.Common.Models.QuotaCheckResult quotaCheck = await quotaService.CheckUploadQuotaAsync(project.WorkspaceId, dataRowCount, cancellationToken);
-        if (!quotaCheck.IsAllowed)
-        {
-            return Results.Problem(
-                statusCode: StatusCodes.Status403Forbidden,
-                title: "Limite do plano atingido",
-                detail: quotaCheck.Reason);
-        }
-
-        using Stream fileStream = file.OpenReadStream();
-        string storedFileName = await fileStorage.SaveFileAsync(fileStream, originalFileName, cancellationToken);
-
-        ImportFile importFile = new ImportFile
-        {
-            ProjectId = projectId,
-            OriginalFileName = originalFileName,
-            StoredFileName = storedFileName,
-            ContentType = file.ContentType ?? "text/csv",
-            ByteSize = file.Length,
-            TotalRows = dataRowCount,
-            Status = FileStatus.Pending
-        };
-
-        dbContext.ImportFiles.Add(importFile);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
-
-        await quotaService.IncrementFilesUploadedAsync(project.WorkspaceId, cancellationToken);
-        await auditService.LogAsync(
-            project.WorkspaceId,
-            currentUserId,
-            "UploadFile",
-            "ImportFile",
-            importFile.Id.ToString(),
-            $"Arquivo '{originalFileName}' ({file.Length} bytes) enviado com sucesso.",
+        ServiceResult<ImportFileDto> result = await fileService.UploadFileAsync(
+            projectId,
+            file?.FileName,
+            file?.ContentType,
+            file?.Length ?? 0,
+            stream,
+            userId,
+            primaryWorkspaceId,
             cancellationToken);
 
-        ImportFileDto dto = new ImportFileDto
-        {
-            Id = importFile.Id,
-            ProjectId = importFile.ProjectId,
-            OriginalFileName = importFile.OriginalFileName,
-            ContentType = importFile.ContentType,
-            ByteSize = importFile.ByteSize,
-            Status = importFile.Status,
-            TotalRows = importFile.TotalRows,
-            ValidRows = importFile.ValidRows,
-            ErrorRows = importFile.ErrorRows,
-            CreatedAt = importFile.CreatedAt,
-            ProcessedAt = importFile.ProcessedAt
-        };
-
-        return Results.Created($"/api/files/{importFile.Id}/report", dto);
+        return result.ToHttpResult(result.Data != null ? $"/api/files/{result.Data.Id}/report" : null);
     }
 
     private static async Task<IResult> GetFilesByProject(
         Guid projectId,
         ClaimsPrincipal claimsPrincipal,
-        IApplicationDbContext dbContext,
+        IFileService fileService,
         CancellationToken cancellationToken)
     {
-        ImportProject? project = await dbContext.ImportProjects
-            .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
 
-        if (project == null)
-        {
-            return Results.NotFound(new { error = "Projeto de importação não encontrado." });
-        }
+        ServiceResult<List<ImportFileDto>> result = await fileService.GetFilesByProjectAsync(
+            projectId,
+            userId,
+            primaryWorkspaceId,
+            cancellationToken);
 
-        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, project.WorkspaceId, dbContext, cancellationToken);
-        if (!canAccess)
-        {
-            return TenantAuthorizationHelper.ForbiddenTenantResult();
-        }
-
-        List<ImportFileDto> list = await dbContext.ImportFiles
-            .Where(f => f.ProjectId == projectId)
-            .OrderByDescending(f => f.CreatedAt)
-            .Select(f => new ImportFileDto
-            {
-                Id = f.Id,
-                ProjectId = f.ProjectId,
-                OriginalFileName = f.OriginalFileName,
-                ContentType = f.ContentType,
-                ByteSize = f.ByteSize,
-                Status = f.Status,
-                TotalRows = f.TotalRows,
-                ValidRows = f.ValidRows,
-                ErrorRows = f.ErrorRows,
-                CreatedAt = f.CreatedAt,
-                ProcessedAt = f.ProcessedAt
-            })
-            .ToListAsync(cancellationToken);
-
-        return Results.Ok(list);
+        return result.ToHttpResult();
     }
 
     private static async Task<IResult> ValidateFile(
         Guid fileId,
         [FromQuery] string? requiredColumns,
         ClaimsPrincipal claimsPrincipal,
-        IApplicationDbContext dbContext,
-        IFileStorageService fileStorage,
-        ICsvValidatorService validatorService,
-        ISubscriptionQuotaService quotaService,
-        IAuditService auditService,
+        IFileService fileService,
         CancellationToken cancellationToken)
     {
-        ImportFile? importFile = await dbContext.ImportFiles
-            .Include(f => f.ValidationIssues)
-            .FirstOrDefaultAsync(f => f.Id == fileId, cancellationToken);
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
 
-        if (importFile == null)
-        {
-            return Results.NotFound(new { error = "Arquivo informado não foi encontrado." });
-        }
+        ServiceResult<ValidationReportDto> result = await fileService.ValidateFileAsync(
+            fileId,
+            requiredColumns,
+            userId,
+            primaryWorkspaceId,
+            cancellationToken);
 
-        ImportProject? project = await dbContext.ImportProjects
-            .FirstOrDefaultAsync(p => p.Id == importFile.ProjectId, cancellationToken);
-
-        if (project == null)
-        {
-            return Results.NotFound(new { error = "Projeto de importação não encontrado." });
-        }
-
-        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, project.WorkspaceId, dbContext, cancellationToken);
-        if (!canAccess)
-        {
-            return TenantAuthorizationHelper.ForbiddenTenantResult();
-        }
-
-        if (importFile.Status == FileStatus.Processing)
-        {
-            return Results.Conflict(new { error = "Este arquivo já está sendo processado no momento. Aguarde a conclusão." });
-        }
-
-        importFile.Status = FileStatus.Processing;
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        string[]? requiredColumnsList = null;
-        if (!string.IsNullOrWhiteSpace(requiredColumns))
-        {
-            requiredColumnsList = requiredColumns.Split(',')
-                .Select(c => c.Trim())
-                .Where(c => !string.IsNullOrEmpty(c))
-                .ToArray();
-        }
-
-        try
-        {
-            using Stream contentStream = await fileStorage.GetFileStreamAsync(importFile.StoredFileName, cancellationToken);
-            FileValidationResult validationResult = await validatorService.ValidateCsvStreamAsync(
-                contentStream,
-                importFile.Id,
-                requiredColumnsList,
-                cancellationToken);
-
-            DataConform.Application.Common.Models.QuotaCheckResult rowQuotaCheck = await quotaService.CheckUploadQuotaAsync(
-                project.WorkspaceId,
-                validationResult.TotalRows,
-                cancellationToken);
-
-            if (!rowQuotaCheck.IsAllowed)
-            {
-                importFile.Status = FileStatus.Failed;
-                await dbContext.SaveChangesAsync(cancellationToken);
-                return Results.Problem(
-                    statusCode: StatusCodes.Status403Forbidden,
-                    title: "Limite de linhas do plano excedido",
-                    detail: rowQuotaCheck.Reason);
-            }
-
-            // Remover inconsistências anteriores caso revalide
-            if (importFile.ValidationIssues.Count > 0)
-            {
-                dbContext.ValidationIssues.RemoveRange(importFile.ValidationIssues);
-            }
-
-            foreach (ValidationIssue issue in validationResult.Issues)
-            {
-                dbContext.ValidationIssues.Add(issue);
-            }
-
-            importFile.Status = FileStatus.Completed;
-            importFile.TotalRows = validationResult.TotalRows;
-            importFile.ValidRows = validationResult.ValidRows;
-            importFile.ErrorRows = validationResult.ErrorRows;
-            importFile.ProcessedAt = DateTimeOffset.UtcNow;
-
-            await dbContext.SaveChangesAsync(cancellationToken);
-
-            Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
-            await auditService.LogAsync(
-                project.WorkspaceId,
-                currentUserId,
-                "ValidateFile",
-                "ImportFile",
-                importFile.Id.ToString(),
-                $"Arquivo validado: {validationResult.TotalRows} linhas, {validationResult.Issues.Count} inconsistências.",
-                cancellationToken);
-
-            ValidationReportDto report = new ValidationReportDto
-            {
-                FileId = importFile.Id,
-                OriginalFileName = importFile.OriginalFileName,
-                Status = importFile.Status,
-                TotalRows = validationResult.TotalRows,
-                ValidRows = validationResult.ValidRows,
-                ErrorRows = validationResult.ErrorRows,
-                ProcessedAt = importFile.ProcessedAt,
-                Issues = validationResult.Issues.Select(i => new ValidationIssueDto
-                {
-                    Id = i.Id,
-                    RowNumber = i.RowNumber,
-                    ColumnName = i.ColumnName,
-                    IssueCode = i.IssueCode,
-                    Message = i.Message,
-                    Severity = i.Severity,
-                    RawValue = i.RawValue,
-                    CreatedAt = i.CreatedAt
-                }).ToList()
-            };
-
-            return Results.Ok(report);
-        }
-        catch (Exception)
-        {
-            importFile.Status = FileStatus.Failed;
-            await dbContext.SaveChangesAsync(cancellationToken);
-            return Results.Problem(
-                title: "Falha ao processar o arquivo",
-                detail: "Não foi possível concluir a leitura do arquivo enviado. Verifique se a planilha está íntegra e no formato CSV esperado.",
-                statusCode: StatusCodes.Status500InternalServerError);
-        }
+        return result.ToHttpResult();
     }
 
     private static async Task<IResult> GetValidationReport(
         Guid fileId,
         ClaimsPrincipal claimsPrincipal,
-        IApplicationDbContext dbContext,
+        IFileService fileService,
         CancellationToken cancellationToken)
     {
-        ImportFile? importFile = await dbContext.ImportFiles
-            .Include(f => f.Project)
-            .Include(f => f.ValidationIssues)
-            .FirstOrDefaultAsync(f => f.Id == fileId, cancellationToken);
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
 
-        if (importFile == null)
-        {
-            return Results.NotFound(new { error = "Arquivo informado não foi encontrado." });
-        }
+        ServiceResult<ValidationReportDto> result = await fileService.GetValidationReportAsync(
+            fileId,
+            userId,
+            primaryWorkspaceId,
+            cancellationToken);
 
-        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, importFile.Project.WorkspaceId, dbContext, cancellationToken);
-        if (!canAccess)
-        {
-            return TenantAuthorizationHelper.ForbiddenTenantResult();
-        }
-
-        ValidationReportDto report = new ValidationReportDto
-        {
-            FileId = importFile.Id,
-            OriginalFileName = importFile.OriginalFileName,
-            Status = importFile.Status,
-            TotalRows = importFile.TotalRows ?? 0,
-            ValidRows = importFile.ValidRows ?? 0,
-            ErrorRows = importFile.ErrorRows ?? 0,
-            ProcessedAt = importFile.ProcessedAt,
-            Issues = importFile.ValidationIssues
-                .OrderBy(i => i.RowNumber)
-                .Select(i => new ValidationIssueDto
-                {
-                    Id = i.Id,
-                    RowNumber = i.RowNumber,
-                    ColumnName = i.ColumnName,
-                    IssueCode = i.IssueCode,
-                    Message = i.Message,
-                    Severity = i.Severity,
-                    RawValue = i.RawValue,
-                    CreatedAt = i.CreatedAt
-                })
-                .ToList()
-        };
-
-        return Results.Ok(report);
+        return result.ToHttpResult();
     }
 
     private static async Task<IResult> DeleteFile(
         Guid fileId,
         ClaimsPrincipal claimsPrincipal,
-        IApplicationDbContext dbContext,
-        IAuditService auditService,
+        IFileService fileService,
         CancellationToken cancellationToken)
     {
-        ImportFile? importFile = await dbContext.ImportFiles
-            .Include(f => f.Project)
-            .FirstOrDefaultAsync(f => f.Id == fileId, cancellationToken);
-
-        if (importFile == null)
-        {
-            return Results.NotFound(new { error = "Arquivo informado não foi encontrado." });
-        }
-
-        Guid workspaceId = importFile.Project.WorkspaceId;
-        string fileName = importFile.OriginalFileName;
-
-        // DataConformDbContext.SaveChangesAsync remove automaticamente o arquivo físico em disco após o commit da transação
-        dbContext.ImportFiles.Remove(importFile);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        Guid? currentUserId = TryGetAuthenticatedUserId(claimsPrincipal);
-
-        await auditService.LogAsync(
-            workspaceId,
-            currentUserId,
-            "DeleteFile",
-            "ImportFile",
-            fileId.ToString(),
-            $"Arquivo '{fileName}' foi excluído do projeto.",
-            cancellationToken);
-
-        return Results.NoContent();
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        ServiceResult result = await fileService.DeleteFileAsync(fileId, userId, cancellationToken);
+        return result.ToHttpResult();
     }
 }

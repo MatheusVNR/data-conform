@@ -1,6 +1,4 @@
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore;
 using DataConform.Application.Common.Interfaces;
 using DataConform.Application.Common.Models;
 
@@ -25,32 +23,19 @@ public static class AuditEndpoints
     private static async Task<IResult> GetWorkspaceAuditLogs(
         Guid workspaceId,
         ClaimsPrincipal claimsPrincipal,
-        IApplicationDbContext dbContext,
+        IAuditService auditService,
         CancellationToken cancellationToken)
     {
-        bool canAccess = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(claimsPrincipal, workspaceId, dbContext, cancellationToken);
-        if (!canAccess)
-        {
-            return TenantAuthorizationHelper.ForbiddenTenantResult();
-        }
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
 
-        List<AuditLogDto> list = await dbContext.AuditLogs
-            .Where(a => a.WorkspaceId == workspaceId)
-            .OrderByDescending(a => a.CreatedAt)
-            .Take(50)
-            .Select(a => new AuditLogDto
-            {
-                Id = a.Id,
-                WorkspaceId = a.WorkspaceId,
-                UserId = a.UserId,
-                Action = a.Action,
-                EntityName = a.EntityName,
-                EntityId = a.EntityId,
-                Details = a.Details,
-                CreatedAt = a.CreatedAt
-            })
-            .ToListAsync(cancellationToken);
+        ServiceResult<List<AuditLogDto>> result = await auditService.GetWorkspaceAuditLogsAsync(
+            workspaceId,
+            userId,
+            primaryWorkspaceId,
+            50,
+            cancellationToken);
 
-        return Results.Ok(list);
+        return result.ToHttpResult();
     }
 }

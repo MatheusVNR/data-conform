@@ -1,7 +1,7 @@
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
 using DataConform.Api.Endpoints;
 using DataConform.Application.Common.Interfaces;
+using DataConform.Application.Common.Models;
 
 namespace DataConform.Api.Filters;
 
@@ -9,7 +9,7 @@ namespace DataConform.Api.Filters;
 /// Filtro global de isolamento Multi-Tenant (Cross-Cutting Concern).
 /// Intercepta automaticamente qualquer endpoint que receba identificadores de recursos
 /// (workspaceId, projectId, fileId ou id em /api/workspaces/{id}) e valida a propriedade
-/// do locatário antes da execução do handler, impedindo IDOR por arquitetura em novas rotas.
+/// do locatário via ITenantAccessService antes da execução do handler, impedindo IDOR por arquitetura.
 /// </summary>
 public class TenantIsolationEndpointFilter : IEndpointFilter
 {
@@ -31,8 +31,11 @@ public class TenantIsolationEndpointFilter : IEndpointFilter
             return await next(context);
         }
 
-        IApplicationDbContext dbContext = httpContext.RequestServices.GetRequiredService<IApplicationDbContext>();
+        ITenantAccessService tenantAccessService = httpContext.RequestServices.GetRequiredService<ITenantAccessService>();
         CancellationToken cancellationToken = httpContext.RequestAborted;
+
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(principal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(principal);
 
         // 1. Validação automática de rotas com {workspaceId} ou /api/workspaces/{id}
         object? rawWorkspaceId = null;
@@ -42,24 +45,15 @@ public class TenantIsolationEndpointFilter : IEndpointFilter
 
         if (hasWorkspaceRouteId && rawWorkspaceId != null && Guid.TryParse(rawWorkspaceId.ToString(), out Guid workspaceId))
         {
-            bool workspaceExists = await dbContext.Workspaces
-                .IgnoreQueryFilters()
-                .AnyAsync(w => w.Id == workspaceId, cancellationToken);
-
-            if (!workspaceExists)
-            {
-                return Results.NotFound(new { error = "Workspace não encontrado." });
-            }
-
-            bool canAccessWorkspace = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(
-                principal,
+            ServiceResult accessResult = await tenantAccessService.VerifyWorkspaceAccessAsync(
+                userId,
+                primaryWorkspaceId,
                 workspaceId,
-                dbContext,
                 cancellationToken);
 
-            if (!canAccessWorkspace)
+            if (!accessResult.IsSuccess)
             {
-                return TenantAuthorizationHelper.ForbiddenTenantResult();
+                return accessResult.ToHttpResult();
             }
         }
 
@@ -68,26 +62,15 @@ public class TenantIsolationEndpointFilter : IEndpointFilter
             rawProjectId != null &&
             Guid.TryParse(rawProjectId.ToString(), out Guid projectId))
         {
-            Guid? projectWorkspaceId = await dbContext.ImportProjects
-                .IgnoreQueryFilters()
-                .Where(p => p.Id == projectId)
-                .Select(p => (Guid?)p.WorkspaceId)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (!projectWorkspaceId.HasValue)
-            {
-                return Results.NotFound(new { error = "Projeto de importação não encontrado." });
-            }
-
-            bool canAccessProject = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(
-                principal,
-                projectWorkspaceId.Value,
-                dbContext,
+            ServiceResult accessResult = await tenantAccessService.VerifyProjectAccessAsync(
+                userId,
+                primaryWorkspaceId,
+                projectId,
                 cancellationToken);
 
-            if (!canAccessProject)
+            if (!accessResult.IsSuccess)
             {
-                return TenantAuthorizationHelper.ForbiddenTenantResult();
+                return accessResult.ToHttpResult();
             }
         }
 
@@ -96,26 +79,15 @@ public class TenantIsolationEndpointFilter : IEndpointFilter
             rawFileId != null &&
             Guid.TryParse(rawFileId.ToString(), out Guid fileId))
         {
-            Guid? fileWorkspaceId = await dbContext.ImportFiles
-                .IgnoreQueryFilters()
-                .Where(f => f.Id == fileId)
-                .Select(f => (Guid?)f.Project.WorkspaceId)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (!fileWorkspaceId.HasValue)
-            {
-                return Results.NotFound(new { error = "Arquivo informado não foi encontrado." });
-            }
-
-            bool canAccessFile = await TenantAuthorizationHelper.CanAccessWorkspaceAsync(
-                principal,
-                fileWorkspaceId.Value,
-                dbContext,
+            ServiceResult accessResult = await tenantAccessService.VerifyFileAccessAsync(
+                userId,
+                primaryWorkspaceId,
+                fileId,
                 cancellationToken);
 
-            if (!canAccessFile)
+            if (!accessResult.IsSuccess)
             {
-                return TenantAuthorizationHelper.ForbiddenTenantResult();
+                return accessResult.ToHttpResult();
             }
         }
 

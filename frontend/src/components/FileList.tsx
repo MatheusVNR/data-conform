@@ -30,12 +30,7 @@ export const FileList: FC<FileListProps> = ({
   const erpPreset: ErpPresetConfig = getErpPreset(targetSystem);
   const totalFiles: number = files.length;
   const totalPages: number = Math.max(1, Math.ceil(totalFiles / pageSize));
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
+  const safeCurrentPage: number = Math.min(currentPage, totalPages);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -146,7 +141,7 @@ export const FileList: FC<FileListProps> = ({
     );
   }
 
-  const startIndex: number = (currentPage - 1) * pageSize;
+  const startIndex: number = (safeCurrentPage - 1) * pageSize;
   const displayedFiles: ImportFileDto[] = files.slice(startIndex, startIndex + pageSize);
   const endIndex: number = Math.min(startIndex + pageSize, totalFiles);
 
@@ -253,8 +248,8 @@ export const FileList: FC<FileListProps> = ({
             <button
               type="button"
               className="btn btn-outline btn-xs"
-              onClick={() => setCurrentPage((p: number) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(Math.max(1, safeCurrentPage - 1))}
+              disabled={safeCurrentPage === 1}
             >
               ← Anterior
             </button>
@@ -263,7 +258,7 @@ export const FileList: FC<FileListProps> = ({
                 <button
                   key={pageNum}
                   type="button"
-                  className={`btn btn-xs ${currentPage === pageNum ? 'btn-primary' : 'btn-outline'}`}
+                  className={`btn btn-xs ${safeCurrentPage === pageNum ? 'btn-primary' : 'btn-outline'}`}
                   onClick={() => setCurrentPage(pageNum)}
                 >
                   {pageNum}
@@ -273,8 +268,8 @@ export const FileList: FC<FileListProps> = ({
             <button
               type="button"
               className="btn btn-outline btn-xs"
-              onClick={() => setCurrentPage((p: number) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(Math.min(totalPages, safeCurrentPage + 1))}
+              disabled={safeCurrentPage === totalPages}
             >
               Próxima →
             </button>

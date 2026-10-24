@@ -34,16 +34,12 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
   const [rating, setRating] = useState<number>(5);
   const [subject, setSubject] = useState<string>('');
   const [message, setMessage] = useState<string>('');
-  const [contactEmail, setContactEmail] = useState<string>(currentUser?.email ?? '');
+  const [customEmail, setCustomEmail] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (currentUser?.email && !contactEmail) {
-      setContactEmail(currentUser.email);
-    }
-  }, [currentUser, contactEmail]);
+  const contactEmail: string = customEmail !== null ? customEmail : (currentUser?.email ?? '');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -276,7 +272,7 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
                   className="form-input"
                   placeholder="seu.email@empresa.com.br"
                   value={contactEmail}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setContactEmail(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomEmail(e.target.value)}
                 />
                 <span className="form-hint">
                   Preencha caso queira receber um retorno direto da nossa equipe técnica sobre a sugestão.
