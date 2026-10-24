@@ -65,6 +65,7 @@ public class WorkspaceService : IWorkspaceService
         {
             Name = request.Name.Trim(),
             Slug = normalizedSlug,
+            OwnerUserId = currentUserId,
             Plan = PlanTier.Starter,
             MonthlyFilesQuota = 20,
             MaxRowsPerFile = 1000
@@ -72,6 +73,11 @@ public class WorkspaceService : IWorkspaceService
 
         _dbContext.Workspaces.Add(workspace);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (currentUserId.HasValue)
+        {
+            _tenantAccessService.InvalidateUserWorkspacesCache(currentUserId.Value);
+        }
 
         await _auditService.LogAsync(
             workspace.Id,
@@ -208,8 +214,14 @@ public class WorkspaceService : IWorkspaceService
                 "Esta é a organização matriz vinculada à sua conta e não pode ser removida. Você pode renomeá-la livremente acima.");
         }
 
+        Guid? ownerUserId = workspace.OwnerUserId;
         _dbContext.Workspaces.Remove(workspace);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (ownerUserId.HasValue)
+        {
+            _tenantAccessService.InvalidateUserWorkspacesCache(ownerUserId.Value);
+        }
 
         return ServiceResult.Success();
     }

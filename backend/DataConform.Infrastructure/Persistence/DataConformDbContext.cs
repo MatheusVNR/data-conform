@@ -44,12 +44,14 @@ public class DataConformDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<Workspace>().HasQueryFilter(w =>
             CurrentUserId == null ||
             w.Id == CurrentWorkspaceId ||
+            w.OwnerUserId == CurrentUserId ||
             w.Users.Any(u => u.Id == CurrentUserId) ||
             w.AuditLogs.Any(a => a.UserId == CurrentUserId && a.Action == "CreateWorkspace"));
 
         modelBuilder.Entity<ImportProject>().HasQueryFilter(p =>
             CurrentUserId == null ||
             p.WorkspaceId == CurrentWorkspaceId ||
+            p.Workspace.OwnerUserId == CurrentUserId ||
             p.Workspace.Users.Any(u => u.Id == CurrentUserId) ||
             p.Workspace.AuditLogs.Any(a => a.UserId == CurrentUserId && a.Action == "CreateWorkspace"));
 

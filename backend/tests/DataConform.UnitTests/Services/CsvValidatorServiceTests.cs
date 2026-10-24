@@ -269,4 +269,21 @@ public class CsvValidatorServiceTests
         Assert.Contains(result.Issues, i => i.ColumnName == "A2_LC" && i.IssueCode == "NEGATIVE_AMOUNT_NOT_ALLOWED");
         Assert.Contains(result.Issues, i => i.ColumnName == "A2_EST" && i.IssueCode == "INVALID_UF_CODE");
     }
+
+    [Fact]
+    public async Task ValidateCsvStreamAsync_DuplicateRows_ShouldDetectDuplicateRowUsingXxHash64()
+    {
+        string csvContent = "Nome,Idade\n" +
+                            "Carlos,30\n" +
+                            "carlos,30\n" +
+                            "Ana,25";
+        byte[] bytes = Encoding.UTF8.GetBytes(csvContent);
+        using MemoryStream stream = new MemoryStream(bytes);
+        Guid fileId = Guid.NewGuid();
+
+        FileValidationResult result = await _validator.ValidateCsvStreamAsync(stream, fileId);
+
+        Assert.Equal(3, result.TotalRows);
+        Assert.Contains(result.Issues, i => i.IssueCode == "DUPLICATE_ROW" && i.RowNumber == 3);
+    }
 }

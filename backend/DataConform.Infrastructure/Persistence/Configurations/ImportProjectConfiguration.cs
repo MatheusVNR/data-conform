@@ -25,6 +25,8 @@ public class ImportProjectConfiguration : IEntityTypeConfiguration<ImportProject
         builder.Property(p => p.CreatedAt)
             .IsRequired();
 
+        builder.HasIndex(p => new { p.WorkspaceId, p.CreatedAt });
+
         builder.HasMany(p => p.Files)
             .WithOne(f => f.Project)
             .HasForeignKey(f => f.ProjectId)

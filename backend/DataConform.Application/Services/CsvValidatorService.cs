@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO.Hashing;
 using System.Text;
 using System.Text.RegularExpressions;
 using DataConform.Application.Common.Interfaces;
@@ -37,7 +38,7 @@ public class CsvValidatorService : ICsvValidatorService
         CancellationToken cancellationToken = default)
     {
         FileValidationResult result = new FileValidationResult();
-        HashSet<string> seenRows = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        HashSet<ulong> seenRowHashes = new HashSet<ulong>();
 
         using StreamReader reader = new StreamReader(csvStream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 4096, leaveOpen: true);
 
@@ -159,7 +160,8 @@ public class CsvValidatorService : ICsvValidatorService
             }
 
             string normalizedLine = line.Trim();
-            if (!seenRows.Add(normalizedLine))
+            ulong rowHash = XxHash64.HashToUInt64(Encoding.UTF8.GetBytes(normalizedLine.ToUpperInvariant()));
+            if (!seenRowHashes.Add(rowHash))
             {
                 result.Issues.Add(new ValidationIssue
                 {

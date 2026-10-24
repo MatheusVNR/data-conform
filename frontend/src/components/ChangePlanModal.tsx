@@ -31,7 +31,8 @@ const STRIPE_PRO_URL: string =
   ((import.meta.env.VITE_STRIPE_PRO_URL as string | undefined) ?? '').trim() || DEFAULT_STRIPE_PRO_TEST_URL;
 const STRIPE_ENTERPRISE_URL: string = ((import.meta.env.VITE_STRIPE_ENTERPRISE_URL as string | undefined) ?? '').trim();
 
-export const PENDING_CHECKOUT_STORAGE_KEY: string = 'dataconform_pending_checkout';
+import { PENDING_CHECKOUT_STORAGE_KEY } from '../types';
+export { PENDING_CHECKOUT_STORAGE_KEY };
 
 const PLANS: PlanOption[] = [
   {

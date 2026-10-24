@@ -13,5 +13,7 @@ public interface IApplicationDbContext
     DbSet<AuditLog> AuditLogs { get; }
     DbSet<CustomerFeedback> CustomerFeedbacks { get; }
 
+    Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker ChangeTracker { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

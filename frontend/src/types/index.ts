@@ -1,3 +1,5 @@
+export const PENDING_CHECKOUT_STORAGE_KEY: string = 'dataconform_pending_checkout';
+
 export type FileStatus = 0 | 1 | 2 | 3;
 
 export const FileStatusLabels: Record<FileStatus, string> = {

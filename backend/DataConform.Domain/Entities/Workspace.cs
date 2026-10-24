@@ -11,6 +11,7 @@ public class Workspace
     public DateTimeOffset? UpdatedAt { get; set; }
 
     public PlanTier Plan { get; set; } = PlanTier.Starter;
+    public Guid? OwnerUserId { get; set; }
     public int MonthlyFilesUploaded { get; set; } = 0;
     public int MonthlyFilesQuota { get; set; } = 20;
     public int MaxRowsPerFile { get; set; } = 1000;

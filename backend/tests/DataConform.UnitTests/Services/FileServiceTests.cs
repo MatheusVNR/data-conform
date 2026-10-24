@@ -145,6 +145,107 @@ public class FileServiceTests : IDisposable
         Assert.Equal(ServiceErrorType.Validation, result.ErrorType);
     }
 
+    [Fact]
+    public async Task UploadFileAsync_DisguisedBinaryExecutable_ShouldRejectWithValidationFailure()
+    {
+        using DataConformDbContext context = CreateInMemoryContext();
+        FileService fileService = CreateFileService(context);
+
+        Workspace ws = new Workspace
+        {
+            Id = Guid.NewGuid(),
+            Name = "Security Org",
+            Slug = "security-org",
+            Plan = PlanTier.Starter,
+            MonthlyFilesQuota = 20,
+            MaxRowsPerFile = 1000
+        };
+        ImportProject proj = new ImportProject
+        {
+            Id = Guid.NewGuid(),
+            WorkspaceId = ws.Id,
+            Workspace = ws,
+            Name = "Security Project",
+            TargetSystem = "TOTVS Protheus"
+        };
+        context.Workspaces.Add(ws);
+        context.ImportProjects.Add(proj);
+        await context.SaveChangesAsync();
+
+        byte[] fakeExe = new byte[] { 0x4D, 0x5A, 0x90, 0x00, 0x03, 0x00, 0x00, 0x00 };
+        using MemoryStream stream = new MemoryStream(fakeExe);
+
+        ServiceResult<ImportFileDto> result = await fileService.UploadFileAsync(
+            proj.Id,
+            "disguised.csv",
+            "text/csv",
+            fakeExe.Length,
+            stream,
+            Guid.NewGuid(),
+            ws.Id);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ServiceErrorType.Validation, result.ErrorType);
+        Assert.Contains("binário ou executável", result.ErrorMessage);
+    }
+
+    [Fact]
+    public async Task ValidateFileAsync_DangerousCsvFormulaRawValues_ShouldSanitizeFormulas()
+    {
+        using DataConformDbContext context = CreateInMemoryContext();
+        FileService fileService = CreateFileService(context);
+
+        Workspace ws = new Workspace
+        {
+            Id = Guid.NewGuid(),
+            Name = "Sanitize Org",
+            Slug = "sanitize-org",
+            Plan = PlanTier.Starter,
+            MonthlyFilesQuota = 20,
+            MaxRowsPerFile = 1000
+        };
+        ImportProject proj = new ImportProject
+        {
+            Id = Guid.NewGuid(),
+            WorkspaceId = ws.Id,
+            Workspace = ws,
+            Name = "Sanitize Proj",
+            TargetSystem = "TOTVS Protheus"
+        };
+        context.Workspaces.Add(ws);
+        context.ImportProjects.Add(proj);
+        await context.SaveChangesAsync();
+
+        string maliciousCsv = "A1_COD,A1_NOME,A1_CGC,A1_EMAIL\n" +
+                              "001,Empresa Normal,12.345.678/0001-95,test@example.com\n" +
+                              "002,=cmd|'/C calc'!A0,12.345.678/0001-00,bad-email";
+        byte[] csvBytes = Encoding.UTF8.GetBytes(maliciousCsv);
+        using MemoryStream uploadStream = new MemoryStream(csvBytes);
+        Guid userId = Guid.NewGuid();
+
+        ServiceResult<ImportFileDto> uploadResult = await fileService.UploadFileAsync(
+            proj.Id,
+            "formula_injection.csv",
+            "text/csv",
+            csvBytes.Length,
+            uploadStream,
+            userId,
+            ws.Id);
+
+        Assert.True(uploadResult.IsSuccess);
+
+        ServiceResult<ValidationReportDto> validateResult = await fileService.ValidateFileAsync(
+            uploadResult.Data!.Id,
+            null,
+            userId,
+            ws.Id);
+
+        Assert.True(validateResult.IsSuccess);
+        ValidationIssueDto? formulaIssue = validateResult.Data?.Issues.FirstOrDefault(i => i.IssueCode == "INVALID_DOCUMENT_FORMAT");
+        Assert.NotNull(formulaIssue);
+        Assert.False(formulaIssue.RawValue?.StartsWith("="));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_tempStoragePath))

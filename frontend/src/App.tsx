@@ -1,9 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import type { FC } from 'react';
-import { AuditLogsModal } from './components/AuditLogsModal';
 import { AuthModal } from './components/AuthModal';
-import { ChangePlanModal, PENDING_CHECKOUT_STORAGE_KEY } from './components/ChangePlanModal';
-import { ComplianceRulesModal } from './components/ComplianceRulesModal';
 import { CreateProjectModal } from './components/CreateProjectModal';
 import { FileList } from './components/FileList';
 import { FileUploader } from './components/FileUploader';
@@ -12,7 +9,19 @@ import { ProjectList } from './components/ProjectList';
 import { ValidationReportModal } from './components/ValidationReportModal';
 import { VisitorInteractiveSandbox } from './components/VisitorInteractiveSandbox';
 import { WorkspaceModal } from './components/WorkspaceModal';
-import { FeedbackModal } from './components/FeedbackModal';
+
+const AuditLogsModal = lazy(() =>
+  import('./components/AuditLogsModal').then((m) => ({ default: m.AuditLogsModal }))
+);
+const ChangePlanModal = lazy(() =>
+  import('./components/ChangePlanModal').then((m) => ({ default: m.ChangePlanModal }))
+);
+const ComplianceRulesModal = lazy(() =>
+  import('./components/ComplianceRulesModal').then((m) => ({ default: m.ComplianceRulesModal }))
+);
+const FeedbackModal = lazy(() =>
+  import('./components/FeedbackModal').then((m) => ({ default: m.FeedbackModal }))
+);
 import {
   confirmStripeCheckout,
   createProject,
@@ -43,7 +52,7 @@ import type {
   WorkspaceDto,
   WorkspaceQuotaDto,
 } from './types';
-import { ERP_PRESETS, getErpPreset, PLAN_LIMITS, PlanTierLabels } from './types';
+import { ERP_PRESETS, getErpPreset, PENDING_CHECKOUT_STORAGE_KEY, PLAN_LIMITS, PlanTierLabels } from './types';
 import './App.css';
 
 interface PendingCheckoutData {
@@ -910,33 +919,43 @@ export const App: FC = () => {
         onSuccess={handleAuthSuccess}
       />
 
-      <ChangePlanModal
-        key={`plan-${String(isPlanOpen)}-${activeWorkspace?.id ?? 'none'}-${String(activeWorkspace?.plan ?? '')}`}
-        isOpen={isPlanOpen}
-        workspace={activeWorkspace}
-        isAuthenticated={Boolean(currentUser)}
-        onClose={() => setIsPlanOpen(false)}
-        onPlanChanged={handlePlanChanged}
-        onRequireAuth={() => handleOpenAuth('register')}
-      />
+      <Suspense fallback={null}>
+        {isPlanOpen && (
+          <ChangePlanModal
+            key={`plan-${String(isPlanOpen)}-${activeWorkspace?.id ?? 'none'}-${String(activeWorkspace?.plan ?? '')}`}
+            isOpen={isPlanOpen}
+            workspace={activeWorkspace}
+            isAuthenticated={Boolean(currentUser)}
+            onClose={() => setIsPlanOpen(false)}
+            onPlanChanged={handlePlanChanged}
+            onRequireAuth={() => handleOpenAuth('register')}
+          />
+        )}
 
-      <AuditLogsModal
-        isOpen={isAuditOpen}
-        workspace={activeWorkspace}
-        onClose={() => setIsAuditOpen(false)}
-      />
+        {isAuditOpen && (
+          <AuditLogsModal
+            isOpen={isAuditOpen}
+            workspace={activeWorkspace}
+            onClose={() => setIsAuditOpen(false)}
+          />
+        )}
 
-      <ComplianceRulesModal
-        isOpen={isRulesOpen}
-        onClose={() => setIsRulesOpen(false)}
-      />
+        {isRulesOpen && (
+          <ComplianceRulesModal
+            isOpen={isRulesOpen}
+            onClose={() => setIsRulesOpen(false)}
+          />
+        )}
 
-      <FeedbackModal
-        isOpen={isFeedbackOpen}
-        currentUser={currentUser}
-        activeWorkspace={activeWorkspace}
-        onClose={() => setIsFeedbackOpen(false)}
-      />
+        {isFeedbackOpen && (
+          <FeedbackModal
+            isOpen={isFeedbackOpen}
+            currentUser={currentUser}
+            activeWorkspace={activeWorkspace}
+            onClose={() => setIsFeedbackOpen(false)}
+          />
+        )}
+      </Suspense>
     </div>
   );
 };

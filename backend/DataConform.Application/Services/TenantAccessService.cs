@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using DataConform.Application.Common.Interfaces;
 using DataConform.Application.Common.Models;
 
@@ -8,12 +9,15 @@ public class TenantAccessService : ITenantAccessService
 {
     private const string ForbiddenTitle = "Acesso negado à organização";
     private const string ForbiddenMessage = "Você não possui permissão para visualizar ou modificar recursos desta organização.";
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
 
     private readonly IApplicationDbContext _dbContext;
+    private readonly IMemoryCache? _cache;
 
-    public TenantAccessService(IApplicationDbContext dbContext)
+    public TenantAccessService(IApplicationDbContext dbContext, IMemoryCache? cache = null)
     {
         _dbContext = dbContext;
+        _cache = cache;
     }
 
     public async Task<HashSet<Guid>> GetAllowedWorkspaceIdsAsync(
@@ -21,12 +25,26 @@ public class TenantAccessService : ITenantAccessService
         Guid? primaryWorkspaceId,
         CancellationToken cancellationToken = default)
     {
-        HashSet<Guid> allowedWorkspaceIds = new HashSet<Guid>();
-
         if (userId == null && primaryWorkspaceId == null)
         {
-            return allowedWorkspaceIds;
+            return new HashSet<Guid>();
         }
+
+        if (userId.HasValue && _cache != null)
+        {
+            string cacheKey = $"user_workspaces_{userId.Value}";
+            if (_cache.TryGetValue(cacheKey, out HashSet<Guid>? cachedIds) && cachedIds != null)
+            {
+                HashSet<Guid> combined = new HashSet<Guid>(cachedIds);
+                if (primaryWorkspaceId.HasValue)
+                {
+                    combined.Add(primaryWorkspaceId.Value);
+                }
+                return combined;
+            }
+        }
+
+        HashSet<Guid> allowedWorkspaceIds = new HashSet<Guid>();
 
         if (primaryWorkspaceId.HasValue)
         {
@@ -35,6 +53,8 @@ public class TenantAccessService : ITenantAccessService
 
         if (userId.HasValue)
         {
+            HashSet<Guid> userSpecificIds = new HashSet<Guid>();
+
             Guid? userDbWorkspaceId = await _dbContext.Users
                 .Where(u => u.Id == userId.Value)
                 .Select(u => (Guid?)u.WorkspaceId)
@@ -42,21 +62,56 @@ public class TenantAccessService : ITenantAccessService
 
             if (userDbWorkspaceId.HasValue)
             {
-                allowedWorkspaceIds.Add(userDbWorkspaceId.Value);
+                userSpecificIds.Add(userDbWorkspaceId.Value);
             }
 
-            List<Guid> createdWorkspaceIds = await _dbContext.AuditLogs
-                .Where(a => a.UserId == userId.Value && a.Action == "CreateWorkspace")
-                .Select(a => a.WorkspaceId)
+            List<Guid> ownedWorkspaceIds = await _dbContext.Workspaces
+                .IgnoreQueryFilters()
+                .Where(w => w.OwnerUserId == userId.Value)
+                .Select(w => w.Id)
                 .ToListAsync(cancellationToken);
 
-            foreach (Guid createdId in createdWorkspaceIds)
+            foreach (Guid ownedId in ownedWorkspaceIds)
             {
-                allowedWorkspaceIds.Add(createdId);
+                userSpecificIds.Add(ownedId);
+            }
+
+            // Fallback para auditoria legado caso ainda não tenha sido populado o OwnerUserId
+            if (ownedWorkspaceIds.Count == 0)
+            {
+                List<Guid> createdWorkspaceIds = await _dbContext.AuditLogs
+                    .Where(a => a.UserId == userId.Value && a.Action == "CreateWorkspace")
+                    .Select(a => a.WorkspaceId)
+                    .ToListAsync(cancellationToken);
+
+                foreach (Guid createdId in createdWorkspaceIds)
+                {
+                    userSpecificIds.Add(createdId);
+                }
+            }
+
+            if (_cache != null)
+            {
+                string cacheKey = $"user_workspaces_{userId.Value}";
+                _cache.Set(cacheKey, userSpecificIds, CacheDuration);
+            }
+
+            foreach (Guid id in userSpecificIds)
+            {
+                allowedWorkspaceIds.Add(id);
             }
         }
 
         return allowedWorkspaceIds;
+    }
+
+    public void InvalidateUserWorkspacesCache(Guid userId)
+    {
+        if (_cache != null)
+        {
+            string cacheKey = $"user_workspaces_{userId}";
+            _cache.Remove(cacheKey);
+        }
     }
 
     public async Task<bool> CanAccessWorkspaceAsync(

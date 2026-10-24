@@ -25,6 +25,8 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [copiedSummary, setCopiedSummary] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const pageSize: number = 50;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -70,6 +72,13 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({
       return matchesSeverity && matchesSearch;
     });
   }, [report, severityFilter, searchTerm]);
+
+  const totalIssues: number = filteredIssues.length;
+  const totalPages: number = Math.max(1, Math.ceil(totalIssues / pageSize));
+  const safeCurrentPage: number = Math.min(currentPage, totalPages);
+  const startIndex: number = (safeCurrentPage - 1) * pageSize;
+  const displayedIssues: ValidationIssueDto[] = filteredIssues.slice(startIndex, startIndex + pageSize);
+  const endIndex: number = Math.min(startIndex + pageSize, totalIssues);
 
   const handleExportCsv = (): void => {
     if (!report || filteredIssues.length === 0) return;
@@ -516,21 +525,30 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({
               <button
                 type="button"
                 className={`filter-btn ${severityFilter === 'all' ? 'active' : ''}`}
-                onClick={() => setSeverityFilter('all')}
+                onClick={() => {
+                  setSeverityFilter('all');
+                  setCurrentPage(1);
+                }}
               >
                 Todas ({report.issues.length})
               </button>
               <button
                 type="button"
                 className={`filter-btn filter-error ${severityFilter === '1' ? 'active' : ''}`}
-                onClick={() => setSeverityFilter('1')}
+                onClick={() => {
+                  setSeverityFilter('1');
+                  setCurrentPage(1);
+                }}
               >
                 Erros ({errorCount})
               </button>
               <button
                 type="button"
                 className={`filter-btn filter-warning ${severityFilter === '0' ? 'active' : ''}`}
-                onClick={() => setSeverityFilter('0')}
+                onClick={() => {
+                  setSeverityFilter('0');
+                  setCurrentPage(1);
+                }}
               >
                 Avisos ({warningCount})
               </button>
@@ -542,7 +560,10 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({
                 className="form-input form-input-sm"
                 placeholder="Filtrar por coluna, código ou mensagem..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
           </div>
@@ -576,7 +597,7 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredIssues.map((issue: ValidationIssueDto) => (
+                  {displayedIssues.map((issue: ValidationIssueDto) => (
                     <tr key={issue.id}>
                       <td>
                         <span className="row-badge">#{issue.rowNumber ?? '—'}</span>
@@ -626,6 +647,35 @@ export const ValidationReportModal: FC<ValidationReportModalProps> = ({
                   ))}
                 </tbody>
               </table>
+              {totalIssues > pageSize && (
+                <div className="table-pagination-bar" style={{ marginTop: '12px' }}>
+                  <div className="pagination-info">
+                    Mostrando <strong>{startIndex + 1}</strong>-<strong>{endIndex}</strong> de{' '}
+                    <strong>{totalIssues}</strong> inconsistências
+                  </div>
+                  <div className="pagination-controls">
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-xs"
+                      onClick={() => setCurrentPage(Math.max(1, safeCurrentPage - 1))}
+                      disabled={safeCurrentPage === 1}
+                    >
+                      Anterior
+                    </button>
+                    <span className="pagination-pages" style={{ fontSize: '13px', fontWeight: 600, padding: '0 8px' }}>
+                      Página {safeCurrentPage} de {totalPages}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-xs"
+                      onClick={() => setCurrentPage(Math.min(totalPages, safeCurrentPage + 1))}
+                      disabled={safeCurrentPage === totalPages}
+                    >
+                      Próxima
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

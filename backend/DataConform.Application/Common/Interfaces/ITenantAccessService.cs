@@ -32,4 +32,6 @@ public interface ITenantAccessService
         Guid? primaryWorkspaceId,
         Guid fileId,
         CancellationToken cancellationToken = default);
+
+    void InvalidateUserWorkspacesCache(Guid userId);
 }

@@ -23,6 +23,11 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
         builder.HasIndex(w => w.Slug)
             .IsUnique();
 
+        builder.Property(w => w.OwnerUserId)
+            .IsRequired(false);
+
+        builder.HasIndex(w => w.OwnerUserId);
+
         builder.Property(w => w.CreatedAt)
             .IsRequired();
 

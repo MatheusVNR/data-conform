@@ -1,7 +1,8 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using DataConform.Application.Common.Interfaces;
 using DataConform.Application.Common.Models;
+using DataConform.Application.Common.Security;
 using DataConform.Application.Files.Dtos;
 using DataConform.Domain.Entities;
 using DataConform.Domain.Enums;
@@ -106,13 +107,47 @@ public class FileService : IFileService
                 $"O arquivo enviado ({byteSize / 1024} KB) excede o limite de {maxMb} MB por arquivo do seu plano ({project.Workspace.Plan}). FaÃ§a upgrade para enviar lotes maiores.");
         }
 
-        // Copia para MemoryStream para permitir contagem de linhas e gravaÃ§Ã£o sem fechar o stream original prematuramente
-        using MemoryStream bufferedStream = new MemoryStream();
-        await fileStream.CopyToAsync(bufferedStream, cancellationToken);
-        bufferedStream.Position = 0;
+        int bufferCheckSize = (int)Math.Min(512L, byteSize);
+        byte[] sniffBuffer = new byte[bufferCheckSize];
+        int bytesRead = await fileStream.ReadAsync(sniffBuffer.AsMemory(0, bufferCheckSize), cancellationToken);
+
+        if (IsBinaryOrExecutable(sniffBuffer, bytesRead))
+        {
+            return ServiceResult<ImportFileDto>.Failure(
+                ServiceErrorType.Validation,
+                "Conteúdo binário ou executável detectado. O arquivo deve ser um documento de texto (.csv ou .txt).");
+        }
+
+        Stream streamToSave;
+        bool shouldDisposeStreamToSave = false;
+        if (fileStream.CanSeek)
+        {
+            fileStream.Position = 0;
+            streamToSave = fileStream;
+        }
+        else
+        {
+            MemoryStream prefixStream = new MemoryStream(sniffBuffer, 0, bytesRead, writable: false);
+            streamToSave = new PrefixStream(prefixStream, fileStream, leaveOpen: true);
+            shouldDisposeStreamToSave = true;
+        }
+
+        string storedFileName;
+        try
+        {
+            storedFileName = await _fileStorage.SaveFileAsync(streamToSave, safeFileName, cancellationToken);
+        }
+        finally
+        {
+            if (shouldDisposeStreamToSave)
+            {
+                streamToSave.Dispose();
+            }
+        }
 
         int dataRowCount = 0;
-        using (StreamReader countReader = new StreamReader(bufferedStream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: true))
+        using (Stream diskStream = await _fileStorage.GetFileStreamAsync(storedFileName, cancellationToken))
+        using (StreamReader countReader = new StreamReader(diskStream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 4096))
         {
             bool isHeaderLine = true;
             string? currentLine;
@@ -136,14 +171,12 @@ public class FileService : IFileService
         QuotaCheckResult quotaCheck = await _quotaService.CheckUploadQuotaAsync(project.WorkspaceId, dataRowCount, cancellationToken);
         if (!quotaCheck.IsAllowed)
         {
+            await _fileStorage.DeleteFileAsync(storedFileName, cancellationToken);
             return ServiceResult<ImportFileDto>.Failure(
                 ServiceErrorType.QuotaExceeded,
                 quotaCheck.Reason ?? "Limite do plano atingido.",
                 "Limite do plano atingido");
         }
-
-        bufferedStream.Position = 0;
-        string storedFileName = await _fileStorage.SaveFileAsync(bufferedStream, safeFileName, cancellationToken);
 
         ImportFile importFile = new ImportFile
         {
@@ -300,14 +333,43 @@ public class FileService : IFileService
                     "Limite de linhas do plano excedido");
             }
 
-            if (importFile.ValidationIssues.Count > 0)
+            const int maxPersistedIssues = 1000;
+            List<ValidationIssue> issuesToPersist = validationResult.Issues.Take(maxPersistedIssues).ToList();
+
+            foreach (ValidationIssue issue in issuesToPersist)
             {
-                _dbContext.ValidationIssues.RemoveRange(importFile.ValidationIssues);
+                issue.RawValue = CsvFormulaSanitizer.Sanitize(issue.RawValue);
             }
 
-            foreach (ValidationIssue issue in validationResult.Issues)
+            if (validationResult.Issues.Count > maxPersistedIssues)
             {
-                _dbContext.ValidationIssues.Add(issue);
+                issuesToPersist.Add(new ValidationIssue
+                {
+                    FileId = importFile.Id,
+                    RowNumber = maxPersistedIssues + 1,
+                    ColumnName = "Geral",
+                    IssueCode = "ISSUE_LIMIT_EXCEEDED",
+                    Message = $"Exibindo as primeiras {maxPersistedIssues:N0} inconsistências detectadas de um total superior ({validationResult.Issues.Count:N0}). Corrija os erros listados e reprocesse o arquivo.",
+                    Severity = IssueSeverity.Warning,
+                    RawValue = string.Empty
+                });
+            }
+
+            bool previousAutoDetect = _dbContext.ChangeTracker.AutoDetectChangesEnabled;
+            try
+            {
+                _dbContext.ChangeTracker.AutoDetectChangesEnabled = false;
+
+                if (importFile.ValidationIssues.Count > 0)
+                {
+                    _dbContext.ValidationIssues.RemoveRange(importFile.ValidationIssues);
+                }
+
+                _dbContext.ValidationIssues.AddRange(issuesToPersist);
+            }
+            finally
+            {
+                _dbContext.ChangeTracker.AutoDetectChangesEnabled = previousAutoDetect;
             }
 
             importFile.Status = FileStatus.Completed;
@@ -324,7 +386,7 @@ public class FileService : IFileService
                 "ValidateFile",
                 "ImportFile",
                 importFile.Id.ToString(),
-                $"Arquivo validado: {validationResult.TotalRows} linhas, {validationResult.Issues.Count} inconsistÃªncias.",
+                $"Arquivo validado: {validationResult.TotalRows} linhas, {validationResult.Issues.Count} inconsistências.",
                 cancellationToken);
 
             ValidationReportDto report = new ValidationReportDto
@@ -336,7 +398,7 @@ public class FileService : IFileService
                 ValidRows = validationResult.ValidRows,
                 ErrorRows = validationResult.ErrorRows,
                 ProcessedAt = importFile.ProcessedAt,
-                Issues = validationResult.Issues.Select(i => new ValidationIssueDto
+                Issues = issuesToPersist.Select(i => new ValidationIssueDto
                 {
                     Id = i.Id,
                     RowNumber = i.RowNumber,
@@ -467,5 +529,130 @@ public class FileService : IFileService
             CreatedAt = importFile.CreatedAt,
             ProcessedAt = importFile.ProcessedAt
         };
+    }
+
+    private static bool IsBinaryOrExecutable(byte[] buffer, int length)
+    {
+        if (length == 0)
+        {
+            return false;
+        }
+
+        // PE Executable ("MZ")
+        if (length >= 2 && buffer[0] == 0x4D && buffer[1] == 0x5A)
+        {
+            return true;
+        }
+
+        // ELF Executable ("\x7fELF")
+        if (length >= 4 && buffer[0] == 0x7F && buffer[1] == 0x45 && buffer[2] == 0x4C && buffer[3] == 0x46)
+        {
+            return true;
+        }
+
+        // Mach-O Executables
+        if (length >= 4 && (
+            (buffer[0] == 0xFE && buffer[1] == 0xED && buffer[2] == 0xFA && (buffer[3] == 0xCE || buffer[3] == 0xCF)) ||
+            (buffer[0] == 0xCF && buffer[1] == 0xFA && buffer[2] == 0xED && buffer[3] == 0xFE) ||
+            (buffer[0] == 0xCA && buffer[1] == 0xFE && buffer[2] == 0xBA && buffer[3] == 0xBE)))
+        {
+            return true;
+        }
+
+        // ZIP / Java Archive / Office Open XML ("PK\x03\x04")
+        if (length >= 4 && buffer[0] == 0x50 && buffer[1] == 0x4B && buffer[2] == 0x03 && buffer[3] == 0x04)
+        {
+            return true;
+        }
+
+        // Null bytes within initial bytes typically mean binary/corrupt file (excluding UTF-16 BOM if any)
+        bool isUtf16Le = length >= 2 && buffer[0] == 0xFF && buffer[1] == 0xFE;
+        bool isUtf16Be = length >= 2 && buffer[0] == 0xFE && buffer[1] == 0xFF;
+
+        if (!isUtf16Le && !isUtf16Be)
+        {
+            for (int i = 0; i < length; i++)
+            {
+                if (buffer[i] == 0x00)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private sealed class PrefixStream : Stream
+    {
+        private readonly Stream _prefixStream;
+        private readonly Stream _mainStream;
+        private readonly bool _leaveOpen;
+
+        public PrefixStream(Stream prefixStream, Stream mainStream, bool leaveOpen = true)
+        {
+            _prefixStream = prefixStream;
+            _mainStream = mainStream;
+            _leaveOpen = leaveOpen;
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => _prefixStream.Length + (_mainStream.CanSeek ? _mainStream.Length : 0);
+        public override long Position
+        {
+            get => _prefixStream.Position + (_mainStream.CanSeek ? _mainStream.Position : 0);
+            set => throw new NotSupportedException();
+        }
+
+        public override void Flush() { }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            int bytesRead = _prefixStream.Read(buffer, offset, count);
+            if (bytesRead > 0)
+            {
+                return bytesRead;
+            }
+            return _mainStream.Read(buffer, offset, count);
+        }
+
+        public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            int bytesRead = await _prefixStream.ReadAsync(buffer.AsMemory(offset, count), cancellationToken);
+            if (bytesRead > 0)
+            {
+                return bytesRead;
+            }
+            return await _mainStream.ReadAsync(buffer.AsMemory(offset, count), cancellationToken);
+        }
+
+        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            int bytesRead = await _prefixStream.ReadAsync(buffer, cancellationToken);
+            if (bytesRead > 0)
+            {
+                return bytesRead;
+            }
+            return await _mainStream.ReadAsync(buffer, cancellationToken);
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _prefixStream.Dispose();
+                if (!_leaveOpen)
+                {
+                    _mainStream.Dispose();
+                }
+            }
+            base.Dispose(disposing);
+        }
     }
 }

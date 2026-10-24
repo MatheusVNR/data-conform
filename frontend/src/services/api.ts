@@ -56,9 +56,26 @@ function getHeaders(includeContentType: boolean = true): HeadersInit {
   return headers;
 }
 
+const DEFAULT_REQUEST_TIMEOUT_MS: number = 30000;
+
+function createTimeoutSignal(): AbortSignal | undefined {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(DEFAULT_REQUEST_TIMEOUT_MS);
+  }
+  return undefined;
+}
+
+export async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
+  const signal: AbortSignal | undefined = init?.signal ?? createTimeoutSignal();
+  return fetch(input, {
+    ...init,
+    ...(signal ? { signal } : {}),
+  });
+}
+
 // Authentication
 export async function login(request: LoginRequestDto): Promise<AuthResponseDto> {
-  const response: Response = await fetch(`${API_BASE_URL}/auth/login`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: getHeaders(true),
     body: JSON.stringify(request),
@@ -75,7 +92,7 @@ export async function login(request: LoginRequestDto): Promise<AuthResponseDto> 
 }
 
 export async function register(request: RegisterRequestDto): Promise<AuthResponseDto> {
-  const response: Response = await fetch(`${API_BASE_URL}/auth/register`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/auth/register`, {
     method: 'POST',
     headers: getHeaders(true),
     body: JSON.stringify(request),
@@ -92,7 +109,7 @@ export async function register(request: RegisterRequestDto): Promise<AuthRespons
 }
 
 export async function getCurrentUser(): Promise<AuthResponseDto> {
-  const response: Response = await fetch(`${API_BASE_URL}/auth/me`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/auth/me`, {
     headers: getHeaders(false),
   });
 
@@ -109,7 +126,7 @@ export function logout(): void {
 
 // Workspaces
 export async function getWorkspaces(): Promise<WorkspaceDto[]> {
-  const response: Response = await fetch(`${API_BASE_URL}/workspaces`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/workspaces`, {
     headers: getHeaders(false),
   });
   if (!response.ok) {
@@ -119,7 +136,7 @@ export async function getWorkspaces(): Promise<WorkspaceDto[]> {
 }
 
 export async function createWorkspace(request: CreateWorkspaceRequest): Promise<WorkspaceDto> {
-  const response: Response = await fetch(`${API_BASE_URL}/workspaces`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/workspaces`, {
     method: 'POST',
     headers: getHeaders(true),
     body: JSON.stringify(request),
@@ -134,7 +151,7 @@ export async function createWorkspace(request: CreateWorkspaceRequest): Promise<
 }
 
 export async function updateWorkspace(workspaceId: string, request: UpdateWorkspaceRequest): Promise<WorkspaceDto> {
-  const response: Response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/workspaces/${workspaceId}`, {
     method: 'PUT',
     headers: getHeaders(true),
     body: JSON.stringify(request),
@@ -149,7 +166,7 @@ export async function updateWorkspace(workspaceId: string, request: UpdateWorksp
 }
 
 export async function deleteWorkspace(workspaceId: string): Promise<void> {
-  const response: Response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/workspaces/${workspaceId}`, {
     method: 'DELETE',
     headers: getHeaders(false),
   });
@@ -161,7 +178,7 @@ export async function deleteWorkspace(workspaceId: string): Promise<void> {
 }
 
 export async function getWorkspaceQuota(workspaceId: string): Promise<WorkspaceQuotaDto> {
-  const response: Response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/quota`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/workspaces/${workspaceId}/quota`, {
     headers: getHeaders(false),
   });
   if (!response.ok) {
@@ -175,7 +192,7 @@ export async function changeWorkspacePlan(
   plan: string | number,
   reason?: string
 ): Promise<WorkspaceQuotaDto> {
-  const response: Response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/change-plan`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/workspaces/${workspaceId}/change-plan`, {
     method: 'POST',
     headers: getHeaders(true),
     body: JSON.stringify({ plan, reason }),
@@ -193,7 +210,7 @@ export async function confirmStripeCheckout(
   workspaceId: string,
   request: ConfirmCheckoutRequest
 ): Promise<WorkspaceQuotaDto> {
-  const response: Response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/checkout/confirm`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/workspaces/${workspaceId}/checkout/confirm`, {
     method: 'POST',
     headers: getHeaders(true),
     body: JSON.stringify(request),
@@ -208,7 +225,7 @@ export async function confirmStripeCheckout(
 }
 
 export async function getWorkspaceAuditLogs(workspaceId: string): Promise<AuditLogDto[]> {
-  const response: Response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/audit-logs`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/workspaces/${workspaceId}/audit-logs`, {
     headers: getHeaders(false),
   });
   if (!response.ok) {
@@ -219,7 +236,7 @@ export async function getWorkspaceAuditLogs(workspaceId: string): Promise<AuditL
 
 // Projects
 export async function getProjects(workspaceId: string): Promise<ImportProjectDto[]> {
-  const response: Response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/projects`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/workspaces/${workspaceId}/projects`, {
     headers: getHeaders(false),
   });
   if (!response.ok) {
@@ -232,7 +249,7 @@ export async function createProject(
   workspaceId: string,
   request: CreateImportProjectRequest
 ): Promise<ImportProjectDto> {
-  const response: Response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/projects`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/workspaces/${workspaceId}/projects`, {
     method: 'POST',
     headers: getHeaders(true),
     body: JSON.stringify(request),
@@ -247,7 +264,7 @@ export async function createProject(
 }
 
 export async function deleteProject(projectId: string): Promise<void> {
-  const response: Response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/projects/${projectId}`, {
     method: 'DELETE',
     headers: getHeaders(false),
   });
@@ -260,7 +277,7 @@ export async function deleteProject(projectId: string): Promise<void> {
 
 // Files
 export async function getFiles(projectId: string): Promise<ImportFileDto[]> {
-  const response: Response = await fetch(`${API_BASE_URL}/projects/${projectId}/files`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/projects/${projectId}/files`, {
     headers: getHeaders(false),
   });
   if (!response.ok) {
@@ -279,7 +296,7 @@ export async function uploadFile(projectId: string, file: File): Promise<ImportF
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response: Response = await fetch(`${API_BASE_URL}/projects/${projectId}/files/upload`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/projects/${projectId}/files/upload`, {
     method: 'POST',
     headers,
     body: formData,
@@ -301,7 +318,7 @@ export async function validateFile(
     ? `${API_BASE_URL}/files/${fileId}/validate?requiredColumns=${encodeURIComponent(requiredColumns)}`
     : `${API_BASE_URL}/files/${fileId}/validate`;
 
-  const response: Response = await fetch(url, {
+  const response: Response = await apiFetch(url, {
     method: 'POST',
     headers: getHeaders(false),
   });
@@ -315,7 +332,7 @@ export async function validateFile(
 }
 
 export async function getFileReport(fileId: string): Promise<ValidationReportDto> {
-  const response: Response = await fetch(`${API_BASE_URL}/files/${fileId}/report`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/files/${fileId}/report`, {
     headers: getHeaders(false),
   });
   if (!response.ok) {
@@ -325,7 +342,7 @@ export async function getFileReport(fileId: string): Promise<ValidationReportDto
 }
 
 export async function deleteFile(fileId: string): Promise<void> {
-  const response: Response = await fetch(`${API_BASE_URL}/files/${fileId}`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/files/${fileId}`, {
     method: 'DELETE',
     headers: getHeaders(false),
   });
@@ -338,7 +355,7 @@ export async function deleteFile(fileId: string): Promise<void> {
 export async function createCustomerFeedback(
   data: CreateCustomerFeedbackRequest
 ): Promise<CustomerFeedbackDto> {
-  const response: Response = await fetch(`${API_BASE_URL}/feedbacks`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/feedbacks`, {
     method: 'POST',
     headers: getHeaders(true),
     body: JSON.stringify(data),
@@ -353,7 +370,7 @@ export async function createCustomerFeedback(
 }
 
 export async function getCustomerFeedbacks(): Promise<CustomerFeedbackDto[]> {
-  const response: Response = await fetch(`${API_BASE_URL}/feedbacks`, {
+  const response: Response = await apiFetch(`${API_BASE_URL}/feedbacks`, {
     headers: getHeaders(false),
   });
 

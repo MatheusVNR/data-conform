@@ -58,6 +58,8 @@ namespace DataConform.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("UserId", "Action");
+
                     b.HasIndex("WorkspaceId", "CreatedAt");
 
                     b.ToTable("audit_logs", (string)null);
@@ -160,7 +162,7 @@ namespace DataConform.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProjectId");
+                    b.HasIndex("ProjectId", "CreatedAt");
 
                     b.ToTable("import_files", (string)null);
                 });
@@ -195,7 +197,7 @@ namespace DataConform.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("WorkspaceId");
+                    b.HasIndex("WorkspaceId", "CreatedAt");
 
                     b.ToTable("import_projects", (string)null);
                 });
@@ -323,6 +325,9 @@ namespace DataConform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<Guid?>("OwnerUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Plan")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -337,6 +342,8 @@ namespace DataConform.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OwnerUserId");
 
                     b.HasIndex("Slug")
                         .IsUnique();

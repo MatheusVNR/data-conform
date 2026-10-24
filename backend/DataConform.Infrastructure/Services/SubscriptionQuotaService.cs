@@ -42,14 +42,33 @@ public class SubscriptionQuotaService : ISubscriptionQuotaService
 
     public async Task IncrementFilesUploadedAsync(Guid workspaceId, CancellationToken cancellationToken = default)
     {
-        Workspace? workspace = await _context.Workspaces
-            .FirstOrDefaultAsync(w => w.Id == workspaceId, cancellationToken);
-
-        if (workspace != null)
+        try
         {
-            workspace.MonthlyFilesUploaded += 1;
-            workspace.UpdatedAt = DateTimeOffset.UtcNow;
-            await _context.SaveChangesAsync(cancellationToken);
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            int affectedRows = await _context.Workspaces
+                .Where(w => w.Id == workspaceId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(w => w.MonthlyFilesUploaded, w => w.MonthlyFilesUploaded + 1)
+                    .SetProperty(w => w.UpdatedAt, now),
+                    cancellationToken);
+
+            if (affectedRows > 0)
+            {
+                return;
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // Fallback for providers that do not support ExecuteUpdate (such as InMemoryDatabaseProvider)
+            Workspace? workspace = await _context.Workspaces
+                .FirstOrDefaultAsync(w => w.Id == workspaceId, cancellationToken);
+
+            if (workspace != null)
+            {
+                workspace.MonthlyFilesUploaded += 1;
+                workspace.UpdatedAt = DateTimeOffset.UtcNow;
+                await _context.SaveChangesAsync(cancellationToken);
+            }
         }
     }
 

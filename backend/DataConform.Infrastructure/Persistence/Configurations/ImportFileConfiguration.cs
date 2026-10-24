@@ -35,6 +35,8 @@ public class ImportFileConfiguration : IEntityTypeConfiguration<ImportFile>
         builder.Property(f => f.CreatedAt)
             .IsRequired();
 
+        builder.HasIndex(f => new { f.ProjectId, f.CreatedAt });
+
         builder.HasMany(f => f.ValidationIssues)
             .WithOne(i => i.File)
             .HasForeignKey(i => i.FileId)

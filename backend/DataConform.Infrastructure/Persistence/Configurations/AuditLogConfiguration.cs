@@ -31,5 +31,6 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
             .IsRequired();
 
         builder.HasIndex(a => new { a.WorkspaceId, a.CreatedAt });
+        builder.HasIndex(a => new { a.UserId, a.Action });
     }
 }

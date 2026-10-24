@@ -22,6 +22,11 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+});
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -215,6 +220,7 @@ app.MapGet("/scalar", () => Results.Redirect("/docs"))
     .AllowAnonymous()
     .ExcludeFromDescription();
 
+app.UseResponseCompression();
 app.UseCors("AllowFrontend");
 app.UseRateLimiter();
 app.UseAuthentication();
