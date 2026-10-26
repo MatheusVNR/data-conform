@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Validar CEP em Lote na Planilha CSV (8 Dígitos para ERP) | DataConform</title>
+    <meta name="description" content="Valide milhares de CEPs em lote na sua planilha CSV antes da importação no ERP. Detecte CEPs de SP/Nordeste com 7 dígitos (sem zero à esquerda) ou 00000-000." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://dataconform.com.br/validar-cep-em-lote-csv/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Validar CEP em Lote na Planilha CSV (8 Dígitos para ERP) | DataConform" />
+    <meta property="og:description" content="Valide milhares de CEPs em lote na sua planilha CSV antes da importação no ERP. Detecte CEPs de SP/Nordeste com 7 dígitos (sem zero à esquerda) ou 00000-000." />
+    <meta property="og:url" content="https://dataconform.com.br/validar-cep-em-lote-csv/" />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Validar CEP em Lote na Planilha CSV (8 Dígitos para ERP) | DataConform" />
+    <meta name="twitter:description" content="Valide milhares de CEPs em lote na sua planilha CSV antes da importação no ERP. Detecte CEPs de SP/Nordeste com 7 dígitos (sem zero à esquerda) ou 00000-000." />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <link rel="stylesheet" href="/seo.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Validar CEP em Lote na Planilha CSV","item":"https://dataconform.com.br/validar-cep-em-lote-csv/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"O CEP precisa ter o traço (01001-000) ou pode conter apenas números (01001000)?","acceptedAnswer":{"@type":"Answer","text":"Ambos são válidos. O DataConform avalia os dígitos numéricos da célula, aprovando tanto 01001-000 quanto 01001000."}},{"@type":"Question","name":"Por que o DataConform bloqueia o CEP 00000-000 mesmo tendo 8 dígitos?","acceptedAnswer":{"@type":"Answer","text":"Porque 00000000 é um preenchimento artificial utilizado para burlar campos obrigatórios e causa rejeição na validação de endereço da NF-e e nos ERPs."}},{"@type":"Question","name":"Quais presets do DataConform exigem a coluna de CEP obrigatoriamente?","acceptedAnswer":{"@type":"Answer","text":"Os presets TOTVS Protheus SA1 (A1_CEP), SAP Business One OCRD (ZipCode), Sankhya TGFPAR (CEP), Omie (cep) e Genérico / CSV exigem a presença da coluna de CEP no cabeçalho."}}]}</script>
+  </head>
+  <body>
+  <header class="seo-navbar">
+    <div class="seo-container seo-navbar-inner">
+      <a href="/" class="seo-brand" aria-label="DataConform - Página Inicial">
+        <img src="/favicon.svg" alt="Logo DataConform" width="32" height="32" />
+        <span class="seo-brand-title">DataConform</span>
+        <span class="seo-brand-badge">Validador CSV ERP</span>
+      </a>
+      <nav class="seo-nav-links" aria-label="Navegação Principal">
+        <a href="/layouts-de-importacao-erp/">Layouts de ERP</a>
+        <a href="/regras-de-validacao-csv/">Regras de Validação</a>
+        <a href="/precos/">Preços</a>
+        <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Validar meu arquivo grátis</a>
+      </nav>
+    </div>
+  </header>
+    <main class="seo-main">
+      <div class="seo-container">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Início</a></li>
+          <li><a href="/regras-de-validacao-csv/">Regras de Validação CSV</a></li>
+          <li aria-current="page">Validar CEP em Lote na Planilha CSV</li>
+        </ol>
+      </nav>
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">Código: INVALID_CEP_FORMAT</span>
+              <span class="seo-pill-outline">Severidade: Erro (Error)</span>
+            </div>
+            <h1>Como Validar CEP em Lote na Planilha CSV e Corrigir Zeros Cortados pelo Excel</h1>
+            <p class="seo-lead">Audite todos os CEPs da sua base de clientes e fornecedores antes de importar no ERP. O DataConform identifica CEPs com 7 dígitos (zero inicial suprimido), códigos incompletos e preenchimentos zerados (00000-000).</p>
+            <div class="seo-cta-row">
+              <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/regras-de-validacao-csv/" class="seo-btn seo-btn-secondary">Ver todas as 17 regras</a>
+            </div>
+          </header>
+
+          <section class="seo-section">
+            <h2>Por que esse erro acontece na planilha CSV e trava o ERP</h2>
+            <p>No sistema postal brasileiro, todos os CEPs da Grande São Paulo e interior paulista (faixas 01000-000 a 09999-999) começam com o algarismo zero. Quando uma planilha de clientes ou fornecedores é aberta diretamente no Excel sem assistente de texto, o aplicativo interpreta a coluna de CEP como número inteiro e remove o zero inicial — transformando 01310-100 em 1310100 (7 dígitos). Além disso, operadores frequentemente preenchem 00000-000 ou 1234 quando desconhecem o endereço.</p>
+          <p>Ao importar esses registros no TOTVS Protheus, SAP Business One, Sankhya ou Omie, o gatilho de consulta de endereço falha, o código de município IBGE não é vinculado corretamente e a emissão de NF-e ou CT-e é rejeitada pela SEFAZ.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>Como o Motor do DataConform Executa a Regra <code>INVALID_CEP_FORMAT</code></h2>
+            <p>O motor do DataConform detecta automaticamente qualquer coluna denominada CEP, ZipCode, A1_CEP, A2_CEP ou variações com prefixo/sufixo cep. Para cada célula preenchida, o validador filtra os dígitos numéricos (aceitando formatos com ou sem hífen, como 01001-000 ou 01001000) e aplica duas verificações obrigatórias: o total de dígitos numéricos deve ser exatamente igual a 8 e a sequência não pode ser &quot;00000000&quot;.</p>
+          <p>Se qualquer linha violar essas regras, o relatório registra o código INVALID_CEP_FORMAT com severidade de Erro, informando a linha exata, a coluna e o valor rejeitado.</p>
+            <div class="seo-detected-box">
+              <h3>Colunas e Dicionários Inspecionados Automaticamente:</h3>
+              <div class="seo-chips-wrap">
+                <span class="seo-col-chip">A1_CEP (TOTVS Protheus SA1)</span>
+              <span class="seo-col-chip">A2_CEP (TOTVS Protheus SA2)</span>
+              <span class="seo-col-chip">ZipCode (SAP Business One OCRD)</span>
+              <span class="seo-col-chip">CEP / cep (Sankhya TGFPAR, Omie, Genérico)</span>
+              <span class="seo-col-chip">Colunas iniciadas por cep_ ou terminadas em _cep</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Exemplos Práticos: Valores Aprovados vs. Valores Rejeitados</h2>
+            <p>Confira como o validador classifica diferentes entradas encontradas em planilhas reais durante a auditoria:</p>
+            <div class="seo-table-wrap">
+              <table class="seo-table">
+                <thead>
+                  <tr>
+                    <th>Valor na Célula / Linha CSV</th>
+                    <th>Resultado no Laudo</th>
+                    <th>Explicação Técnica</th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><code>01001-000</code></td>
+                <td><span class="seo-code-pill seo-code-ok">Válido (Aprovado)</span></td>
+                <td>CEP com hífen contendo exatamente 8 dígitos numéricos válidos.</td>
+              </tr>
+              <tr>
+                <td><code>80020100</code></td>
+                <td><span class="seo-code-pill seo-code-ok">Válido (Aprovado)</span></td>
+                <td>CEP sem hífen contendo 8 dígitos numéricos válidos.</td>
+              </tr>
+              <tr>
+                <td><code>1001000</code></td>
+                <td><span class="seo-code-pill seo-code-error">Rejeitado (INVALID_CEP_FORMAT)</span></td>
+                <td>Possui apenas 7 dígitos (zero inicial de São Paulo perdido na conversão numérica do Excel).</td>
+              </tr>
+              <tr>
+                <td><code>00000-000</code></td>
+                <td><span class="seo-code-pill seo-code-error">Rejeitado (INVALID_CEP_FORMAT)</span></td>
+                <td>Sequência zerada (00000000) bloqueada explicitamente pela regra fiscal de endereço.</td>
+              </tr>
+              <tr>
+                <td><code>1234</code></td>
+                <td><span class="seo-code-pill seo-code-error">Rejeitado (INVALID_CEP_FORMAT)</span></td>
+                <td>Código postal incompleto com menos de 8 dígitos numéricos.</td>
+              </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Passo a Passo para Auditar e Sanear sua Planilha</h2>
+            <ol class="seo-steps-list">
+          <li class="seo-step-item">
+            <span class="seo-step-num">1</span>
+            <div>
+              <strong>Passo 1</strong>
+              <p>Gere seu arquivo CSV de clientes ou fornecedores mantendo a coluna de CEP (A1_CEP, ZipCode, CEP).</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">2</span>
+            <div>
+              <strong>Passo 2</strong>
+              <p>Carregue a planilha no DataConform selecionando o ERP de destino para inspecionar todos os endereços em lote.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">3</span>
+            <div>
+              <strong>Passo 3</strong>
+              <p>Filtre por INVALID_CEP_FORMAT no relatório, baixe os registros afetados em CSV, padronize os 8 dígitos e emita o laudo em PDF.</p>
+            </div>
+          </li>
+            </ol>
+          </section>
+
+          <section class="seo-section">
+            <h2>Perguntas Frequentes (FAQ) — Validar CEP em Lote na Planilha CSV</h2>
+            <div class="seo-faq-list">
+          <div class="seo-faq-item">
+            <h3>O CEP precisa ter o traço (01001-000) ou pode conter apenas números (01001000)?</h3>
+            <p>Ambos são válidos. O DataConform avalia os dígitos numéricos da célula, aprovando tanto 01001-000 quanto 01001000.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>Por que o DataConform bloqueia o CEP 00000-000 mesmo tendo 8 dígitos?</h3>
+            <p>Porque 00000000 é um preenchimento artificial utilizado para burlar campos obrigatórios e causa rejeição na validação de endereço da NF-e e nos ERPs.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>Quais presets do DataConform exigem a coluna de CEP obrigatoriamente?</h3>
+            <p>Os presets TOTVS Protheus SA1 (A1_CEP), SAP Business One OCRD (ZipCode), Sankhya TGFPAR (CEP), Omie (cep) e Genérico / CSV exigem a presença da coluna de CEP no cabeçalho.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-cta-banner">
+            <div>
+              <h2>Audite sua planilha CSV contra o erro <code>INVALID_CEP_FORMAT</code> agora mesmo</h2>
+              <p>Experimente o simulador interativo na página inicial ou valide até 20 arquivos por mês gratuitamente no plano Starter com exportação de inconsistências e laudo em PDF.</p>
+            </div>
+            <div class="seo-cta-row">
+              <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/precos/" class="seo-btn seo-btn-secondary">Consultar planos e cotas</a>
+            </div>
+          </section>
+
+          <aside class="seo-related-box" aria-label="Links Relacionados">
+            <div class="seo-related-col">
+              <h3>Outras Regras de Alta Intenção</h3>
+              <ul>
+                <li><a href="/validar-uf-estado-planilha-csv/"><strong>Validar Sigla de UF e Estado no CSV</strong> (INVALID_UF_CODE)</a></li>
+              <li><a href="/validar-cpf-cnpj-em-massa-csv/"><strong>Validar CPF e CNPJ em Massa no CSV</strong> (INVALID_DOCUMENT_FORMAT)</a></li>
+              <li><a href="/erro-colunas-delimitador-quebrado-csv/"><strong>Erro de Colunas e Delimitador Quebrado no CSV</strong> (COLUMN_COUNT_MISMATCH)</a></li>
+              <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/"><strong>Corrigir Erro de Encoding UTF-8 no CSV</strong> (ENCODING_CORRUPTION)</a></li>
+                <li><a href="/regras-de-validacao-csv/"><strong>Ver catálogo completo das 17 regras →</strong></a></li>
+              </ul>
+            </div>
+            <div class="seo-related-col">
+              <h3>Layouts de ERP que Utilizam esta Regra</h3>
+              <ul>
+                <li><a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus</strong> (SA1 (Clientes))</a></li>
+              <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/"><strong>SAP Business One</strong> (OCRD (Business Partners))</a></li>
+              <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/"><strong>Sankhya</strong> (TGFPAR (Parceiros))</a></li>
+              <li><a href="/layout-importacao-omie-clientes/"><strong>Omie</strong> (Planilha de Clientes e Fornecedores)</a></li>
+              </ul>
+            </div>
+          </aside>
+        </article>
+      </div>
+    </main>
+  <footer class="seo-footer">
+    <div class="seo-container">
+      <div class="seo-footer-grid">
+        <div class="seo-footer-col">
+          <strong>DataConform</strong>
+          <p>Plataforma SaaS de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP. Diagnóstico linha a linha com exportação CSV e laudo em PDF.</p>
+          <p class="seo-footer-links-inline">
+            <a href="/">Início &amp; Simulador</a> •
+            <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
+            <a href="/regras-de-validacao-csv/">Regras CSV</a> •
+            <a href="/precos/">Preços</a>
+          </p>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 1)</strong>
+          <ul>
+            <li><a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1 (Clientes))</a></li>
+            <li><a href="/layout-importacao-protheus-sa2-fornecedores/">TOTVS Protheus - Fornecedores (SA2 (Fornecedores))</a></li>
+            <li><a href="/layout-importacao-protheus-sb1-produtos/">TOTVS Protheus - Produtos (SB1 (Produtos))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD (Business Partners))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-oitm-itens/">SAP Business One - Itens (OITM (Item Master Data))</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 2)</strong>
+          <ul>
+            <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
+            <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
+            <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Regras de Validação CSV</strong>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="seo-footer-bottom">
+        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>

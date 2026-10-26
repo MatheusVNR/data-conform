@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Layout de Importação TOTVS Protheus SA1 (Clientes) em CSV | DataConform</title>
+    <meta name="description" content="Baixe e valide o layout CSV da tabela SA1 (Clientes) do TOTVS Protheus (MATA030). Verifique A1_COD, A1_LOJA, A1_CGC, A1_EMAIL, A1_EST e A1_CEP antes da carga." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://dataconform.com.br/layout-importacao-protheus-sa1-clientes/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Layout de Importação TOTVS Protheus SA1 (Clientes) em CSV | DataConform" />
+    <meta property="og:description" content="Baixe e valide o layout CSV da tabela SA1 (Clientes) do TOTVS Protheus (MATA030). Verifique A1_COD, A1_LOJA, A1_CGC, A1_EMAIL, A1_EST e A1_CEP antes da carga." />
+    <meta property="og:url" content="https://dataconform.com.br/layout-importacao-protheus-sa1-clientes/" />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Layout de Importação TOTVS Protheus SA1 (Clientes) em CSV | DataConform" />
+    <meta name="twitter:description" content="Baixe e valide o layout CSV da tabela SA1 (Clientes) do TOTVS Protheus (MATA030). Verifique A1_COD, A1_LOJA, A1_CGC, A1_EMAIL, A1_EST e A1_CEP antes da carga." />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <link rel="stylesheet" href="/seo.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"TOTVS Protheus — SA1 (Clientes)","item":"https://dataconform.com.br/layout-importacao-protheus-sa1-clientes/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Posso enviar o campo A1_CGC com ou sem pontuação?","acceptedAnswer":{"@type":"Answer","text":"Sim. O motor extrai os dígitos numéricos de A1_CGC antes de validar a quantidade (11 ou 14 dígitos) e calcular o Módulo 11."}},{"@type":"Question","name":"O DataConform aceita clientes estrangeiros na tabela SA1?","acceptedAnswer":{"@type":"Answer","text":"Sim. Na coluna A1_EST, além das 27 Unidades Federativas do Brasil, o validador aceita oficialmente a sigla EX."}},{"@type":"Question","name":"Como evitar que acentos em A1_NOME fiquem corrompidos?","acceptedAnswer":{"@type":"Answer","text":"Salve a planilha como CSV UTF-8. Caso existam caracteres ANSI corrompidos, o DataConform aponta o erro ENCODING_CORRUPTION na linha exata."}}]}</script>
+  </head>
+  <body>
+  <header class="seo-navbar">
+    <div class="seo-container seo-navbar-inner">
+      <a href="/" class="seo-brand" aria-label="DataConform - Página Inicial">
+        <img src="/favicon.svg" alt="Logo DataConform" width="32" height="32" />
+        <span class="seo-brand-title">DataConform</span>
+        <span class="seo-brand-badge">Validador CSV ERP</span>
+      </a>
+      <nav class="seo-nav-links" aria-label="Navegação Principal">
+        <a href="/layouts-de-importacao-erp/">Layouts de ERP</a>
+        <a href="/regras-de-validacao-csv/">Regras de Validação</a>
+        <a href="/precos/">Preços</a>
+        <a href="/?erp=protheus-sa1#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Validar meu arquivo grátis</a>
+      </nav>
+    </div>
+  </header>
+    <main class="seo-main">
+      <div class="seo-container">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Início</a></li>
+          <li><a href="/layouts-de-importacao-erp/">Layouts de Importação ERP</a></li>
+          <li aria-current="page">TOTVS Protheus — SA1 (Clientes)</li>
+        </ol>
+      </nav>
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">TOTVS Protheus</span>
+              <span class="seo-pill-outline">Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotina MATA030</span>
+            </div>
+            <h1>Layout de Importação TOTVS Protheus SA1 (Clientes): Validação de CSV para MATA030</h1>
+            <p class="seo-lead">Homologue sua planilha de clientes segundo o dicionário SX3 da tabela SA1 antes de executar a rotina automática MATA030 ou o MILE no TOTVS Protheus. Intercepte erros de CNPJ/CPF, CEP, UF, limite de crédito e codificação UTF-8 linha a linha.</p>
+            <div class="seo-cta-row">
+              <a href="/?erp=protheus-sa1#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/layouts-de-importacao-erp/" class="seo-btn seo-btn-secondary">Ver todos os layouts de ERP</a>
+            </div>
+          </header>
+
+          <section class="seo-section">
+            <h2>Para que serve o layout SA1 (Clientes) no TOTVS Protheus</h2>
+            <p>A tabela SA1 (Cadastro de Clientes) alimenta os módulos SIGAFAT, SIGAFIN e SIGACOM no TOTVS Protheus. Em cargas via ExecAuto (MATA030) ou MILE, a importação exige aderência estrita ao dicionário SX3 para evitar bloqueios de NF-e na SEFAZ.</p>
+          <p>O preset do DataConform para TOTVS Protheus SA1 audita o arquivo CSV antes da carga: confere o cabeçalho, valida CPF e CNPJ em A1_CGC por Módulo 11, checa siglas estaduais em A1_EST, exige 8 dígitos em A1_CEP e bloqueia valores negativos em A1_LC.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>Tabela de Colunas Obrigatórias Reais do Preset (SA1 (Clientes))</h2>
+            <p>O preset oficial do DataConform para <strong>TOTVS Protheus</strong> exige as seguintes colunas no cabeçalho da planilha CSV (arquivo de referência: <code>layout_totvs_protheus_sa1.csv</code>):</p>
+            <div class="seo-table-wrap">
+              <table class="seo-table">
+                <thead>
+                  <tr>
+                    <th>Coluna Obrigatória</th>
+                    <th>Descrição Técnica no ERP</th>
+                    <th>Exemplo Válido</th>
+                    <th>Regra Aplicada no DataConform</th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><code>A1_COD</code></td>
+                <td>Código identificador único do cliente no dicionário SX3.</td>
+                <td><code>000101</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING</span></td>
+              </tr>
+              <tr>
+                <td><code>A1_LOJA</code></td>
+                <td>Código da filial ou loja vinculada ao cliente na tabela SA1.</td>
+                <td><code>01</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING</span></td>
+              </tr>
+              <tr>
+                <td><code>A1_NOME</code></td>
+                <td>Razão social ou nome completo do cliente para faturamento.</td>
+                <td><code>Alpha Tecnologia e Sistemas LTDA</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING / ENCODING_CORRUPTION</span></td>
+              </tr>
+              <tr>
+                <td><code>A1_CGC</code></td>
+                <td>Documento fiscal (CNPJ 14 dígitos ou CPF 11 dígitos) com validação Módulo 11.</td>
+                <td><code>12.345.678/0001-95</code></td>
+                <td><span class="seo-code-pill">INVALID_DOCUMENT_FORMAT</span></td>
+              </tr>
+              <tr>
+                <td><code>A1_EMAIL</code></td>
+                <td>E-mail corporativo para envio de XML e DANFE de Nota Fiscal Eletrônica.</td>
+                <td><code>fiscal@alphatech.com.br</code></td>
+                <td><span class="seo-code-pill">INVALID_EMAIL_FORMAT</span></td>
+              </tr>
+              <tr>
+                <td><code>A1_LC</code></td>
+                <td>Limite de crédito aprovado no módulo SIGAFIN (decimal não negativo).</td>
+                <td><code>50000.00</code></td>
+                <td><span class="seo-code-pill">INVALID_NUMERIC_VALUE / NEGATIVE_AMOUNT_NOT_ALLOWED</span></td>
+              </tr>
+              <tr>
+                <td><code>A1_EST</code></td>
+                <td>Sigla da UF (27 estados brasileiros ou EX para clientes no exterior).</td>
+                <td><code>SP</code></td>
+                <td><span class="seo-code-pill">INVALID_UF_CODE</span></td>
+              </tr>
+              <tr>
+                <td><code>A1_CEP</code></td>
+                <td>Código de Endereçamento Postal com exatamente 8 dígitos numéricos.</td>
+                <td><code>01001-000</code></td>
+                <td><span class="seo-code-pill">INVALID_CEP_FORMAT</span></td>
+              </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Exemplo de Estrutura CSV Homologada (layout_totvs_protheus_sa1.csv)</h2>
+            <p>Abaixo está a estrutura real do arquivo CSV utilizado pelo DataConform para homologar cargas deste módulo, incluindo linhas íntegras e linhas de teste para captura de inconsistências:</p>
+            <pre class="seo-code-block"><code>A1_COD,A1_LOJA,A1_NOME,A1_CGC,A1_EMAIL,A1_LC,A1_EST,A1_CEP
+000101,01,Alpha Tecnologia e Sistemas LTDA,12.345.678/0001-95,fiscal@alphatech.com.br,50000.00,SP,01001-000
+000102,01,Beta Logistica Integrada SA,11.222.333/0001-81,financeiro@betalog.com.br,120000.50,PR,80020-100
+000103,01,Fornecedor com CNPJ Incorreto LTDA,12.345.678/0001-00,contato@empresa.com.br,25000.00,SC,88010-000
+000104,01,Cliente com Limite Negativo ME,06.990.590/0001-23,email-invalido-sem-arroba.com,-4500.00,XX,1234</code></pre>
+          </section>
+
+          <section class="seo-section">
+            <h2>Erros Mais Comuns na Importação do TOTVS Protheus e Regras do DataConform</h2>
+            <p>Durante a preparação da carga de dados, os seguintes desvios costumam bloquear a importação no ERP e são interceptados automaticamente pelo motor de validação:</p>
+            <div class="seo-cards-grid">
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_DOCUMENT_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>A1_CGC</code></span>
+            </div>
+            <h3>CNPJ/CPF com dígito verificador inválido ou zero à esquerda suprimido</h3>
+            <p>O Excel costuma converter A1_CGC em número e apagar zeros iniciais. O DataConform recalcula os dois dígitos verificadores (Módulo 11) e rejeita sequências repetidas.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_CEP_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>A1_CEP</code></span>
+            </div>
+            <h3>CEP com 7 dígitos para clientes de São Paulo e Nordeste</h3>
+            <p>CEPs iniciados por zero (ex.: 01001-000) perdem o primeiro dígito ao serem salvos como inteiro. O validador exige 8 dígitos e bloqueia 00000000.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_UF_CODE</span>
+              <span class="seo-field-tag">Campo: <code>A1_EST</code></span>
+            </div>
+            <h3>Nome do estado por extenso no lugar da sigla da UF</h3>
+            <p>O campo A1_EST aceita apenas 2 caracteres no SX3. O motor valida se o valor pertence às 27 siglas estaduais brasileiras ou EX.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">NEGATIVE_AMOUNT_NOT_ALLOWED</span>
+              <span class="seo-field-tag">Campo: <code>A1_LC</code></span>
+            </div>
+            <h3>Limite de crédito negativo ou texto mal formatado</h3>
+            <p>Valores negativos ou símbolos corrompidos em A1_LC travam a análise de crédito. O DataConform valida a conversão decimal e bloqueia saldos negativos.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Passo a Passo para Validar sua Planilha antes da Carga no ERP</h2>
+            <ol class="seo-steps-list">
+          <li class="seo-step-item">
+            <span class="seo-step-num">1</span>
+            <div>
+              <strong>Passo 1</strong>
+              <p>Exporte sua base de clientes em CSV mantendo na primeira linha os campos exatos do SX3: A1_COD, A1_LOJA, A1_NOME, A1_CGC, A1_EMAIL, A1_LC, A1_EST e A1_CEP.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">2</span>
+            <div>
+              <strong>Passo 2</strong>
+              <p>No DataConform, selecione o preset &quot;TOTVS Protheus&quot; (Tabela SA1) e faça o upload do arquivo para inspeção estrutural e semântica.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">3</span>
+            <div>
+              <strong>Passo 3</strong>
+              <p>Filtre os desvios no laudo, baixe o CSV de inconsistências para correção e gere o laudo em PDF antes de liberar a carga no MATA030.</p>
+            </div>
+          </li>
+            </ol>
+          </section>
+
+          <section class="seo-section">
+            <h2>Perguntas Frequentes (FAQ) — Importação TOTVS Protheus</h2>
+            <div class="seo-faq-list">
+          <div class="seo-faq-item">
+            <h3>Posso enviar o campo A1_CGC com ou sem pontuação?</h3>
+            <p>Sim. O motor extrai os dígitos numéricos de A1_CGC antes de validar a quantidade (11 ou 14 dígitos) e calcular o Módulo 11.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>O DataConform aceita clientes estrangeiros na tabela SA1?</h3>
+            <p>Sim. Na coluna A1_EST, além das 27 Unidades Federativas do Brasil, o validador aceita oficialmente a sigla EX.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>Como evitar que acentos em A1_NOME fiquem corrompidos?</h3>
+            <p>Salve a planilha como CSV UTF-8. Caso existam caracteres ANSI corrompidos, o DataConform aponta o erro ENCODING_CORRUPTION na linha exata.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-cta-banner">
+            <div>
+              <h2>Pronto para homologar sua planilha do TOTVS Protheus?</h2>
+              <p>Teste agora mesmo no simulador interativo sem cadastro ou crie sua conta gratuita no plano Starter (até 20 arquivos/mês e laudo em PDF).</p>
+            </div>
+            <div class="seo-cta-row">
+              <a href="/?erp=protheus-sa1#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/precos/" class="seo-btn seo-btn-secondary">Conhecer planos e limites</a>
+            </div>
+          </section>
+
+          <aside class="seo-related-box" aria-label="Conteúdos Relacionados">
+            <div class="seo-related-col">
+              <h3>Regras de Validação Aplicadas neste Layout</h3>
+              <ul>
+                <li><a href="/validar-cpf-cnpj-em-massa-csv/"><strong>Validar CPF e CNPJ em Massa no CSV</strong> (INVALID_DOCUMENT_FORMAT)</a></li>
+              <li><a href="/validar-cep-em-lote-csv/"><strong>Validar CEP em Lote na Planilha CSV</strong> (INVALID_CEP_FORMAT)</a></li>
+              <li><a href="/validar-uf-estado-planilha-csv/"><strong>Validar Sigla de UF e Estado no CSV</strong> (INVALID_UF_CODE)</a></li>
+              <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/"><strong>Corrigir Erro de Encoding UTF-8 no CSV</strong> (ENCODING_CORRUPTION)</a></li>
+              </ul>
+            </div>
+            <div class="seo-related-col">
+              <h3>Outros Layouts de Importação ERP</h3>
+              <ul>
+                <li><a href="/layout-importacao-protheus-sa2-fornecedores/"><strong>TOTVS Protheus - Fornecedores</strong> — Tabela SA2 (Fornecedores — SIGACOM / SIGAFIN) • Rotina MATA020</a></li>
+              <li><a href="/layout-importacao-protheus-sb1-produtos/"><strong>TOTVS Protheus - Produtos</strong> — Tabela SB1 (Catálogo de Itens / Estoque — SIGAEST) • Rotina MATA010</a></li>
+              <li><a href="/layout-importacao-senior-erp-e085cli-clientes/"><strong>Senior ERP</strong> — Tabela E085CLI (Gestão Empresarial | ERP Senior / Sapiens)</a></li>
+                <li><a href="/layouts-de-importacao-erp/"><strong>Ver todos os 10 presets de ERP →</strong></a></li>
+              </ul>
+            </div>
+          </aside>
+        </article>
+      </div>
+    </main>
+  <footer class="seo-footer">
+    <div class="seo-container">
+      <div class="seo-footer-grid">
+        <div class="seo-footer-col">
+          <strong>DataConform</strong>
+          <p>Plataforma SaaS de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP. Diagnóstico linha a linha com exportação CSV e laudo em PDF.</p>
+          <p class="seo-footer-links-inline">
+            <a href="/">Início &amp; Simulador</a> •
+            <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
+            <a href="/regras-de-validacao-csv/">Regras CSV</a> •
+            <a href="/precos/">Preços</a>
+          </p>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 1)</strong>
+          <ul>
+            <li><a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1 (Clientes))</a></li>
+            <li><a href="/layout-importacao-protheus-sa2-fornecedores/">TOTVS Protheus - Fornecedores (SA2 (Fornecedores))</a></li>
+            <li><a href="/layout-importacao-protheus-sb1-produtos/">TOTVS Protheus - Produtos (SB1 (Produtos))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD (Business Partners))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-oitm-itens/">SAP Business One - Itens (OITM (Item Master Data))</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 2)</strong>
+          <ul>
+            <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
+            <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
+            <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Regras de Validação CSV</strong>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="seo-footer-bottom">
+        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>

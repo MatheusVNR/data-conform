@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Layout de Importação Sankhya TGFPAR (Parceiros de Negócio) CSV | DataConform</title>
+    <meta name="description" content="Homologue sua planilha CSV para a tabela TGFPAR (Parceiros de Negócio) do ERP Sankhya. Valide CODPARC, NOMEPARC, CGC_CPF, EMAIL, LIMCRED, ATIVO e CEP." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://dataconform.com.br/layout-importacao-sankhya-tgfpar-parceiros/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Layout de Importação Sankhya TGFPAR (Parceiros de Negócio) CSV | DataConform" />
+    <meta property="og:description" content="Homologue sua planilha CSV para a tabela TGFPAR (Parceiros de Negócio) do ERP Sankhya. Valide CODPARC, NOMEPARC, CGC_CPF, EMAIL, LIMCRED, ATIVO e CEP." />
+    <meta property="og:url" content="https://dataconform.com.br/layout-importacao-sankhya-tgfpar-parceiros/" />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Layout de Importação Sankhya TGFPAR (Parceiros de Negócio) CSV | DataConform" />
+    <meta name="twitter:description" content="Homologue sua planilha CSV para a tabela TGFPAR (Parceiros de Negócio) do ERP Sankhya. Valide CODPARC, NOMEPARC, CGC_CPF, EMAIL, LIMCRED, ATIVO e CEP." />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <link rel="stylesheet" href="/seo.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"Sankhya — TGFPAR (Parceiros)","item":"https://dataconform.com.br/layout-importacao-sankhya-tgfpar-parceiros/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Posso testar o cenário da tabela TGFPAR do Sankhya gratuitamente?","acceptedAnswer":{"@type":"Answer","text":"Sim. O simulador na página inicial já conta com aba dedicada ao Sankhya Om (TGFPAR), e o plano Starter Gratuito valida até 20 arquivos reais por mês."}},{"@type":"Question","name":"A coluna CGC_CPF aceita documentos com máscara?","acceptedAnswer":{"@type":"Answer","text":"Sim. O validador higieniza pontos, barra e hífen para validar os 11 dígitos do CPF ou 14 dígitos do CNPJ pelo Módulo 11."}},{"@type":"Question","name":"O DataConform verifica se alguma coluna obrigatória da TGFPAR foi esquecida?","acceptedAnswer":{"@type":"Answer","text":"Sim. Se qualquer uma das 7 colunas obrigatórias não constar no cabeçalho, o relatório aponta REQUIRED_HEADER_MISSING."}}]}</script>
+  </head>
+  <body>
+  <header class="seo-navbar">
+    <div class="seo-container seo-navbar-inner">
+      <a href="/" class="seo-brand" aria-label="DataConform - Página Inicial">
+        <img src="/favicon.svg" alt="Logo DataConform" width="32" height="32" />
+        <span class="seo-brand-title">DataConform</span>
+        <span class="seo-brand-badge">Validador CSV ERP</span>
+      </a>
+      <nav class="seo-nav-links" aria-label="Navegação Principal">
+        <a href="/layouts-de-importacao-erp/">Layouts de ERP</a>
+        <a href="/regras-de-validacao-csv/">Regras de Validação</a>
+        <a href="/precos/">Preços</a>
+        <a href="/?erp=sankhya-tgfpar#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Validar meu arquivo grátis</a>
+      </nav>
+    </div>
+  </header>
+    <main class="seo-main">
+      <div class="seo-container">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Início</a></li>
+          <li><a href="/layouts-de-importacao-erp/">Layouts de Importação ERP</a></li>
+          <li aria-current="page">Sankhya — TGFPAR (Parceiros)</li>
+        </ol>
+      </nav>
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">Sankhya</span>
+              <span class="seo-pill-outline">Tabela TGFPAR (Parceiros de Negócio — Sankhya Om / Sankhya-W)</span>
+            </div>
+            <h1>Layout de Importação Sankhya TGFPAR: Validação de Parceiros de Negócio em CSV</h1>
+            <p class="seo-lead">Audite sua planilha de clientes, fornecedores e parceiros antes de importar na tabela TGFPAR do Sankhya Om. Bloqueie erros em CGC_CPF, LIMCRED, EMAIL e CEP antes que a carga falhe no banco.</p>
+            <div class="seo-cta-row">
+              <a href="/?erp=sankhya-tgfpar#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/layouts-de-importacao-erp/" class="seo-btn seo-btn-secondary">Ver todos os layouts de ERP</a>
+            </div>
+          </header>
+
+          <section class="seo-section">
+            <h2>Para que serve o layout TGFPAR (Parceiros) no Sankhya</h2>
+            <p>No ERP Sankhya (Sankhya Om / Sankhya-W), a tabela TGFPAR centraliza todos os Parceiros de Negócio — clientes, fornecedores, transportadoras e vendedores. Durante cargas em lote, um único CGC_CPF com dígito verificador incorreto, um CEP com menos de 8 dígitos ou um limite negativo em LIMCRED aborta a transação ou bloqueia o faturamento no Portal de Vendas.</p>
+          <p>O preset &quot;Sankhya&quot; do DataConform reflete o dicionário de dados da tabela TGFPAR. Ele exige e inspeciona as colunas CODPARC, NOMEPARC, CGC_CPF, EMAIL, LIMCRED, ATIVO e CEP, aplicando validação de Módulo 11 para CPF/CNPJ, validação postal de 8 dígitos para CEP e checagem numérica para LIMCRED.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>Tabela de Colunas Obrigatórias Reais do Preset (TGFPAR (Parceiros))</h2>
+            <p>O preset oficial do DataConform para <strong>Sankhya</strong> exige as seguintes colunas no cabeçalho da planilha CSV (arquivo de referência: <code>layout_sankhya_tgfpar.csv</code>):</p>
+            <div class="seo-table-wrap">
+              <table class="seo-table">
+                <thead>
+                  <tr>
+                    <th>Coluna Obrigatória</th>
+                    <th>Descrição Técnica no ERP</th>
+                    <th>Exemplo Válido</th>
+                    <th>Regra Aplicada no DataConform</th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><code>CODPARC</code></td>
+                <td>Código chave do parceiro de negócio na tabela TGFPAR do Sankhya.</td>
+                <td><code>501</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING</span></td>
+              </tr>
+              <tr>
+                <td><code>NOMEPARC</code></td>
+                <td>Nome ou razão social do parceiro de negócio no cadastro TGFPAR.</td>
+                <td><code>Cerrado Agroindustrial LTDA</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING / ENCODING_CORRUPTION</span></td>
+              </tr>
+              <tr>
+                <td><code>CGC_CPF</code></td>
+                <td>CNPJ (14 dígitos) ou CPF (11 dígitos) validado por Módulo 11.</td>
+                <td><code>12.345.678/0001-95</code></td>
+                <td><span class="seo-code-pill">INVALID_DOCUMENT_FORMAT</span></td>
+              </tr>
+              <tr>
+                <td><code>EMAIL</code></td>
+                <td>E-mail para envio de NF-e, boletos e comunicações comerciais.</td>
+                <td><code>contabil@cerradoagro.com.br</code></td>
+                <td><span class="seo-code-pill">INVALID_EMAIL_FORMAT</span></td>
+              </tr>
+              <tr>
+                <td><code>LIMCRED</code></td>
+                <td>Limite de crédito financeiro na TGFPAR (decimal maior ou igual a zero).</td>
+                <td><code>180000.00</code></td>
+                <td><span class="seo-code-pill">INVALID_NUMERIC_VALUE / NEGATIVE_AMOUNT_NOT_ALLOWED</span></td>
+              </tr>
+              <tr>
+                <td><code>ATIVO</code></td>
+                <td>Flag de registro ativo na tabela TGFPAR (ex.: S para Sim, N para Não).</td>
+                <td><code>S</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING</span></td>
+              </tr>
+              <tr>
+                <td><code>CEP</code></td>
+                <td>CEP de 8 dígitos numéricos vinculado ao endereço do parceiro.</td>
+                <td><code>74000-000</code></td>
+                <td><span class="seo-code-pill">INVALID_CEP_FORMAT</span></td>
+              </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Exemplo de Estrutura CSV Homologada (layout_sankhya_tgfpar.csv)</h2>
+            <p>Abaixo está a estrutura real do arquivo CSV utilizado pelo DataConform para homologar cargas deste módulo, incluindo linhas íntegras e linhas de teste para captura de inconsistências:</p>
+            <pre class="seo-code-block"><code>CODPARC,NOMEPARC,CGC_CPF,EMAIL,LIMCRED,ATIVO,CEP
+501,Cerrado Agroindustrial LTDA,12.345.678/0001-95,contabil@cerradoagro.com.br,180000.00,S,74000-000
+502,Parceiro Sankhya Com Erro SA,12.345.678/0001-00,sem-arroba.com.br,-3000.00,S,1234</code></pre>
+          </section>
+
+          <section class="seo-section">
+            <h2>Erros Mais Comuns na Importação do Sankhya e Regras do DataConform</h2>
+            <p>Durante a preparação da carga de dados, os seguintes desvios costumam bloquear a importação no ERP e são interceptados automaticamente pelo motor de validação:</p>
+            <div class="seo-cards-grid">
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_DOCUMENT_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>CGC_CPF</code></span>
+            </div>
+            <h3>CGC_CPF com dígito verificador inválido ou formatação truncada</h3>
+            <p>O Sankhya valida o CGC_CPF no cadastro e na emissão de notas (TGFCAB). O DataConform detecta qualquer CPF ou CNPJ inválido na coluna CGC_CPF antes da carga.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_CEP_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>CEP</code></span>
+            </div>
+            <h3>CEP incompleto impedindo vínculo com a tabela TSICEP</h3>
+            <p>Na TGFPAR, CEPs com 4 ou 7 dígitos geram falha de integridade com a tabela de logradouros e são bloqueados pelo código INVALID_CEP_FORMAT.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">NEGATIVE_AMOUNT_NOT_ALLOWED</span>
+              <span class="seo-field-tag">Campo: <code>LIMCRED</code></span>
+            </div>
+            <h3>Valor negativo ou não numérico na coluna LIMCRED</h3>
+            <p>O campo LIMCRED do dicionário Sankhya é inspecionado automaticamente para impedir a entrada de limites negativos.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">ENCODING_CORRUPTION</span>
+              <span class="seo-field-tag">Campo: <code>NOMEPARC</code></span>
+            </div>
+            <h3>Nomes de parceiros com acentuação corrompida (ANSI vs UTF-8)</h3>
+            <p>Planilhas exportadas em ISO-8859-1 ou Windows-1252 apresentam caracteres inválidos em NOMEPARC se não forem convertidas para UTF-8.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Passo a Passo para Validar sua Planilha antes da Carga no ERP</h2>
+            <ol class="seo-steps-list">
+          <li class="seo-step-item">
+            <span class="seo-step-num">1</span>
+            <div>
+              <strong>Passo 1</strong>
+              <p>Prepare a planilha CSV da tabela TGFPAR com as 7 colunas obrigatórias: CODPARC, NOMEPARC, CGC_CPF, EMAIL, LIMCRED, ATIVO e CEP.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">2</span>
+            <div>
+              <strong>Passo 2</strong>
+              <p>Selecione o preset &quot;Sankhya&quot; no DataConform e envie seu arquivo para validação.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">3</span>
+            <div>
+              <strong>Passo 3</strong>
+              <p>Exporte a listagem de inconsistências em CSV para correção e gere o laudo em PDF antes da carga no Sankhya Om.</p>
+            </div>
+          </li>
+            </ol>
+          </section>
+
+          <section class="seo-section">
+            <h2>Perguntas Frequentes (FAQ) — Importação Sankhya</h2>
+            <div class="seo-faq-list">
+          <div class="seo-faq-item">
+            <h3>Posso testar o cenário da tabela TGFPAR do Sankhya gratuitamente?</h3>
+            <p>Sim. O simulador na página inicial já conta com aba dedicada ao Sankhya Om (TGFPAR), e o plano Starter Gratuito valida até 20 arquivos reais por mês.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>A coluna CGC_CPF aceita documentos com máscara?</h3>
+            <p>Sim. O validador higieniza pontos, barra e hífen para validar os 11 dígitos do CPF ou 14 dígitos do CNPJ pelo Módulo 11.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>O DataConform verifica se alguma coluna obrigatória da TGFPAR foi esquecida?</h3>
+            <p>Sim. Se qualquer uma das 7 colunas obrigatórias não constar no cabeçalho, o relatório aponta REQUIRED_HEADER_MISSING.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-cta-banner">
+            <div>
+              <h2>Pronto para homologar sua planilha do Sankhya?</h2>
+              <p>Teste agora mesmo no simulador interativo sem cadastro ou crie sua conta gratuita no plano Starter (até 20 arquivos/mês e laudo em PDF).</p>
+            </div>
+            <div class="seo-cta-row">
+              <a href="/?erp=sankhya-tgfpar#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/precos/" class="seo-btn seo-btn-secondary">Conhecer planos e limites</a>
+            </div>
+          </section>
+
+          <aside class="seo-related-box" aria-label="Conteúdos Relacionados">
+            <div class="seo-related-col">
+              <h3>Regras de Validação Aplicadas neste Layout</h3>
+              <ul>
+                <li><a href="/validar-cpf-cnpj-em-massa-csv/"><strong>Validar CPF e CNPJ em Massa no CSV</strong> (INVALID_DOCUMENT_FORMAT)</a></li>
+              <li><a href="/validar-cep-em-lote-csv/"><strong>Validar CEP em Lote na Planilha CSV</strong> (INVALID_CEP_FORMAT)</a></li>
+              <li><a href="/validar-email-em-lote-planilha-csv/"><strong>Validar E-mails em Lote no CSV</strong> (INVALID_EMAIL_FORMAT)</a></li>
+              <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/"><strong>Corrigir Erro de Encoding UTF-8 no CSV</strong> (ENCODING_CORRUPTION)</a></li>
+              </ul>
+            </div>
+            <div class="seo-related-col">
+              <h3>Outros Layouts de Importação ERP</h3>
+              <ul>
+                <li><a href="/layout-importacao-senior-erp-e085cli-clientes/"><strong>Senior ERP</strong> — Tabela E085CLI (Gestão Empresarial | ERP Senior / Sapiens)</a></li>
+              <li><a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus</strong> — Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotina MATA030</a></li>
+              <li><a href="/layout-importacao-omie-clientes/"><strong>Omie</strong> — Planilha Oficial de Clientes e Fornecedores — ERP Omie</a></li>
+                <li><a href="/layouts-de-importacao-erp/"><strong>Ver todos os 10 presets de ERP →</strong></a></li>
+              </ul>
+            </div>
+          </aside>
+        </article>
+      </div>
+    </main>
+  <footer class="seo-footer">
+    <div class="seo-container">
+      <div class="seo-footer-grid">
+        <div class="seo-footer-col">
+          <strong>DataConform</strong>
+          <p>Plataforma SaaS de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP. Diagnóstico linha a linha com exportação CSV e laudo em PDF.</p>
+          <p class="seo-footer-links-inline">
+            <a href="/">Início &amp; Simulador</a> •
+            <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
+            <a href="/regras-de-validacao-csv/">Regras CSV</a> •
+            <a href="/precos/">Preços</a>
+          </p>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 1)</strong>
+          <ul>
+            <li><a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1 (Clientes))</a></li>
+            <li><a href="/layout-importacao-protheus-sa2-fornecedores/">TOTVS Protheus - Fornecedores (SA2 (Fornecedores))</a></li>
+            <li><a href="/layout-importacao-protheus-sb1-produtos/">TOTVS Protheus - Produtos (SB1 (Produtos))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD (Business Partners))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-oitm-itens/">SAP Business One - Itens (OITM (Item Master Data))</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 2)</strong>
+          <ul>
+            <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
+            <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
+            <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Regras de Validação CSV</strong>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="seo-footer-bottom">
+        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Layout de Importação TOTVS Protheus SB1 (Produtos e NCM) CSV | DataConform</title>
+    <meta name="description" content="Homologue a planilha CSV de produtos para a tabela SB1 do TOTVS Protheus (MATA010). Valide B1_COD, B1_DESC, B1_TIPO, B1_UM, NCM (B1_POSIPI) e preço (B1_PRV1)." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://dataconform.com.br/layout-importacao-protheus-sb1-produtos/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Layout de Importação TOTVS Protheus SB1 (Produtos e NCM) CSV | DataConform" />
+    <meta property="og:description" content="Homologue a planilha CSV de produtos para a tabela SB1 do TOTVS Protheus (MATA010). Valide B1_COD, B1_DESC, B1_TIPO, B1_UM, NCM (B1_POSIPI) e preço (B1_PRV1)." />
+    <meta property="og:url" content="https://dataconform.com.br/layout-importacao-protheus-sb1-produtos/" />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Layout de Importação TOTVS Protheus SB1 (Produtos e NCM) CSV | DataConform" />
+    <meta name="twitter:description" content="Homologue a planilha CSV de produtos para a tabela SB1 do TOTVS Protheus (MATA010). Valide B1_COD, B1_DESC, B1_TIPO, B1_UM, NCM (B1_POSIPI) e preço (B1_PRV1)." />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <link rel="stylesheet" href="/seo.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"TOTVS Protheus - Produtos — SB1 (Produtos)","item":"https://dataconform.com.br/layout-importacao-protheus-sb1-produtos/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"O campo B1_POSIPI pode ser validado com pontos (8471.49.00) ou somente números (84714900)?","acceptedAnswer":{"@type":"Answer","text":"Ambos os formatos são aceitos. O DataConform extrai os dígitos numéricos e verifica se o código NCM contém exatamente 8 dígitos."}},{"@type":"Question","name":"Como o DataConform trata vírgula e ponto decimal em B1_PRV1?","acceptedAnswer":{"@type":"Answer","text":"O validador reconhece tanto o padrão internacional (18500.00) quanto o brasileiro (18.500,00 ou 18500,00), rejeitando textos e valores negativos."}},{"@type":"Question","name":"Quantos produtos posso validar por arquivo CSV da SB1?","acceptedAnswer":{"@type":"Answer","text":"Até 1.000 linhas no plano Starter Gratuito, até 50.000 linhas no plano Professional e até 1.000.000 de linhas no plano Enterprise."}}]}</script>
+  </head>
+  <body>
+  <header class="seo-navbar">
+    <div class="seo-container seo-navbar-inner">
+      <a href="/" class="seo-brand" aria-label="DataConform - Página Inicial">
+        <img src="/favicon.svg" alt="Logo DataConform" width="32" height="32" />
+        <span class="seo-brand-title">DataConform</span>
+        <span class="seo-brand-badge">Validador CSV ERP</span>
+      </a>
+      <nav class="seo-nav-links" aria-label="Navegação Principal">
+        <a href="/layouts-de-importacao-erp/">Layouts de ERP</a>
+        <a href="/regras-de-validacao-csv/">Regras de Validação</a>
+        <a href="/precos/">Preços</a>
+        <a href="/?erp=protheus-sb1#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Validar meu arquivo grátis</a>
+      </nav>
+    </div>
+  </header>
+    <main class="seo-main">
+      <div class="seo-container">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Início</a></li>
+          <li><a href="/layouts-de-importacao-erp/">Layouts de Importação ERP</a></li>
+          <li aria-current="page">TOTVS Protheus - Produtos — SB1 (Produtos)</li>
+        </ol>
+      </nav>
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">TOTVS Protheus - Produtos</span>
+              <span class="seo-pill-outline">Tabela SB1 (Catálogo de Itens / Estoque — SIGAEST) • Rotina MATA010</span>
+            </div>
+            <h1>Layout de Importação TOTVS Protheus SB1 (Produtos): Validação de NCM e Preços</h1>
+            <p class="seo-lead">Audite o catálogo de produtos e materiais antes da carga na tabela SB1 (rotina MATA010 / SIGAEST) do TOTVS Protheus. Bloqueie códigos NCM truncados em B1_POSIPI, preços negativos em B1_PRV1 e descrições corrompidas.</p>
+            <div class="seo-cta-row">
+              <a href="/?erp=protheus-sb1#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/layouts-de-importacao-erp/" class="seo-btn seo-btn-secondary">Ver todos os layouts de ERP</a>
+            </div>
+          </header>
+
+          <section class="seo-section">
+            <h2>Para que serve o layout SB1 (Produtos) no TOTVS Protheus - Produtos</h2>
+            <p>A tabela SB1 (Descrição Genérica do Produto) sustenta os módulos de Estoque (SIGAEST), Compras (SIGACOM), Faturamento (SIGAFAT) e PCP no TOTVS Protheus. Na migração de SKUs via MATA010, erros na classificação fiscal NCM (B1_POSIPI) ou na formatação do preço base (B1_PRV1) causam rejeição de NF-e na SEFAZ e distorções no cálculo de IPI, ICMS-ST e PIS/COFINS.</p>
+          <p>O preset &quot;TOTVS Protheus - Produtos&quot; do DataConform inspeciona cada item antes da importação no ERP. Ele garante que as 6 colunas obrigatórias do SX3 estejam preenchidas, verifica se o código NCM em B1_POSIPI contém exatamente 8 dígitos numéricos e valida a integridade decimal do preço de venda em B1_PRV1.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>Tabela de Colunas Obrigatórias Reais do Preset (SB1 (Produtos))</h2>
+            <p>O preset oficial do DataConform para <strong>TOTVS Protheus - Produtos</strong> exige as seguintes colunas no cabeçalho da planilha CSV (arquivo de referência: <code>layout_totvs_protheus_sb1.csv</code>):</p>
+            <div class="seo-table-wrap">
+              <table class="seo-table">
+                <thead>
+                  <tr>
+                    <th>Coluna Obrigatória</th>
+                    <th>Descrição Técnica no ERP</th>
+                    <th>Exemplo Válido</th>
+                    <th>Regra Aplicada no DataConform</th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><code>B1_COD</code></td>
+                <td>Código único do item/produto no estoque (chave primária na SB1).</td>
+                <td><code>PRD001</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING</span></td>
+              </tr>
+              <tr>
+                <td><code>B1_DESC</code></td>
+                <td>Descrição técnica e comercial do produto impressa na DANFE.</td>
+                <td><code>Servidor Rack Corporativo Xeon</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING / ENCODING_CORRUPTION</span></td>
+              </tr>
+              <tr>
+                <td><code>B1_TIPO</code></td>
+                <td>Tipo do item no Protheus (ex.: PA Produto Acabado, MP Matéria-Prima, SV).</td>
+                <td><code>PA</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING</span></td>
+              </tr>
+              <tr>
+                <td><code>B1_UM</code></td>
+                <td>Unidade de medida principal vinculada à tabela SAH (UN, KG, PC, CX).</td>
+                <td><code>UN</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING</span></td>
+              </tr>
+              <tr>
+                <td><code>B1_POSIPI</code></td>
+                <td>Código NCM fiscal de 8 dígitos numéricos obrigatórios.</td>
+                <td><code>8471.49.00</code></td>
+                <td><span class="seo-code-pill">INVALID_NCM_FORMAT</span></td>
+              </tr>
+              <tr>
+                <td><code>B1_PRV1</code></td>
+                <td>Preço padrão de venda na tabela 1 (decimal maior ou igual a zero).</td>
+                <td><code>18500.00</code></td>
+                <td><span class="seo-code-pill">INVALID_NUMERIC_VALUE / NEGATIVE_AMOUNT_NOT_ALLOWED</span></td>
+              </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Exemplo de Estrutura CSV Homologada (layout_totvs_protheus_sb1.csv)</h2>
+            <p>Abaixo está a estrutura real do arquivo CSV utilizado pelo DataConform para homologar cargas deste módulo, incluindo linhas íntegras e linhas de teste para captura de inconsistências:</p>
+            <pre class="seo-code-block"><code>B1_COD,B1_DESC,B1_TIPO,B1_UM,B1_POSIPI,B1_PRV1
+PRD001,Servidor Rack Corporativo Xeon,PA,UN,8471.49.00,18500.00
+PRD002,Licenca de Software Operacional,SV,UN,8523.49.20,1200.00</code></pre>
+          </section>
+
+          <section class="seo-section">
+            <h2>Erros Mais Comuns na Importação do TOTVS Protheus - Produtos e Regras do DataConform</h2>
+            <p>Durante a preparação da carga de dados, os seguintes desvios costumam bloquear a importação no ERP e são interceptados automaticamente pelo motor de validação:</p>
+            <div class="seo-cards-grid">
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_NCM_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>B1_POSIPI</code></span>
+            </div>
+            <h3>NCM com 7 dígitos (zero à esquerda cortado pelo Excel)</h3>
+            <p>Itens dos capítulos 01 a 09 possuem NCM iniciado por zero. Quando o Excel formata a coluna como número, o código fica com 7 dígitos e trava a emissão de NF-e. O DataConform exige 8 dígitos.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_NUMERIC_VALUE</span>
+              <span class="seo-field-tag">Campo: <code>B1_PRV1</code></span>
+            </div>
+            <h3>Preço de venda com texto ou fórmula quebrada</h3>
+            <p>Observações como &quot;Sob consulta&quot; ou traços no campo numérico B1_PRV1 provocam falha de conversão de tipo no ExecAuto MATA010.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">ENCODING_CORRUPTION</span>
+              <span class="seo-field-tag">Campo: <code>B1_DESC</code></span>
+            </div>
+            <h3>Símbolos técnicos e acentos corrompidos na descrição</h3>
+            <p>Catálogos salvos fora do padrão UTF-8 geram o caractere de substituição Unicode na descrição do produto.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">REQUIRED_FIELD_MISSING</span>
+              <span class="seo-field-tag">Campo: <code>B1_UM / B1_TIPO</code></span>
+            </div>
+            <h3>SKUs sem unidade de medida ou tipo de material</h3>
+            <p>A ausência de B1_UM ou B1_TIPO impede a gravação do registro na SB1. O DataConform lista exatamente quais linhas estão incompletas.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Passo a Passo para Validar sua Planilha antes da Carga no ERP</h2>
+            <ol class="seo-steps-list">
+          <li class="seo-step-item">
+            <span class="seo-step-num">1</span>
+            <div>
+              <strong>Passo 1</strong>
+              <p>Gere o arquivo CSV do catálogo contendo o cabeçalho B1_COD, B1_DESC, B1_TIPO, B1_UM, B1_POSIPI e B1_PRV1.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">2</span>
+            <div>
+              <strong>Passo 2</strong>
+              <p>Carregue o arquivo no DataConform com o preset &quot;TOTVS Protheus - Produtos&quot; para validar NCMs e preços em lote.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">3</span>
+            <div>
+              <strong>Passo 3</strong>
+              <p>Exporte os itens com falha para saneamento fiscal e emita o laudo em PDF antes da carga na tabela SB1.</p>
+            </div>
+          </li>
+            </ol>
+          </section>
+
+          <section class="seo-section">
+            <h2>Perguntas Frequentes (FAQ) — Importação TOTVS Protheus - Produtos</h2>
+            <div class="seo-faq-list">
+          <div class="seo-faq-item">
+            <h3>O campo B1_POSIPI pode ser validado com pontos (8471.49.00) ou somente números (84714900)?</h3>
+            <p>Ambos os formatos são aceitos. O DataConform extrai os dígitos numéricos e verifica se o código NCM contém exatamente 8 dígitos.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>Como o DataConform trata vírgula e ponto decimal em B1_PRV1?</h3>
+            <p>O validador reconhece tanto o padrão internacional (18500.00) quanto o brasileiro (18.500,00 ou 18500,00), rejeitando textos e valores negativos.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>Quantos produtos posso validar por arquivo CSV da SB1?</h3>
+            <p>Até 1.000 linhas no plano Starter Gratuito, até 50.000 linhas no plano Professional e até 1.000.000 de linhas no plano Enterprise.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-cta-banner">
+            <div>
+              <h2>Pronto para homologar sua planilha do TOTVS Protheus - Produtos?</h2>
+              <p>Teste agora mesmo no simulador interativo sem cadastro ou crie sua conta gratuita no plano Starter (até 20 arquivos/mês e laudo em PDF).</p>
+            </div>
+            <div class="seo-cta-row">
+              <a href="/?erp=protheus-sb1#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/precos/" class="seo-btn seo-btn-secondary">Conhecer planos e limites</a>
+            </div>
+          </section>
+
+          <aside class="seo-related-box" aria-label="Conteúdos Relacionados">
+            <div class="seo-related-col">
+              <h3>Regras de Validação Aplicadas neste Layout</h3>
+              <ul>
+                <li><a href="/validar-ncm-planilha-csv/"><strong>Validar NCM em Planilha CSV</strong> (INVALID_NCM_FORMAT)</a></li>
+              <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/"><strong>Corrigir Erro de Encoding UTF-8 no CSV</strong> (ENCODING_CORRUPTION)</a></li>
+              <li><a href="/erro-colunas-delimitador-quebrado-csv/"><strong>Erro de Colunas e Delimitador Quebrado no CSV</strong> (COLUMN_COUNT_MISMATCH)</a></li>
+              <li><a href="/remover-identificar-linhas-duplicadas-csv/"><strong>Identificar Linhas Duplicadas no CSV</strong> (DUPLICATE_ROW)</a></li>
+              </ul>
+            </div>
+            <div class="seo-related-col">
+              <h3>Outros Layouts de Importação ERP</h3>
+              <ul>
+                <li><a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus</strong> — Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotina MATA030</a></li>
+              <li><a href="/layout-importacao-protheus-sa2-fornecedores/"><strong>TOTVS Protheus - Fornecedores</strong> — Tabela SA2 (Fornecedores — SIGACOM / SIGAFIN) • Rotina MATA020</a></li>
+              <li><a href="/layout-importacao-sap-business-one-oitm-itens/"><strong>SAP Business One - Itens</strong> — Objeto OITM (Item Master Data — DTW / Data Transfer Workbench)</a></li>
+                <li><a href="/layouts-de-importacao-erp/"><strong>Ver todos os 10 presets de ERP →</strong></a></li>
+              </ul>
+            </div>
+          </aside>
+        </article>
+      </div>
+    </main>
+  <footer class="seo-footer">
+    <div class="seo-container">
+      <div class="seo-footer-grid">
+        <div class="seo-footer-col">
+          <strong>DataConform</strong>
+          <p>Plataforma SaaS de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP. Diagnóstico linha a linha com exportação CSV e laudo em PDF.</p>
+          <p class="seo-footer-links-inline">
+            <a href="/">Início &amp; Simulador</a> •
+            <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
+            <a href="/regras-de-validacao-csv/">Regras CSV</a> •
+            <a href="/precos/">Preços</a>
+          </p>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 1)</strong>
+          <ul>
+            <li><a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1 (Clientes))</a></li>
+            <li><a href="/layout-importacao-protheus-sa2-fornecedores/">TOTVS Protheus - Fornecedores (SA2 (Fornecedores))</a></li>
+            <li><a href="/layout-importacao-protheus-sb1-produtos/">TOTVS Protheus - Produtos (SB1 (Produtos))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD (Business Partners))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-oitm-itens/">SAP Business One - Itens (OITM (Item Master Data))</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 2)</strong>
+          <ul>
+            <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
+            <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
+            <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Regras de Validação CSV</strong>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="seo-footer-bottom">
+        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>

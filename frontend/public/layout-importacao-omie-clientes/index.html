@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Layout de Importação Omie (Planilha de Clientes CSV) | DataConform</title>
+    <meta name="description" content="Valide sua planilha CSV de clientes e fornecedores antes de importar no ERP Omie. Confira codigo_cliente, razao_social, cnpj_cpf, email, estado e cep grátis." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://dataconform.com.br/layout-importacao-omie-clientes/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Layout de Importação Omie (Planilha de Clientes CSV) | DataConform" />
+    <meta property="og:description" content="Valide sua planilha CSV de clientes e fornecedores antes de importar no ERP Omie. Confira codigo_cliente, razao_social, cnpj_cpf, email, estado e cep grátis." />
+    <meta property="og:url" content="https://dataconform.com.br/layout-importacao-omie-clientes/" />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Layout de Importação Omie (Planilha de Clientes CSV) | DataConform" />
+    <meta name="twitter:description" content="Valide sua planilha CSV de clientes e fornecedores antes de importar no ERP Omie. Confira codigo_cliente, razao_social, cnpj_cpf, email, estado e cep grátis." />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <link rel="stylesheet" href="/seo.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"Omie — Planilha de Clientes e Fornecedores","item":"https://dataconform.com.br/layout-importacao-omie-clientes/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Posso baixar uma planilha modelo CSV pronta para o Omie?","acceptedAnswer":{"@type":"Answer","text":"Sim. Na vitrine de dicionários da página inicial ou dentro de projetos, clique em \"Baixar Modelo CSV\" para obter layout_omie_clientes.csv."}},{"@type":"Question","name":"Se minha planilha tiver uma coluna chamada status, ela dará erro?","acceptedAnswer":{"@type":"Answer","text":"Não. Colunas adicionais como status são preservadas e o motor sabe diferenciá-las das colunas de estado/UF."}},{"@type":"Question","name":"Quanto custa validar planilhas para o Omie no DataConform?","acceptedAnswer":{"@type":"Answer","text":"O plano Starter é gratuito (até 20 arquivos/mês de 1.000 linhas). O plano Professional custa R$ 79,90/mês (até 500 arquivos de 50.000 linhas)."}}]}</script>
+  </head>
+  <body>
+  <header class="seo-navbar">
+    <div class="seo-container seo-navbar-inner">
+      <a href="/" class="seo-brand" aria-label="DataConform - Página Inicial">
+        <img src="/favicon.svg" alt="Logo DataConform" width="32" height="32" />
+        <span class="seo-brand-title">DataConform</span>
+        <span class="seo-brand-badge">Validador CSV ERP</span>
+      </a>
+      <nav class="seo-nav-links" aria-label="Navegação Principal">
+        <a href="/layouts-de-importacao-erp/">Layouts de ERP</a>
+        <a href="/regras-de-validacao-csv/">Regras de Validação</a>
+        <a href="/precos/">Preços</a>
+        <a href="/?erp=omie-clientes#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Validar meu arquivo grátis</a>
+      </nav>
+    </div>
+  </header>
+    <main class="seo-main">
+      <div class="seo-container">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Início</a></li>
+          <li><a href="/layouts-de-importacao-erp/">Layouts de Importação ERP</a></li>
+          <li aria-current="page">Omie — Planilha de Clientes e Fornecedores</li>
+        </ol>
+      </nav>
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">Omie</span>
+              <span class="seo-pill-outline">Planilha Oficial de Clientes e Fornecedores — ERP Omie</span>
+            </div>
+            <h1>Layout de Importação Omie (Clientes e Fornecedores): Validação Prévia de Planilha CSV</h1>
+            <p class="seo-lead">Evite erros na importação em lote de clientes e fornecedores no ERP Omie. Audite codigo_cliente, razao_social, cnpj_cpf, email, valor_limite_credito, estado e cep com diagnóstico linha a linha.</p>
+            <div class="seo-cta-row">
+              <a href="/?erp=omie-clientes#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/layouts-de-importacao-erp/" class="seo-btn seo-btn-secondary">Ver todos os layouts de ERP</a>
+            </div>
+          </header>
+
+          <section class="seo-section">
+            <h2>Para que serve o layout Planilha de Clientes e Fornecedores no Omie</h2>
+            <p>O ERP Omie é amplamente utilizado para gestão integrada de faturamento, finanças e emissão de NF-e/NFS-e. Ao migrar cadastros de clientes e fornecedores por planilha para o Omie, campos com CPF/CNPJ inválido, CEPs com zero à esquerda cortado pelo Excel ou siglas de estado incorretas fazem com que a importação falhe ou gere cadastros que travam na emissão da nota fiscal.</p>
+          <p>Com o preset &quot;Omie&quot; do DataConform, você audita toda a sua planilha CSV antes de subir no ERP. O motor verifica automaticamente as 7 colunas obrigatórias do modelo (codigo_cliente, razao_social, cnpj_cpf, email, valor_limite_credito, estado e cep), apontando exatamente a linha e o valor que precisam de correção.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>Tabela de Colunas Obrigatórias Reais do Preset (Planilha de Clientes e Fornecedores)</h2>
+            <p>O preset oficial do DataConform para <strong>Omie</strong> exige as seguintes colunas no cabeçalho da planilha CSV (arquivo de referência: <code>layout_omie_clientes.csv</code>):</p>
+            <div class="seo-table-wrap">
+              <table class="seo-table">
+                <thead>
+                  <tr>
+                    <th>Coluna Obrigatória</th>
+                    <th>Descrição Técnica no ERP</th>
+                    <th>Exemplo Válido</th>
+                    <th>Regra Aplicada no DataConform</th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><code>codigo_cliente</code></td>
+                <td>Código de integração ou identificador único do cliente/fornecedor.</td>
+                <td><code>1001</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING</span></td>
+              </tr>
+              <tr>
+                <td><code>razao_social</code></td>
+                <td>Razão social da empresa ou nome completo do cliente pessoa física.</td>
+                <td><code>Alpha Tecnologia e Servicos LTDA</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING / ENCODING_CORRUPTION</span></td>
+              </tr>
+              <tr>
+                <td><code>cnpj_cpf</code></td>
+                <td>CNPJ (14 dígitos) ou CPF (11 dígitos) com validação Módulo 11.</td>
+                <td><code>12.345.678/0001-95</code></td>
+                <td><span class="seo-code-pill">INVALID_DOCUMENT_FORMAT</span></td>
+              </tr>
+              <tr>
+                <td><code>email</code></td>
+                <td>E-mail para envio automático de boletos, NF-e e NFS-e pelo Omie.</td>
+                <td><code>contato@alphatech.com.br</code></td>
+                <td><span class="seo-code-pill">INVALID_EMAIL_FORMAT</span></td>
+              </tr>
+              <tr>
+                <td><code>valor_limite_credito</code></td>
+                <td>Limite de crédito comercial atribuído ao cliente (decimal não negativo).</td>
+                <td><code>50000.00</code></td>
+                <td><span class="seo-code-pill">INVALID_NUMERIC_VALUE / NEGATIVE_AMOUNT_NOT_ALLOWED</span></td>
+              </tr>
+              <tr>
+                <td><code>estado</code></td>
+                <td>Sigla da Unidade Federativa do cliente (27 UFs do Brasil ou EX).</td>
+                <td><code>SP</code></td>
+                <td><span class="seo-code-pill">INVALID_UF_CODE</span></td>
+              </tr>
+              <tr>
+                <td><code>cep</code></td>
+                <td>CEP do endereço contendo exatamente 8 dígitos numéricos válidos.</td>
+                <td><code>01310-100</code></td>
+                <td><span class="seo-code-pill">INVALID_CEP_FORMAT</span></td>
+              </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Exemplo de Estrutura CSV Homologada (layout_omie_clientes.csv)</h2>
+            <p>Abaixo está a estrutura real do arquivo CSV utilizado pelo DataConform para homologar cargas deste módulo, incluindo linhas íntegras e linhas de teste para captura de inconsistências:</p>
+            <pre class="seo-code-block"><code>codigo_cliente,razao_social,cnpj_cpf,email,valor_limite_credito,estado,cep,status
+1001,Alpha Tecnologia e Servicos LTDA,12.345.678/0001-95,contato@alphatech.com.br,50000.00,SP,01310-100,ATIVO
+1002,Beta Comercio de Alimentos SA,11.222.333/0001-81,financeiro@betaalimentos.com.br,120000.50,PR,80020-000,ATIVO
+1003,Invalido Erro CNPJ LTDA,12.345.678/0001-00,suporte@empresa.com,25000.00,SC,88000-000,ATIVO
+1004,Invalido Valor Negativo ME,06.990.590/0001-23,email-sem-arroba.com,-4500.00,XX,0000,ATIVO</code></pre>
+          </section>
+
+          <section class="seo-section">
+            <h2>Erros Mais Comuns na Importação do Omie e Regras do DataConform</h2>
+            <p>Durante a preparação da carga de dados, os seguintes desvios costumam bloquear a importação no ERP e são interceptados automaticamente pelo motor de validação:</p>
+            <div class="seo-cards-grid">
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_DOCUMENT_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>cnpj_cpf</code></span>
+            </div>
+            <h3>CPF ou CNPJ com dígito verificador incorreto em planilhas manuais</h3>
+            <p>Dados vindos de controles manuais costumam conter CNPJs digitados incorretamente. O DataConform recalcula o Módulo 11 de cada linha em cnpj_cpf.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_CEP_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>cep</code></span>
+            </div>
+            <h3>CEP zerado (00000-000) ou truncado com 7 dígitos</h3>
+            <p>O Omie utiliza o CEP para validação de endereço fiscal. O DataConform rejeita CEPs com menos de 8 dígitos ou iguais a 00000000.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_UF_CODE</span>
+              <span class="seo-field-tag">Campo: <code>estado</code></span>
+            </div>
+            <h3>Estado por extenso ou sigla inexistente na coluna estado</h3>
+            <p>A coluna estado deve conter a sigla de 2 letras da UF (ex.: SP, PR, SC) ou EX. Valores como &quot;XX&quot; são sinalizados com INVALID_UF_CODE.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_EMAIL_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>email</code></span>
+            </div>
+            <h3>E-mails sem @ ou com observações na célula</h3>
+            <p>Anotações junto ao endereço na coluna email invalidam o disparo de cobranças no Omie e são detectadas pelo DataConform.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Passo a Passo para Validar sua Planilha antes da Carga no ERP</h2>
+            <ol class="seo-steps-list">
+          <li class="seo-step-item">
+            <span class="seo-step-num">1</span>
+            <div>
+              <strong>Passo 1</strong>
+              <p>Exporte sua planilha de clientes em CSV UTF-8 com as colunas codigo_cliente, razao_social, cnpj_cpf, email, valor_limite_credito, estado e cep.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">2</span>
+            <div>
+              <strong>Passo 2</strong>
+              <p>No DataConform, selecione o preset &quot;Omie&quot; e faça o upload do arquivo para rodar as regras estruturais e fiscais.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">3</span>
+            <div>
+              <strong>Passo 3</strong>
+              <p>Baixe o CSV apenas com as linhas que apresentaram erro, corrija os cadastros e faça a importação limpa no Omie.</p>
+            </div>
+          </li>
+            </ol>
+          </section>
+
+          <section class="seo-section">
+            <h2>Perguntas Frequentes (FAQ) — Importação Omie</h2>
+            <div class="seo-faq-list">
+          <div class="seo-faq-item">
+            <h3>Posso baixar uma planilha modelo CSV pronta para o Omie?</h3>
+            <p>Sim. Na vitrine de dicionários da página inicial ou dentro de projetos, clique em &quot;Baixar Modelo CSV&quot; para obter layout_omie_clientes.csv.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>Se minha planilha tiver uma coluna chamada status, ela dará erro?</h3>
+            <p>Não. Colunas adicionais como status são preservadas e o motor sabe diferenciá-las das colunas de estado/UF.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>Quanto custa validar planilhas para o Omie no DataConform?</h3>
+            <p>O plano Starter é gratuito (até 20 arquivos/mês de 1.000 linhas). O plano Professional custa R$ 79,90/mês (até 500 arquivos de 50.000 linhas).</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-cta-banner">
+            <div>
+              <h2>Pronto para homologar sua planilha do Omie?</h2>
+              <p>Teste agora mesmo no simulador interativo sem cadastro ou crie sua conta gratuita no plano Starter (até 20 arquivos/mês e laudo em PDF).</p>
+            </div>
+            <div class="seo-cta-row">
+              <a href="/?erp=omie-clientes#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/precos/" class="seo-btn seo-btn-secondary">Conhecer planos e limites</a>
+            </div>
+          </section>
+
+          <aside class="seo-related-box" aria-label="Conteúdos Relacionados">
+            <div class="seo-related-col">
+              <h3>Regras de Validação Aplicadas neste Layout</h3>
+              <ul>
+                <li><a href="/validar-cpf-cnpj-em-massa-csv/"><strong>Validar CPF e CNPJ em Massa no CSV</strong> (INVALID_DOCUMENT_FORMAT)</a></li>
+              <li><a href="/validar-cep-em-lote-csv/"><strong>Validar CEP em Lote na Planilha CSV</strong> (INVALID_CEP_FORMAT)</a></li>
+              <li><a href="/validar-uf-estado-planilha-csv/"><strong>Validar Sigla de UF e Estado no CSV</strong> (INVALID_UF_CODE)</a></li>
+              <li><a href="/validar-email-em-lote-planilha-csv/"><strong>Validar E-mails em Lote no CSV</strong> (INVALID_EMAIL_FORMAT)</a></li>
+              </ul>
+            </div>
+            <div class="seo-related-col">
+              <h3>Outros Layouts de Importação ERP</h3>
+              <ul>
+                <li><a href="/layout-importacao-contaazul-clientes/"><strong>ContaAzul</strong> — Layout de Carga Cadastral e Financeira — ERP ContaAzul</a></li>
+              <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/"><strong>Sankhya</strong> — Tabela TGFPAR (Parceiros de Negócio — Sankhya Om / Sankhya-W)</a></li>
+              <li><a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus</strong> — Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotina MATA030</a></li>
+                <li><a href="/layouts-de-importacao-erp/"><strong>Ver todos os 10 presets de ERP →</strong></a></li>
+              </ul>
+            </div>
+          </aside>
+        </article>
+      </div>
+    </main>
+  <footer class="seo-footer">
+    <div class="seo-container">
+      <div class="seo-footer-grid">
+        <div class="seo-footer-col">
+          <strong>DataConform</strong>
+          <p>Plataforma SaaS de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP. Diagnóstico linha a linha com exportação CSV e laudo em PDF.</p>
+          <p class="seo-footer-links-inline">
+            <a href="/">Início &amp; Simulador</a> •
+            <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
+            <a href="/regras-de-validacao-csv/">Regras CSV</a> •
+            <a href="/precos/">Preços</a>
+          </p>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 1)</strong>
+          <ul>
+            <li><a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1 (Clientes))</a></li>
+            <li><a href="/layout-importacao-protheus-sa2-fornecedores/">TOTVS Protheus - Fornecedores (SA2 (Fornecedores))</a></li>
+            <li><a href="/layout-importacao-protheus-sb1-produtos/">TOTVS Protheus - Produtos (SB1 (Produtos))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD (Business Partners))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-oitm-itens/">SAP Business One - Itens (OITM (Item Master Data))</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 2)</strong>
+          <ul>
+            <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
+            <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
+            <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Regras de Validação CSV</strong>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="seo-footer-bottom">
+        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Validar UF e Sigla de Estado em Planilha CSV (IBGE / SEFAZ) | DataConform</title>
+    <meta name="description" content="Valide a coluna de UF/Estado na sua planilha CSV antes de importar no ERP. Garanta que todos os registros usem as 27 siglas oficiais do Brasil ou EX (Exterior)." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://dataconform.com.br/validar-uf-estado-planilha-csv/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Validar UF e Sigla de Estado em Planilha CSV (IBGE / SEFAZ) | DataConform" />
+    <meta property="og:description" content="Valide a coluna de UF/Estado na sua planilha CSV antes de importar no ERP. Garanta que todos os registros usem as 27 siglas oficiais do Brasil ou EX (Exterior)." />
+    <meta property="og:url" content="https://dataconform.com.br/validar-uf-estado-planilha-csv/" />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Validar UF e Sigla de Estado em Planilha CSV (IBGE / SEFAZ) | DataConform" />
+    <meta name="twitter:description" content="Valide a coluna de UF/Estado na sua planilha CSV antes de importar no ERP. Garanta que todos os registros usem as 27 siglas oficiais do Brasil ou EX (Exterior)." />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <link rel="stylesheet" href="/seo.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Validar Sigla de UF e Estado no CSV","item":"https://dataconform.com.br/validar-uf-estado-planilha-csv/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quais são todas as 28 siglas aceitas pela regra de UF do DataConform?","acceptedAnswer":{"@type":"Answer","text":"São as 27 siglas estaduais e distrital do Brasil (AC, AL, AP, AM, BA, CE, DF, ES, GO, MA, MT, MS, MG, PA, PB, PR, PE, PI, RJ, RN, RS, RO, RR, SC, SP, SE, TO) mais a sigla EX para Exterior."}},{"@type":"Question","name":"A validação diferencia letras maiúsculas de minúsculas (ex.: sp vs SP)?","acceptedAnswer":{"@type":"Answer","text":"O comparador do DataConform é case-insensitive (aceita sp ou SP), mas recomendamos padronizar em letras maiúsculas para total compatibilidade com o dicionário do seu ERP."}},{"@type":"Question","name":"O DataConform confunde a coluna \"status\" com coluna de estado?","acceptedAnswer":{"@type":"Answer","text":"Não. O motor possui uma trava explícita para nunca aplicar a regra de UF sobre colunas chamadas \"status\", evitando falsos positivos."}}]}</script>
+  </head>
+  <body>
+  <header class="seo-navbar">
+    <div class="seo-container seo-navbar-inner">
+      <a href="/" class="seo-brand" aria-label="DataConform - Página Inicial">
+        <img src="/favicon.svg" alt="Logo DataConform" width="32" height="32" />
+        <span class="seo-brand-title">DataConform</span>
+        <span class="seo-brand-badge">Validador CSV ERP</span>
+      </a>
+      <nav class="seo-nav-links" aria-label="Navegação Principal">
+        <a href="/layouts-de-importacao-erp/">Layouts de ERP</a>
+        <a href="/regras-de-validacao-csv/">Regras de Validação</a>
+        <a href="/precos/">Preços</a>
+        <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Validar meu arquivo grátis</a>
+      </nav>
+    </div>
+  </header>
+    <main class="seo-main">
+      <div class="seo-container">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Início</a></li>
+          <li><a href="/regras-de-validacao-csv/">Regras de Validação CSV</a></li>
+          <li aria-current="page">Validar Sigla de UF e Estado no CSV</li>
+        </ol>
+      </nav>
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">Código: INVALID_UF_CODE</span>
+              <span class="seo-pill-outline">Severidade: Erro (Error)</span>
+            </div>
+            <h1>Como Validar Sigla de UF (Estado) em Planilha CSV para Importação em ERPs</h1>
+            <p class="seo-lead">Impeça que nomes de estados por extenso (&quot;São Paulo&quot;) ou siglas inexistentes (&quot;XX&quot;, &quot;ZZ&quot;) entrem no cadastro do seu ERP e travem o cálculo de ICMS e DIFAL. O DataConform valida as 27 UFs brasileiras e EX em lote.</p>
+            <div class="seo-cta-row">
+              <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/regras-de-validacao-csv/" class="seo-btn seo-btn-secondary">Ver todas as 17 regras</a>
+            </div>
+          </header>
+
+          <section class="seo-section">
+            <h2>Por que esse erro acontece na planilha CSV e trava o ERP</h2>
+            <p>A Unidade Federativa (UF) do cliente ou fornecedor é o parâmetro determinante para o motor tributário de qualquer ERP no Brasil: ela define se a operação é interna ou interestadual, qual alíquota de ICMS aplicar (7%, 12%, 18%, 4%) e se há cobrança de DIFAL ou Substituição Tributária. Em planilhas vindas de formulários web ou CRMs, é muito comum encontrar o nome do estado escrito por extenso (&quot;Minas Gerais&quot;, &quot;Paraná&quot;), siglas inventadas para testes (&quot;XX&quot;, &quot;ZZ&quot;) ou erros de digitação (&quot;SP &quot;, &quot;RJ1&quot;).</p>
+          <p>Nos dicionários de dados de ERPs como TOTVS Protheus (A1_EST / A2_EST), Senior (CodEst) e SAP S/4HANA (State), o campo aceita apenas 2 caracteres vinculados à tabela oficial de estados. Valores fora da lista oficial travam a importação ou impedem o faturamento.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>Como o Motor do DataConform Executa a Regra <code>INVALID_UF_CODE</code></h2>
+            <p>O validador do DataConform possui um conjunto indexado (HashSet case-insensitive) com as 27 siglas oficiais das Unidades Federativas brasileiras (AC, AL, AP, AM, BA, CE, DF, ES, GO, MA, MT, MS, MG, PA, PB, PR, PE, PI, RJ, RN, RS, RO, RR, SC, SP, SE, TO) mais a sigla especial EX utilizada em ERPs para clientes e fornecedores no exterior.</p>
+          <p>Ao inspecionar colunas de UF/Estado, o motor remove espaços laterais e verifica se a sigla consta na tabela oficial. Qualquer valor divergente recebe o apontamento INVALID_UF_CODE com indicação da linha, coluna e valor rejeitado.</p>
+            <div class="seo-detected-box">
+              <h3>Colunas e Dicionários Inspecionados Automaticamente:</h3>
+              <div class="seo-chips-wrap">
+                <span class="seo-col-chip">A1_EST (TOTVS Protheus SA1)</span>
+              <span class="seo-col-chip">A2_EST (TOTVS Protheus SA2)</span>
+              <span class="seo-col-chip">CodEst (Senior ERP E085CLI)</span>
+              <span class="seo-col-chip">State (SAP S/4HANA BP)</span>
+              <span class="seo-col-chip">estado (Omie)</span>
+              <span class="seo-col-chip">uf / UF (ContaAzul, Genérico)</span>
+              <span class="seo-col-chip">Colunas terminadas em _est ou iniciadas por uf_ (exceto status)</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Exemplos Práticos: Valores Aprovados vs. Valores Rejeitados</h2>
+            <p>Confira como o validador classifica diferentes entradas encontradas em planilhas reais durante a auditoria:</p>
+            <div class="seo-table-wrap">
+              <table class="seo-table">
+                <thead>
+                  <tr>
+                    <th>Valor na Célula / Linha CSV</th>
+                    <th>Resultado no Laudo</th>
+                    <th>Explicação Técnica</th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><code>SP, RJ, MG, PR, RS, SC, BA...</code></td>
+                <td><span class="seo-code-pill seo-code-ok">Válido (Aprovado)</span></td>
+                <td>Sigla oficial pertencente às 27 Unidades Federativas do Brasil.</td>
+              </tr>
+              <tr>
+                <td><code>EX</code></td>
+                <td><span class="seo-code-pill seo-code-ok">Válido (Aprovado)</span></td>
+                <td>Sigla oficial para operações de importação/exportação com parceiros no exterior.</td>
+              </tr>
+              <tr>
+                <td><code>São Paulo</code></td>
+                <td><span class="seo-code-pill seo-code-error">Rejeitado (INVALID_UF_CODE)</span></td>
+                <td>Nome do estado por extenso no lugar da sigla de 2 letras (SP).</td>
+              </tr>
+              <tr>
+                <td><code>XX / ZZ / BR</code></td>
+                <td><span class="seo-code-pill seo-code-error">Rejeitado (INVALID_UF_CODE)</span></td>
+                <td>Sigla inexistente na tabela oficial IBGE/SEFAZ de Unidades Federativas.</td>
+              </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Passo a Passo para Auditar e Sanear sua Planilha</h2>
+            <ol class="seo-steps-list">
+          <li class="seo-step-item">
+            <span class="seo-step-num">1</span>
+            <div>
+              <strong>Passo 1</strong>
+              <p>Certifique-se de que sua planilha CSV utiliza siglas de 2 letras na coluna de estado (A1_EST, A2_EST, CodEst, State, estado ou uf).</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">2</span>
+            <div>
+              <strong>Passo 2</strong>
+              <p>Envie o arquivo no DataConform selecionando o preset do seu ERP para auditar todas as linhas.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">3</span>
+            <div>
+              <strong>Passo 3</strong>
+              <p>Caso existam erros INVALID_UF_CODE, exporte o CSV de inconsistências, substitua pelas siglas oficiais e gere o laudo PDF.</p>
+            </div>
+          </li>
+            </ol>
+          </section>
+
+          <section class="seo-section">
+            <h2>Perguntas Frequentes (FAQ) — Validar Sigla de UF e Estado no CSV</h2>
+            <div class="seo-faq-list">
+          <div class="seo-faq-item">
+            <h3>Quais são todas as 28 siglas aceitas pela regra de UF do DataConform?</h3>
+            <p>São as 27 siglas estaduais e distrital do Brasil (AC, AL, AP, AM, BA, CE, DF, ES, GO, MA, MT, MS, MG, PA, PB, PR, PE, PI, RJ, RN, RS, RO, RR, SC, SP, SE, TO) mais a sigla EX para Exterior.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>A validação diferencia letras maiúsculas de minúsculas (ex.: sp vs SP)?</h3>
+            <p>O comparador do DataConform é case-insensitive (aceita sp ou SP), mas recomendamos padronizar em letras maiúsculas para total compatibilidade com o dicionário do seu ERP.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>O DataConform confunde a coluna &quot;status&quot; com coluna de estado?</h3>
+            <p>Não. O motor possui uma trava explícita para nunca aplicar a regra de UF sobre colunas chamadas &quot;status&quot;, evitando falsos positivos.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-cta-banner">
+            <div>
+              <h2>Audite sua planilha CSV contra o erro <code>INVALID_UF_CODE</code> agora mesmo</h2>
+              <p>Experimente o simulador interativo na página inicial ou valide até 20 arquivos por mês gratuitamente no plano Starter com exportação de inconsistências e laudo em PDF.</p>
+            </div>
+            <div class="seo-cta-row">
+              <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/precos/" class="seo-btn seo-btn-secondary">Consultar planos e cotas</a>
+            </div>
+          </section>
+
+          <aside class="seo-related-box" aria-label="Links Relacionados">
+            <div class="seo-related-col">
+              <h3>Outras Regras de Alta Intenção</h3>
+              <ul>
+                <li><a href="/validar-cep-em-lote-csv/"><strong>Validar CEP em Lote na Planilha CSV</strong> (INVALID_CEP_FORMAT)</a></li>
+              <li><a href="/validar-cpf-cnpj-em-massa-csv/"><strong>Validar CPF e CNPJ em Massa no CSV</strong> (INVALID_DOCUMENT_FORMAT)</a></li>
+              <li><a href="/validar-email-em-lote-planilha-csv/"><strong>Validar E-mails em Lote no CSV</strong> (INVALID_EMAIL_FORMAT)</a></li>
+              <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/"><strong>Corrigir Erro de Encoding UTF-8 no CSV</strong> (ENCODING_CORRUPTION)</a></li>
+                <li><a href="/regras-de-validacao-csv/"><strong>Ver catálogo completo das 17 regras →</strong></a></li>
+              </ul>
+            </div>
+            <div class="seo-related-col">
+              <h3>Layouts de ERP que Utilizam esta Regra</h3>
+              <ul>
+                <li><a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus</strong> (SA1 (Clientes))</a></li>
+              <li><a href="/layout-importacao-protheus-sa2-fornecedores/"><strong>TOTVS Protheus - Fornecedores</strong> (SA2 (Fornecedores))</a></li>
+              <li><a href="/layout-importacao-senior-erp-e085cli-clientes/"><strong>Senior ERP</strong> (E085CLI (Clientes Sapiens))</a></li>
+              <li><a href="/layout-importacao-sap-s4hana-business-partner/"><strong>SAP S/4HANA</strong> (Business Partner (BP))</a></li>
+              </ul>
+            </div>
+          </aside>
+        </article>
+      </div>
+    </main>
+  <footer class="seo-footer">
+    <div class="seo-container">
+      <div class="seo-footer-grid">
+        <div class="seo-footer-col">
+          <strong>DataConform</strong>
+          <p>Plataforma SaaS de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP. Diagnóstico linha a linha com exportação CSV e laudo em PDF.</p>
+          <p class="seo-footer-links-inline">
+            <a href="/">Início &amp; Simulador</a> •
+            <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
+            <a href="/regras-de-validacao-csv/">Regras CSV</a> •
+            <a href="/precos/">Preços</a>
+          </p>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 1)</strong>
+          <ul>
+            <li><a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1 (Clientes))</a></li>
+            <li><a href="/layout-importacao-protheus-sa2-fornecedores/">TOTVS Protheus - Fornecedores (SA2 (Fornecedores))</a></li>
+            <li><a href="/layout-importacao-protheus-sb1-produtos/">TOTVS Protheus - Produtos (SB1 (Produtos))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD (Business Partners))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-oitm-itens/">SAP Business One - Itens (OITM (Item Master Data))</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 2)</strong>
+          <ul>
+            <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
+            <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
+            <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Regras de Validação CSV</strong>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="seo-footer-bottom">
+        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>

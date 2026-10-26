@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Layout de Importação SAP Business One OITM (Itens DTW) CSV | DataConform</title>
+    <meta name="description" content="Audite sua planilha CSV do objeto OITM (Cadastro de Itens) para o DTW do SAP Business One. Valide ItemCode, ItemName, SalUnitMsr, Price e NcmCode em lote." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://dataconform.com.br/layout-importacao-sap-business-one-oitm-itens/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Layout de Importação SAP Business One OITM (Itens DTW) CSV | DataConform" />
+    <meta property="og:description" content="Audite sua planilha CSV do objeto OITM (Cadastro de Itens) para o DTW do SAP Business One. Valide ItemCode, ItemName, SalUnitMsr, Price e NcmCode em lote." />
+    <meta property="og:url" content="https://dataconform.com.br/layout-importacao-sap-business-one-oitm-itens/" />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Layout de Importação SAP Business One OITM (Itens DTW) CSV | DataConform" />
+    <meta name="twitter:description" content="Audite sua planilha CSV do objeto OITM (Cadastro de Itens) para o DTW do SAP Business One. Valide ItemCode, ItemName, SalUnitMsr, Price e NcmCode em lote." />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <link rel="stylesheet" href="/seo.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"SAP Business One - Itens — OITM (Item Master Data)","item":"https://dataconform.com.br/layout-importacao-sap-business-one-oitm-itens/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"O DataConform valida o campo NcmCode com pontos (8528.52.20) ou sem pontos (85285220)?","acceptedAnswer":{"@type":"Answer","text":"Ambos os formatos são aceitos, pois o motor extrai os dígitos numéricos de NcmCode e verifica se totalizam exatamente 8 dígitos."}},{"@type":"Question","name":"O que acontece se um item estiver com ItemCode ou SalUnitMsr em branco?","acceptedAnswer":{"@type":"Answer","text":"O DataConform registra o erro REQUIRED_FIELD_MISSING indicando o número da linha e a coluna obrigatória vazia."}},{"@type":"Question","name":"Posso baixar um arquivo CSV de exemplo para o objeto OITM?","acceptedAnswer":{"@type":"Answer","text":"Sim. Ao selecionar o preset \"SAP Business One - Itens\" na plataforma, você pode baixar o arquivo modelo layout_sap_b1_oitm.csv."}}]}</script>
+  </head>
+  <body>
+  <header class="seo-navbar">
+    <div class="seo-container seo-navbar-inner">
+      <a href="/" class="seo-brand" aria-label="DataConform - Página Inicial">
+        <img src="/favicon.svg" alt="Logo DataConform" width="32" height="32" />
+        <span class="seo-brand-title">DataConform</span>
+        <span class="seo-brand-badge">Validador CSV ERP</span>
+      </a>
+      <nav class="seo-nav-links" aria-label="Navegação Principal">
+        <a href="/layouts-de-importacao-erp/">Layouts de ERP</a>
+        <a href="/regras-de-validacao-csv/">Regras de Validação</a>
+        <a href="/precos/">Preços</a>
+        <a href="/?erp=sap-b1-oitm#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Validar meu arquivo grátis</a>
+      </nav>
+    </div>
+  </header>
+    <main class="seo-main">
+      <div class="seo-container">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Início</a></li>
+          <li><a href="/layouts-de-importacao-erp/">Layouts de Importação ERP</a></li>
+          <li aria-current="page">SAP Business One - Itens — OITM (Item Master Data)</li>
+        </ol>
+      </nav>
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">SAP Business One - Itens</span>
+              <span class="seo-pill-outline">Objeto OITM (Item Master Data — DTW / Data Transfer Workbench)</span>
+            </div>
+            <h1>Layout de Importação SAP Business One OITM (DTW): Validação de Itens e NcmCode</h1>
+            <p class="seo-lead">Homologue a planilha de dados mestres de itens (objeto OITM) antes de importar via Data Transfer Workbench (DTW) no SAP Business One. Valide códigos NCM (NcmCode), preços (Price) e unidades (SalUnitMsr) sem retrabalho.</p>
+            <div class="seo-cta-row">
+              <a href="/?erp=sap-b1-oitm#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/layouts-de-importacao-erp/" class="seo-btn seo-btn-secondary">Ver todos os layouts de ERP</a>
+            </div>
+          </header>
+
+          <section class="seo-section">
+            <h2>Para que serve o layout OITM (Item Master Data) no SAP Business One - Itens</h2>
+            <p>O objeto OITM (Item Master Data) armazena todo o catálogo de mercadorias, matérias-primas e serviços no SAP Business One. Em cargas via Data Transfer Workbench (DTW), erros no código NCM (NcmCode) ou inconsistências numéricas em preços impedem a determinação de código de imposto (Tax Code Determination) e geram rejeições fiscais no faturamento.</p>
+          <p>O preset &quot;SAP Business One - Itens&quot; do DataConform automatiza a revisão técnica da planilha OITM. A ferramenta confere se as colunas obrigatórias ItemCode, ItemName, SalUnitMsr, Price e NcmCode estão presentes no cabeçalho, valida se cada NcmCode possui 8 dígitos numéricos e garante que todos os preços em Price sejam números decimais não negativos.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>Tabela de Colunas Obrigatórias Reais do Preset (OITM (Item Master Data))</h2>
+            <p>O preset oficial do DataConform para <strong>SAP Business One - Itens</strong> exige as seguintes colunas no cabeçalho da planilha CSV (arquivo de referência: <code>layout_sap_b1_oitm.csv</code>):</p>
+            <div class="seo-table-wrap">
+              <table class="seo-table">
+                <thead>
+                  <tr>
+                    <th>Coluna Obrigatória</th>
+                    <th>Descrição Técnica no ERP</th>
+                    <th>Exemplo Válido</th>
+                    <th>Regra Aplicada no DataConform</th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><code>ItemCode</code></td>
+                <td>Código identificador único do item no mestre de materiais do SAP B1.</td>
+                <td><code>ITM001</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING</span></td>
+              </tr>
+              <tr>
+                <td><code>ItemName</code></td>
+                <td>Descrição comercial do item no objeto OITM (em UTF-8).</td>
+                <td><code>Monitor Led 27 Polegadas 4K</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING / ENCODING_CORRUPTION</span></td>
+              </tr>
+              <tr>
+                <td><code>SalUnitMsr</code></td>
+                <td>Unidade de medida de vendas padrão do item (ex.: PC, UN, KG, CX).</td>
+                <td><code>PC</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING</span></td>
+              </tr>
+              <tr>
+                <td><code>Price</code></td>
+                <td>Preço unitário base do item para validação financeira (decimal não negativo).</td>
+                <td><code>1650.00</code></td>
+                <td><span class="seo-code-pill">INVALID_NUMERIC_VALUE / NEGATIVE_AMOUNT_NOT_ALLOWED</span></td>
+              </tr>
+              <tr>
+                <td><code>NcmCode</code></td>
+                <td>Código NCM fiscal vinculado à tabela ONCM do SAP B1 (8 dígitos numéricos).</td>
+                <td><code>8528.52.20</code></td>
+                <td><span class="seo-code-pill">INVALID_NCM_FORMAT</span></td>
+              </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Exemplo de Estrutura CSV Homologada (layout_sap_b1_oitm.csv)</h2>
+            <p>Abaixo está a estrutura real do arquivo CSV utilizado pelo DataConform para homologar cargas deste módulo, incluindo linhas íntegras e linhas de teste para captura de inconsistências:</p>
+            <pre class="seo-code-block"><code>ItemCode,ItemName,SalUnitMsr,Price,NcmCode
+ITM001,Monitor Led 27 Polegadas 4K,PC,1650.00,8528.52.20
+ITM002,Teclado Mecanico USB Brasil,PC,320.50,8471.60.52</code></pre>
+          </section>
+
+          <section class="seo-section">
+            <h2>Erros Mais Comuns na Importação do SAP Business One - Itens e Regras do DataConform</h2>
+            <p>Durante a preparação da carga de dados, os seguintes desvios costumam bloquear a importação no ERP e são interceptados automaticamente pelo motor de validação:</p>
+            <div class="seo-cards-grid">
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_NCM_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>NcmCode</code></span>
+            </div>
+            <h3>NcmCode ausente na tabela ONCM por perda de zero à esquerda</h3>
+            <p>Se um NCM de 8 dígitos perder o zero inicial no Excel (ficando com 7 dígitos), o DTW não encontra a chave na tabela ONCM do SAP B1 e aborta a criação do item.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_NUMERIC_VALUE</span>
+              <span class="seo-field-tag">Campo: <code>Price</code></span>
+            </div>
+            <h3>Formatação monetária inválida ou células de preço corrompidas</h3>
+            <p>Fórmulas quebradas do Excel (#REF!, #VALOR!) exportadas na coluna Price disparam erro na DI API. O DataConform aponta a linha exata.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">DUPLICATE_ROW</span>
+              <span class="seo-field-tag">Campo: <code>Linha completa</code></span>
+            </div>
+            <h3>Itens repetidos na consolidação de catálogos</h3>
+            <p>Planilhas unificadas de múltiplos fornecedores costumam conter linhas duplicadas. O validador sinaliza registros idênticos com DUPLICATE_ROW.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">ENCODING_CORRUPTION</span>
+              <span class="seo-field-tag">Campo: <code>ItemName</code></span>
+            </div>
+            <h3>Caracteres especiais corrompidos em descrições técnicas</h3>
+            <p>Descrições de itens com acentuação salvas fora de UTF-8 geram caracteres inválidos no banco SQL Server ou SAP HANA.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Passo a Passo para Validar sua Planilha antes da Carga no ERP</h2>
+            <ol class="seo-steps-list">
+          <li class="seo-step-item">
+            <span class="seo-step-num">1</span>
+            <div>
+              <strong>Passo 1</strong>
+              <p>Monte sua planilha CSV do objeto OITM com as colunas obrigatórias ItemCode, ItemName, SalUnitMsr, Price e NcmCode.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">2</span>
+            <div>
+              <strong>Passo 2</strong>
+              <p>Faça o upload no DataConform selecionando o preset &quot;SAP Business One - Itens&quot; para auditar NCMs e preços.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">3</span>
+            <div>
+              <strong>Passo 3</strong>
+              <p>Baixe o CSV de inconsistências para corrigir os SKUs afetados e gere o laudo em PDF antes de importar no DTW.</p>
+            </div>
+          </li>
+            </ol>
+          </section>
+
+          <section class="seo-section">
+            <h2>Perguntas Frequentes (FAQ) — Importação SAP Business One - Itens</h2>
+            <div class="seo-faq-list">
+          <div class="seo-faq-item">
+            <h3>O DataConform valida o campo NcmCode com pontos (8528.52.20) ou sem pontos (85285220)?</h3>
+            <p>Ambos os formatos são aceitos, pois o motor extrai os dígitos numéricos de NcmCode e verifica se totalizam exatamente 8 dígitos.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>O que acontece se um item estiver com ItemCode ou SalUnitMsr em branco?</h3>
+            <p>O DataConform registra o erro REQUIRED_FIELD_MISSING indicando o número da linha e a coluna obrigatória vazia.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>Posso baixar um arquivo CSV de exemplo para o objeto OITM?</h3>
+            <p>Sim. Ao selecionar o preset &quot;SAP Business One - Itens&quot; na plataforma, você pode baixar o arquivo modelo layout_sap_b1_oitm.csv.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-cta-banner">
+            <div>
+              <h2>Pronto para homologar sua planilha do SAP Business One - Itens?</h2>
+              <p>Teste agora mesmo no simulador interativo sem cadastro ou crie sua conta gratuita no plano Starter (até 20 arquivos/mês e laudo em PDF).</p>
+            </div>
+            <div class="seo-cta-row">
+              <a href="/?erp=sap-b1-oitm#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/precos/" class="seo-btn seo-btn-secondary">Conhecer planos e limites</a>
+            </div>
+          </section>
+
+          <aside class="seo-related-box" aria-label="Conteúdos Relacionados">
+            <div class="seo-related-col">
+              <h3>Regras de Validação Aplicadas neste Layout</h3>
+              <ul>
+                <li><a href="/validar-ncm-planilha-csv/"><strong>Validar NCM em Planilha CSV</strong> (INVALID_NCM_FORMAT)</a></li>
+              <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/"><strong>Corrigir Erro de Encoding UTF-8 no CSV</strong> (ENCODING_CORRUPTION)</a></li>
+              <li><a href="/remover-identificar-linhas-duplicadas-csv/"><strong>Identificar Linhas Duplicadas no CSV</strong> (DUPLICATE_ROW)</a></li>
+              <li><a href="/erro-colunas-delimitador-quebrado-csv/"><strong>Erro de Colunas e Delimitador Quebrado no CSV</strong> (COLUMN_COUNT_MISMATCH)</a></li>
+              </ul>
+            </div>
+            <div class="seo-related-col">
+              <h3>Outros Layouts de Importação ERP</h3>
+              <ul>
+                <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/"><strong>SAP Business One</strong> — Objeto OCRD (Business Partners — DTW / Data Transfer Workbench)</a></li>
+              <li><a href="/layout-importacao-protheus-sb1-produtos/"><strong>TOTVS Protheus - Produtos</strong> — Tabela SB1 (Catálogo de Itens / Estoque — SIGAEST) • Rotina MATA010</a></li>
+              <li><a href="/layout-importacao-sap-s4hana-business-partner/"><strong>SAP S/4HANA</strong> — SAP S/4HANA Migration Cockpit — Business Partner (BP)</a></li>
+                <li><a href="/layouts-de-importacao-erp/"><strong>Ver todos os 10 presets de ERP →</strong></a></li>
+              </ul>
+            </div>
+          </aside>
+        </article>
+      </div>
+    </main>
+  <footer class="seo-footer">
+    <div class="seo-container">
+      <div class="seo-footer-grid">
+        <div class="seo-footer-col">
+          <strong>DataConform</strong>
+          <p>Plataforma SaaS de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP. Diagnóstico linha a linha com exportação CSV e laudo em PDF.</p>
+          <p class="seo-footer-links-inline">
+            <a href="/">Início &amp; Simulador</a> •
+            <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
+            <a href="/regras-de-validacao-csv/">Regras CSV</a> •
+            <a href="/precos/">Preços</a>
+          </p>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 1)</strong>
+          <ul>
+            <li><a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1 (Clientes))</a></li>
+            <li><a href="/layout-importacao-protheus-sa2-fornecedores/">TOTVS Protheus - Fornecedores (SA2 (Fornecedores))</a></li>
+            <li><a href="/layout-importacao-protheus-sb1-produtos/">TOTVS Protheus - Produtos (SB1 (Produtos))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD (Business Partners))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-oitm-itens/">SAP Business One - Itens (OITM (Item Master Data))</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 2)</strong>
+          <ul>
+            <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
+            <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
+            <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Regras de Validação CSV</strong>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="seo-footer-bottom">
+        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>

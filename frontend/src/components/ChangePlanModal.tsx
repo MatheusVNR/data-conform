@@ -71,7 +71,7 @@ const PLANS: PlanOption[] = [
   {
     key: 'Enterprise',
     name: 'Enterprise',
-    price: 'R$ 249,00 / mês',
+    price: 'R$ 249,90 / mês',
     monthlyFiles: 10000,
     maxFileSize: 'Até 50 MB / arquivo',
     maxConcurrent: 'Até 10 arquivos por lote',
@@ -156,7 +156,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
     const targetUrl: string =
       selectedPlan === 'Professional'
         ? STRIPE_PRO_URL
-        : STRIPE_ENTERPRISE_URL || STRIPE_PRO_URL;
+        : STRIPE_ENTERPRISE_URL;
 
     if (!targetUrl) {
       setError('Link de checkout do Stripe não configurado para este plano.');

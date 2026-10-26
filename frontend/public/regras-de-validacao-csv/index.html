@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Regras de Validação CSV e Conformidade Fiscal para ERPs | DataConform</title>
+    <meta name="description" content="Conheça as 17 regras reais de validação estrutural (RFC 4180) e fiscal do DataConform: CPF/CNPJ (Módulo 11), NCM, CEP, UF, UTF-8, linhas duplicadas e delimitadores." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://dataconform.com.br/regras-de-validacao-csv/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Regras de Validação CSV e Conformidade Fiscal para ERPs | DataConform" />
+    <meta property="og:description" content="Conheça as 17 regras reais de validação estrutural (RFC 4180) e fiscal do DataConform: CPF/CNPJ (Módulo 11), NCM, CEP, UF, UTF-8, linhas duplicadas e delimitadores." />
+    <meta property="og:url" content="https://dataconform.com.br/regras-de-validacao-csv/" />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Regras de Validação CSV e Conformidade Fiscal para ERPs | DataConform" />
+    <meta name="twitter:description" content="Conheça as 17 regras reais de validação estrutural (RFC 4180) e fiscal do DataConform: CPF/CNPJ (Módulo 11), NCM, CEP, UF, UTF-8, linhas duplicadas e delimitadores." />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <link rel="stylesheet" href="/seo.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Como o DataConform sabe qual regra aplicar em cada coluna da planilha CSV?","acceptedAnswer":{"@type":"Answer","text":"O motor combina duas camadas: primeiro valida as colunas obrigatórias definidas para o projeto/ERP (`REQUIRED_HEADER_MISSING` e `REQUIRED_FIELD_MISSING`). Em seguida, analisa o nome de cada coluna do cabeçalho — reconhecendo tanto nomes genéricos (`cpf`, `cnpj`, `email`, `cep`, `uf`, `ncm`, `valor`, `data`, `telefone`) quanto nomes técnicos de dicionários de ERP (`A1_CGC`, `B1_POSIPI`, `LicTradNum`, `NcmCode`, `TaxId0`, `CgcCpf`, `EmaCli`, `VlrLim`, `LIMCRED`)."}},{"@type":"Question","name":"O DataConform protege contra arquivos binários renomeados e injeção de fórmulas em CSV?","acceptedAnswer":{"@type":"Answer","text":"Sim. A plataforma bloqueia o envio de arquivos binários disfarçados de CSV (como planilhas .xlsx ou .pdf apenas renomeadas para .csv) e sanitiza a exportação de relatórios para evitar ataques de CSV Formula Injection."}},{"@type":"Question","name":"Qual a diferença entre apontamentos com severidade \"Erro\" e severidade \"Aviso\"?","acceptedAnswer":{"@type":"Answer","text":"Apontamentos de Erro indicam desvios que impedem a importação ou corrompem regras fiscais (como CNPJ inválido, coluna obrigatória ausente ou quebra de delimitador). Avisos (como `EMPTY_HEADER_NAME` e `DUPLICATE_ROW`) alertam sobre anomalias estruturais ou duplicidades de linhas no lote."}}]}</script>
+  </head>
+  <body>
+  <header class="seo-navbar">
+    <div class="seo-container seo-navbar-inner">
+      <a href="/" class="seo-brand" aria-label="DataConform - Página Inicial">
+        <img src="/favicon.svg" alt="Logo DataConform" width="32" height="32" />
+        <span class="seo-brand-title">DataConform</span>
+        <span class="seo-brand-badge">Validador CSV ERP</span>
+      </a>
+      <nav class="seo-nav-links" aria-label="Navegação Principal">
+        <a href="/layouts-de-importacao-erp/">Layouts de ERP</a>
+        <a href="/regras-de-validacao-csv/">Regras de Validação</a>
+        <a href="/precos/">Preços</a>
+        <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Validar meu arquivo grátis</a>
+      </nav>
+    </div>
+  </header>
+    <main class="seo-main">
+      <div class="seo-container">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Início</a></li>
+          <li aria-current="page">Regras de Validação CSV</li>
+        </ol>
+      </nav>
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">Motor de Auditoria CSV</span>
+              <span class="seo-pill-outline">17 Códigos de Verificação Nativos</span>
+            </div>
+            <h1>Regras de Validação CSV: Conformidade Estrutural (RFC 4180) e Fiscal para ERPs</h1>
+            <p class="seo-lead">Conheça em detalhes todas as 17 regras executadas pelo motor do DataConform para auditar planilhas cadastrais, fiscais, financeiras e de estoque antes da importação no seu sistema ERP.</p>
+            <div class="seo-cta-row">
+              <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/layouts-de-importacao-erp/" class="seo-btn seo-btn-secondary">Ver layouts por ERP</a>
+            </div>
+          </header>
+
+          <section class="seo-section">
+            <h2>Arquitetura de Validação Estrutural e Semântica</h2>
+            <p>A carga de um arquivo CSV falha por dois tipos de desvios: corrupção estrutural do arquivo (encoding incompatível com UTF-8, vírgulas fora de aspas que deslocam colunas ou cabeçalhos duplicados) e inconsistência semântica dos dados (CNPJ inválido, NCM de 7 dígitos, UF inexistente ou limite negativo).</p>
+            <p>O DataConform lê o CSV em streaming, detecta automaticamente o delimitador (vírgula, ponto e vírgula ou tabulação), rastreia linhas duplicadas com hash de 64 bits (XxHash64) e aplica regras fiscais sobre as colunas dos dicionários TOTVS Protheus, SAP, Senior, Sankhya, Omie e ContaAzul.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>Guias Aprofundados por Regra de Alta Intenção</h2>
+            <p>Explore abaixo os guias técnicos detalhados com exemplos de valores aprovados e rejeitados para as principais dores de importação de planilhas:</p>
+            <div class="seo-cards-grid">
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_DOCUMENT_FORMAT</span>
+              <span class="seo-field-tag">Erro (Error)</span>
+            </div>
+            <h3><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></h3>
+            <div class="seo-card-actions">
+              <a href="/validar-cpf-cnpj-em-massa-csv/" class="seo-btn seo-btn-secondary seo-btn-sm">Ler guia técnico</a>
+              <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Simulador</a>
+            </div>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_NCM_FORMAT</span>
+              <span class="seo-field-tag">Erro (Error)</span>
+            </div>
+            <h3><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></h3>
+            <div class="seo-card-actions">
+              <a href="/validar-ncm-planilha-csv/" class="seo-btn seo-btn-secondary seo-btn-sm">Ler guia técnico</a>
+              <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Simulador</a>
+            </div>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_CEP_FORMAT</span>
+              <span class="seo-field-tag">Erro (Error)</span>
+            </div>
+            <h3><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></h3>
+            <div class="seo-card-actions">
+              <a href="/validar-cep-em-lote-csv/" class="seo-btn seo-btn-secondary seo-btn-sm">Ler guia técnico</a>
+              <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Simulador</a>
+            </div>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">ENCODING_CORRUPTION</span>
+              <span class="seo-field-tag">Erro (Error)</span>
+            </div>
+            <h3><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></h3>
+            <div class="seo-card-actions">
+              <a href="/erro-encoding-utf8-caracteres-estranhos-csv/" class="seo-btn seo-btn-secondary seo-btn-sm">Ler guia técnico</a>
+              <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Simulador</a>
+            </div>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">COLUMN_COUNT_MISMATCH</span>
+              <span class="seo-field-tag">Erro (Error)</span>
+            </div>
+            <h3><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></h3>
+            <div class="seo-card-actions">
+              <a href="/erro-colunas-delimitador-quebrado-csv/" class="seo-btn seo-btn-secondary seo-btn-sm">Ler guia técnico</a>
+              <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Simulador</a>
+            </div>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">DUPLICATE_ROW</span>
+              <span class="seo-field-tag">Aviso (Warning — contabiliza linha com inconsistência)</span>
+            </div>
+            <h3><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></h3>
+            <div class="seo-card-actions">
+              <a href="/remover-identificar-linhas-duplicadas-csv/" class="seo-btn seo-btn-secondary seo-btn-sm">Ler guia técnico</a>
+              <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Simulador</a>
+            </div>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_EMAIL_FORMAT</span>
+              <span class="seo-field-tag">Erro (Error)</span>
+            </div>
+            <h3><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></h3>
+            <div class="seo-card-actions">
+              <a href="/validar-email-em-lote-planilha-csv/" class="seo-btn seo-btn-secondary seo-btn-sm">Ler guia técnico</a>
+              <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Simulador</a>
+            </div>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_UF_CODE</span>
+              <span class="seo-field-tag">Erro (Error)</span>
+            </div>
+            <h3><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></h3>
+            <div class="seo-card-actions">
+              <a href="/validar-uf-estado-planilha-csv/" class="seo-btn seo-btn-secondary seo-btn-sm">Ler guia técnico</a>
+              <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Simulador</a>
+            </div>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Catálogo Completo dos 17 Códigos de Erro e Aviso do DataConform</h2>
+            <div class="seo-table-wrap">
+              <table class="seo-table">
+                <thead>
+                  <tr>
+                    <th>Código da Regra (IssueCode)</th>
+                    <th>Severidade</th>
+                    <th>Categoria</th>
+                    <th>O que o Validador Inspeciona</th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><code>EMPTY_FILE</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Estrutural (RFC 4180)</td>
+                <td>Arquivo CSV enviado está completamente vazio ou não possui linha de cabeçalho.</td>
+              </tr>
+              <tr>
+                <td><code>ENCODING_CORRUPTION</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Codificação (UTF-8)</td>
+                <td>Detecta caracteres corrompidos (\uFFFD) no cabeçalho ou nas linhas quando a planilha foi salva fora do padrão UTF-8.</td>
+              </tr>
+              <tr>
+                <td><code>EMPTY_HEADER_NAME</code></td>
+                <td><span class="seo-code-pill ">Aviso</span></td>
+                <td>Estrutural (RFC 4180)</td>
+                <td>Identifica colunas na linha #1 cujo título está em branco (delimitadores sobrando no cabeçalho).</td>
+              </tr>
+              <tr>
+                <td><code>DUPLICATE_HEADER</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Estrutural (RFC 4180)</td>
+                <td>Bloqueia planilhas que possuam duas ou mais colunas com o mesmo nome no cabeçalho.</td>
+              </tr>
+              <tr>
+                <td><code>REQUIRED_HEADER_MISSING</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Dicionário ERP</td>
+                <td>Aponta ausência de qualquer coluna obrigatória exigida pelo preset do ERP selecionado (ex.: A1_CGC, LicTradNum).</td>
+              </tr>
+              <tr>
+                <td><code>COLUMN_COUNT_MISMATCH</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Estrutural (RFC 4180)</td>
+                <td>Sinaliza linhas cuja quantidade de células diverge do número de colunas do cabeçalho por quebra de delimitador.</td>
+              </tr>
+              <tr>
+                <td><code>DUPLICATE_ROW</code></td>
+                <td><span class="seo-code-pill ">Aviso</span></td>
+                <td>Integridade de Lote</td>
+                <td>Identifica linhas inteiras repetidas no arquivo através de hash de 64 bits (XxHash64) normalizado.</td>
+              </tr>
+              <tr>
+                <td><code>REQUIRED_FIELD_MISSING</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Dicionário ERP</td>
+                <td>Aponta células em branco em colunas definidas como obrigatórias para a tabela do ERP de destino.</td>
+              </tr>
+              <tr>
+                <td><code>INVALID_DOCUMENT_FORMAT</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Fiscal / Receita Federal</td>
+                <td>Valida CPF (11 dígitos) e CNPJ (14 dígitos) com cálculo matemático dos dois dígitos verificadores (Módulo 11).</td>
+              </tr>
+              <tr>
+                <td><code>INVALID_EMAIL_FORMAT</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Comunicação / NF-e</td>
+                <td>Verifica sintaxe de e-mail corporativo (presença de usuário, @, domínio com ponto e ausência de espaços).</td>
+              </tr>
+              <tr>
+                <td><code>INVALID_NUMERIC_VALUE</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Financeiro / Estoque</td>
+                <td>Garante que colunas de valor, preço, custo, quantidade e limite de crédito contenham números decimais válidos.</td>
+              </tr>
+              <tr>
+                <td><code>NEGATIVE_AMOUNT_NOT_ALLOWED</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Financeiro / Estoque</td>
+                <td>Bloqueia valores negativos em colunas financeiras e quantitativas (ex.: A1_LC, B1_PRV1, CreditLine, LIMCRED).</td>
+              </tr>
+              <tr>
+                <td><code>INVALID_DATE_FORMAT</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Calendário / Fiscal</td>
+                <td>Valida datas nos formatos AAAA-MM-DD, DD/MM/AAAA e ISO 8601 em colunas de nascimento, emissão, vencimento e ValidFrom.</td>
+              </tr>
+              <tr>
+                <td><code>INVALID_UF_CODE</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Fiscal / IBGE</td>
+                <td>Exige sigla válida dentre as 27 Unidades Federativas brasileiras ou EX (Exterior) nas colunas de UF/Estado.</td>
+              </tr>
+              <tr>
+                <td><code>INVALID_CEP_FORMAT</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Endereçamento Postal</td>
+                <td>Exige exatamente 8 dígitos numéricos válidos no CEP (rejeitando CEPs de 7 dígitos cortados pelo Excel e 00000000).</td>
+              </tr>
+              <tr>
+                <td><code>INVALID_NCM_FORMAT</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Fiscal / Mercadorias</td>
+                <td>Exige exatamente 8 dígitos numéricos para códigos NCM em catálogos de produtos (B1_POSIPI, NcmCode, NCM).</td>
+              </tr>
+              <tr>
+                <td><code>INVALID_PHONE_FORMAT</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Cadastro / Contato</td>
+                <td>Valida telefones fixos (10 dígitos) e celulares (11 dígitos) com código DDD nacional válido entre 11 e 99.</td>
+              </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Perguntas Frequentes (FAQ) — Motor de Regras DataConform</h2>
+            <div class="seo-faq-list">
+          <div class="seo-faq-item">
+            <h3>Como o DataConform sabe qual regra aplicar em cada coluna da planilha CSV?</h3>
+            <p>O motor combina duas camadas: primeiro valida as colunas obrigatórias definidas para o projeto/ERP (`REQUIRED_HEADER_MISSING` e `REQUIRED_FIELD_MISSING`). Em seguida, analisa o nome de cada coluna do cabeçalho — reconhecendo tanto nomes genéricos (`cpf`, `cnpj`, `email`, `cep`, `uf`, `ncm`, `valor`, `data`, `telefone`) quanto nomes técnicos de dicionários de ERP (`A1_CGC`, `B1_POSIPI`, `LicTradNum`, `NcmCode`, `TaxId0`, `CgcCpf`, `EmaCli`, `VlrLim`, `LIMCRED`).</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>O DataConform protege contra arquivos binários renomeados e injeção de fórmulas em CSV?</h3>
+            <p>Sim. A plataforma bloqueia o envio de arquivos binários disfarçados de CSV (como planilhas .xlsx ou .pdf apenas renomeadas para .csv) e sanitiza a exportação de relatórios para evitar ataques de CSV Formula Injection.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>Qual a diferença entre apontamentos com severidade &quot;Erro&quot; e severidade &quot;Aviso&quot;?</h3>
+            <p>Apontamentos de Erro indicam desvios que impedem a importação ou corrompem regras fiscais (como CNPJ inválido, coluna obrigatória ausente ou quebra de delimitador). Avisos (como `EMPTY_HEADER_NAME` e `DUPLICATE_ROW`) alertam sobre anomalias estruturais ou duplicidades de linhas no lote.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-cta-banner">
+            <div>
+              <h2>Audite sua planilha contra as 17 regras em segundos</h2>
+              <p>Use o simulador gratuito sem cadastro ou crie sua conta no plano Starter para validar seus próprios arquivos CSV e emitir laudos em PDF.</p>
+            </div>
+            <div class="seo-cta-row">
+              <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/precos/" class="seo-btn seo-btn-secondary">Ver planos e capacidade</a>
+            </div>
+          </section>
+        </article>
+      </div>
+    </main>
+  <footer class="seo-footer">
+    <div class="seo-container">
+      <div class="seo-footer-grid">
+        <div class="seo-footer-col">
+          <strong>DataConform</strong>
+          <p>Plataforma SaaS de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP. Diagnóstico linha a linha com exportação CSV e laudo em PDF.</p>
+          <p class="seo-footer-links-inline">
+            <a href="/">Início &amp; Simulador</a> •
+            <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
+            <a href="/regras-de-validacao-csv/">Regras CSV</a> •
+            <a href="/precos/">Preços</a>
+          </p>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 1)</strong>
+          <ul>
+            <li><a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1 (Clientes))</a></li>
+            <li><a href="/layout-importacao-protheus-sa2-fornecedores/">TOTVS Protheus - Fornecedores (SA2 (Fornecedores))</a></li>
+            <li><a href="/layout-importacao-protheus-sb1-produtos/">TOTVS Protheus - Produtos (SB1 (Produtos))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD (Business Partners))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-oitm-itens/">SAP Business One - Itens (OITM (Item Master Data))</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 2)</strong>
+          <ul>
+            <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
+            <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
+            <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Regras de Validação CSV</strong>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="seo-footer-bottom">
+        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>

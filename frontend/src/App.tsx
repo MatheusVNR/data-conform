@@ -76,6 +76,12 @@ export const App: FC = () => {
   const [files, setFiles] = useState<ImportFileDto[]>([]);
   const [activeReport, setActiveReport] = useState<ValidationReportDto | null>(null);
   const [demoErpName, setDemoErpName] = useState<string | null>(null);
+  const [sandboxErpKey, setSandboxErpKey] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('erp');
+    }
+    return null;
+  });
 
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingProjects, setLoadingProjects] = useState<boolean>(false);
@@ -94,6 +100,17 @@ export const App: FC = () => {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('dataconform_theme', theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (loading || currentUser || typeof window === 'undefined') {
+      return;
+    }
+    const hasErpParam: boolean = new URLSearchParams(window.location.search).has('erp');
+    if (window.location.hash === '#sandbox' || hasErpParam) {
+      const sandboxEl: HTMLElement | null = document.getElementById('sandbox');
+      sandboxEl?.scrollIntoView?.({ behavior: 'smooth' });
+    }
+  }, [loading, currentUser]);
 
   const handleToggleTheme = (): void => {
     setTheme((prev: 'light' | 'dark') => (prev === 'dark' ? 'light' : 'dark'));
@@ -619,6 +636,8 @@ export const App: FC = () => {
             </section>
 
             <VisitorInteractiveSandbox
+              key={`sandbox-${sandboxErpKey ?? 'default'}`}
+              initialErpKey={sandboxErpKey}
               onOpenReportModal={(report: ValidationReportDto, erpName: string) => {
                 setDemoErpName(erpName);
                 setActiveReport(report);
@@ -634,6 +653,9 @@ export const App: FC = () => {
                     Cada projeto conta com mapeamento exclusivo das tabelas, campos obrigatórios e modelos CSV oficiais dos principais ERPs do mercado.
                   </p>
                 </div>
+                <a href="/layouts-de-importacao-erp/" className="btn btn-outline btn-sm">
+                  Ver Todos os Layouts ERP →
+                </a>
               </div>
 
               <div className="visitor-erp-grid">
@@ -678,7 +700,8 @@ export const App: FC = () => {
                           type="button"
                           className="btn btn-outline btn-xs"
                           onClick={() => {
-                            document.querySelector('.visitor-sandbox-section')?.scrollIntoView({ behavior: 'smooth' });
+                            setSandboxErpKey(erpKey);
+                            document.getElementById('sandbox')?.scrollIntoView?.({ behavior: 'smooth' });
                           }}
                         >
                           ⚡ Testar no Simulador ↑
@@ -858,6 +881,15 @@ export const App: FC = () => {
           </div>
 
           <div className="footer-links-col">
+            <a href="/layouts-de-importacao-erp/" className="footer-link-btn">
+              Layouts por ERP
+            </a>
+            <a href="/regras-de-validacao-csv/" className="footer-link-btn">
+              Regras de Validação CSV
+            </a>
+            <a href="/precos/" className="footer-link-btn">
+              Preços
+            </a>
             <button type="button" className="footer-link-btn" onClick={() => setIsRulesOpen(true)}>
               Garantias de Conformidade
             </button>

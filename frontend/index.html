@@ -4,12 +4,218 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="DataConform — Plataforma B2B de validação, governança e saneamento de dados para importação segura em ERPs corporativos." />
+    <title>DataConform | Validador de CSV e Homologação de Dados para ERPs (TOTVS, SAP, Sankhya, Omie)</title>
+    <meta
+      name="description"
+      content="Valide planilhas CSV antes de importar no TOTVS Protheus, SAP Business One, SAP S/4HANA, Senior, Sankhya, Omie e ContaAzul. Detecte erros de CPF/CNPJ, NCM, CEP, UF e UTF-8 com laudo em PDF. Comece grátis."
+    />
+    <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#0f172a" />
-    <title>DataConform | Conformidade e Validação de Dados B2B</title>
+    <link rel="canonical" href="https://dataconform.com.br/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:url" content="https://dataconform.com.br/" />
+    <meta
+      property="og:title"
+      content="DataConform — Validador de CSV e Homologação de Carga para ERPs"
+    />
+    <meta
+      property="og:description"
+      content="Audite planilhas CSV antes da importação no TOTVS Protheus, SAP Business One, SAP S/4HANA, Senior, Sankhya, Omie e ContaAzul. Validação matemática de CPF/CNPJ, NCM, CEP, UTF-8 e laudo em PDF."
+    />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="DataConform — Plataforma de pré-validação de arquivos CSV para importação em ERPs"
+    />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="DataConform — Validador de CSV e Homologação de Carga para ERPs"
+    />
+    <meta
+      name="twitter:description"
+      content="Audite planilhas CSV antes da importação no TOTVS Protheus, SAP, Senior, Sankhya, Omie e ContaAzul. Diagnóstico linha a linha com laudo em PDF. Comece grátis."
+    />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://dataconform.com.br/#organization",
+            "name": "DataConform",
+            "url": "https://dataconform.com.br/",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://dataconform.com.br/brand/dataconform-logo-512.png",
+              "width": 512,
+              "height": 512
+            }
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://dataconform.com.br/#website",
+            "url": "https://dataconform.com.br/",
+            "name": "DataConform",
+            "inLanguage": "pt-BR",
+            "publisher": {
+              "@id": "https://dataconform.com.br/#organization"
+            }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://dataconform.com.br/#software",
+            "name": "DataConform",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web",
+            "url": "https://dataconform.com.br/",
+            "image": "https://dataconform.com.br/og/dataconform-og.png",
+            "description": "Plataforma SaaS B2B de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP (TOTVS Protheus, SAP Business One, SAP S/4HANA, Senior ERP, Sankhya, Omie e ContaAzul), com validação de CPF/CNPJ (Módulo 11), NCM, CEP, UF, encoding UTF-8 e emissão de laudo em PDF.",
+            "offers": [
+              {
+                "@type": "Offer",
+                "name": "Starter",
+                "price": "0.00",
+                "priceCurrency": "BRL",
+                "description": "Plano gratuito: até 20 arquivos/mês, até 1.000 linhas por arquivo, até 5 MB por arquivo.",
+                "url": "https://dataconform.com.br/precos/"
+              },
+              {
+                "@type": "Offer",
+                "name": "Professional",
+                "price": "79.90",
+                "priceCurrency": "BRL",
+                "description": "Até 500 arquivos/mês, até 50.000 linhas por arquivo, até 25 MB por arquivo.",
+                "url": "https://dataconform.com.br/precos/"
+              },
+              {
+                "@type": "Offer",
+                "name": "Enterprise",
+                "price": "249.90",
+                "priceCurrency": "BRL",
+                "description": "Até 10.000 arquivos/mês, até 1.000.000 de linhas por arquivo, até 50 MB por arquivo.",
+                "url": "https://dataconform.com.br/precos/"
+              }
+            ]
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <header style="max-width: 1180px; margin: 0 auto; padding: 1.25rem 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <strong>DataConform</strong> — Pré-Validação e Homologação de Planilhas CSV para ERPs
+        </div>
+        <nav aria-label="Navegação Institucional">
+          <a href="/layouts-de-importacao-erp/" style="margin-right: 1rem;">Layouts de Importação ERP</a>
+          <a href="/regras-de-validacao-csv/" style="margin-right: 1rem;">Regras de Validação CSV</a>
+          <a href="/precos/">Planos e Preços</a>
+        </nav>
+      </header>
+
+      <main style="max-width: 1180px; margin: 0 auto; padding: 2rem 1.5rem; font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #0f172a;">
+        <section>
+          <h1>Elimine rejeições de carga e retrabalho em implantações de sistemas ERP</h1>
+          <p>
+            O <strong>DataConform</strong> audita, valida e homologa planilhas CSV cadastrais, fiscais, financeiras e de estoque antes da importação definitiva no seu ERP, apontando linha a linha qualquer desvio estrutural (RFC 4180) ou fiscal com exportação CSV das inconsistências e laudo técnico em PDF.
+          </p>
+          <p>
+            Experimente o simulador interativo sem cadastro na página inicial ou crie sua conta gratuita no <strong>Plano Starter (R$ 0/mês — até 20 arquivos de 1.000 linhas)</strong>.
+          </p>
+        </section>
+
+        <section style="margin-top: 2rem;">
+          <h2>Dicionários de Dados e Layouts de Importação Homologados por ERP</h2>
+          <p>
+            Cada projeto no DataConform conta com mapeamento das tabelas, colunas obrigatórias e planilhas modelo CSV para download dos principais sistemas ERP em operação no Brasil:
+          </p>
+          <ul>
+            <li>
+              <a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus — Tabela SA1 (Clientes / MATA030):</strong></a>
+              valida <code>A1_COD</code>, <code>A1_LOJA</code>, <code>A1_NOME</code>, <code>A1_CGC</code>, <code>A1_EMAIL</code>, <code>A1_LC</code>, <code>A1_EST</code> e <code>A1_CEP</code>.
+            </li>
+            <li>
+              <a href="/layout-importacao-protheus-sa2-fornecedores/"><strong>TOTVS Protheus — Tabela SA2 (Fornecedores / MATA020):</strong></a>
+              valida <code>A2_COD</code>, <code>A2_LOJA</code>, <code>A2_NOME</code>, <code>A2_CGC</code>, <code>A2_EMAIL</code>, <code>A2_LC</code> e <code>A2_EST</code>.
+            </li>
+            <li>
+              <a href="/layout-importacao-protheus-sb1-produtos/"><strong>TOTVS Protheus — Tabela SB1 (Produtos / MATA010):</strong></a>
+              valida <code>B1_COD</code>, <code>B1_DESC</code>, <code>B1_TIPO</code>, <code>B1_UM</code>, <code>B1_POSIPI</code> (NCM) e <code>B1_PRV1</code>.
+            </li>
+            <li>
+              <a href="/layout-importacao-sap-business-one-ocrd-parceiros/"><strong>SAP Business One — Objeto OCRD (Parceiros de Negócios / DTW):</strong></a>
+              valida <code>CardCode</code>, <code>CardName</code>, <code>LicTradNum</code>, <code>E_Mail</code>, <code>CreditLine</code> e <code>ZipCode</code>.
+            </li>
+            <li>
+              <a href="/layout-importacao-sap-business-one-oitm-itens/"><strong>SAP Business One — Objeto OITM (Cadastro de Itens / DTW):</strong></a>
+              valida <code>ItemCode</code>, <code>ItemName</code>, <code>SalUnitMsr</code>, <code>Price</code> e <code>NcmCode</code>.
+            </li>
+            <li>
+              <a href="/layout-importacao-sap-s4hana-business-partner/"><strong>SAP S/4HANA — Migration Cockpit (Business Partner BP):</strong></a>
+              valida <code>BP_Number</code>, <code>Name1</code>, <code>TaxId0</code>, <code>E_Mail</code>, <code>CreditLine</code>, <code>ValidFrom</code> e <code>State</code>.
+            </li>
+            <li>
+              <a href="/layout-importacao-senior-erp-e085cli-clientes/"><strong>Senior ERP — Tabela E085CLI (Clientes Sapiens / Gestão Empresarial):</strong></a>
+              valida <code>CodCli</code>, <code>NomCli</code>, <code>CgcCpf</code>, <code>EmaCli</code>, <code>VlrLim</code>, <code>SitCli</code> e <code>CodEst</code>.
+            </li>
+            <li>
+              <a href="/layout-importacao-sankhya-tgfpar-parceiros/"><strong>Sankhya — Tabela TGFPAR (Parceiros de Negócio):</strong></a>
+              valida <code>CODPARC</code>, <code>NOMEPARC</code>, <code>CGC_CPF</code>, <code>EMAIL</code>, <code>LIMCRED</code>, <code>ATIVO</code> e <code>CEP</code>.
+            </li>
+            <li>
+              <a href="/layout-importacao-omie-clientes/"><strong>Omie — Planilha Oficial de Clientes e Fornecedores:</strong></a>
+              valida <code>codigo_cliente</code>, <code>razao_social</code>, <code>cnpj_cpf</code>, <code>email</code>, <code>valor_limite_credito</code>, <code>estado</code> e <code>cep</code>.
+            </li>
+            <li>
+              <a href="/layout-importacao-contaazul-clientes/"><strong>ContaAzul — Importação Cadastral e Financeira:</strong></a>
+              valida <code>codigo_cliente</code>, <code>razao_social</code>, <code>cnpj_cpf</code>, <code>email</code>, <code>valor_limite_credito</code>, <code>data_vencimento</code> e <code>uf</code>.
+            </li>
+          </ul>
+          <p><a href="/layouts-de-importacao-erp/">Explorar catálogo completo de layouts de importação ERP →</a></p>
+        </section>
+
+        <section style="margin-top: 2rem;">
+          <h2>Motor de Conformidade com 17 Regras Estruturais e Fiscais</h2>
+          <p>
+            O DataConform combina inspeção estrutural RFC 4180 (detecção automática de delimitador vírgula, ponto e vírgula ou tabulação) com validação semântica para o cenário fiscal brasileiro:
+          </p>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em massa (cálculo de dígito verificador Módulo 11 — <code>INVALID_DOCUMENT_FORMAT</code>)</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar código NCM em planilha de produtos (8 dígitos numéricos — <code>INVALID_NCM_FORMAT</code>)</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em lote e zeros à esquerda cortados pelo Excel (<code>INVALID_CEP_FORMAT</code>)</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Detectar caracteres estranhos e corrupção de encoding UTF-8 (<code>ENCODING_CORRUPTION</code>)</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Localizar linhas com colunas a mais ou delimitador quebrado (<code>COLUMN_COUNT_MISMATCH</code>)</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar linhas duplicadas com hash de 64 bits XxHash64 (<code>DUPLICATE_ROW</code>)</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar lista de e-mails corporativos e de NF-e em lote (<code>INVALID_EMAIL_FORMAT</code>)</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar siglas de UF e Estado segundo tabela IBGE/SEFAZ + EX (<code>INVALID_UF_CODE</code>)</a></li>
+          </ul>
+          <p><a href="/regras-de-validacao-csv/">Ver todas as 17 regras de validação CSV do DataConform →</a></p>
+        </section>
+
+        <section style="margin-top: 2rem;">
+          <h2>Planos e Capacidade Operacional Transparentes</h2>
+          <ul>
+            <li><strong>Starter (Gratuito — R$ 0/mês):</strong> até 20 arquivos/mês, até 1.000 linhas por arquivo, até 5 MB por arquivo.</li>
+            <li><strong>Professional (R$ 79,90/mês):</strong> até 500 arquivos/mês, até 50.000 linhas por arquivo, até 25 MB por arquivo.</li>
+            <li><strong>Enterprise (R$ 249,90/mês):</strong> até 10.000 arquivos/mês, até 1.000.000 de linhas por arquivo, até 50 MB por arquivo.</li>
+          </ul>
+          <p><a href="/precos/">Consultar comparativo completo de planos e preços →</a></p>
+        </section>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

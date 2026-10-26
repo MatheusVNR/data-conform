@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Validar CPF e CNPJ em Massa na Planilha CSV (Módulo 11) | DataConform</title>
+    <meta name="description" content="Valide milhares de CPFs e CNPJs em massa na sua planilha CSV antes de importar no ERP. Cálculo automático do dígito verificador (Módulo 11) e laudo em PDF." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://dataconform.com.br/validar-cpf-cnpj-em-massa-csv/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Validar CPF e CNPJ em Massa na Planilha CSV (Módulo 11) | DataConform" />
+    <meta property="og:description" content="Valide milhares de CPFs e CNPJs em massa na sua planilha CSV antes de importar no ERP. Cálculo automático do dígito verificador (Módulo 11) e laudo em PDF." />
+    <meta property="og:url" content="https://dataconform.com.br/validar-cpf-cnpj-em-massa-csv/" />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Validar CPF e CNPJ em Massa na Planilha CSV (Módulo 11) | DataConform" />
+    <meta name="twitter:description" content="Valide milhares de CPFs e CNPJs em massa na sua planilha CSV antes de importar no ERP. Cálculo automático do dígito verificador (Módulo 11) e laudo em PDF." />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <link rel="stylesheet" href="/seo.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Validar CPF e CNPJ em Massa no CSV","item":"https://dataconform.com.br/validar-cpf-cnpj-em-massa-csv/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Posso misturar CPFs (11 dígitos) e CNPJs (14 dígitos) na mesma coluna da planilha?","acceptedAnswer":{"@type":"Answer","text":"Sim. O DataConform avalia cada célula individualmente: se após remover a pontuação restarem 11 dígitos, aplica a regra de Módulo 11 de CPF; se restarem 14 dígitos, aplica a regra de Módulo 11 de CNPJ."}},{"@type":"Question","name":"Preciso remover pontos, traços e barras antes de validar o CSV?","acceptedAnswer":{"@type":"Answer","text":"Não. O validador aceita documentos formatados (12.345.678/0001-95) ou apenas números (12345678000195) de forma transparente."}},{"@type":"Question","name":"Como corrigir zeros à esquerda perdidos no CPF ou CNPJ no Excel?","acceptedAnswer":{"@type":"Answer","text":"Formate a coluna como Texto antes de exportar ou utilize a função =TEXTO(A2;\"00000000000000\") para CNPJ (14 posições) e =TEXTO(A2;\"00000000000\") para CPF (11 posições), salvando em seguida como CSV UTF-8."}}]}</script>
+  </head>
+  <body>
+  <header class="seo-navbar">
+    <div class="seo-container seo-navbar-inner">
+      <a href="/" class="seo-brand" aria-label="DataConform - Página Inicial">
+        <img src="/favicon.svg" alt="Logo DataConform" width="32" height="32" />
+        <span class="seo-brand-title">DataConform</span>
+        <span class="seo-brand-badge">Validador CSV ERP</span>
+      </a>
+      <nav class="seo-nav-links" aria-label="Navegação Principal">
+        <a href="/layouts-de-importacao-erp/">Layouts de ERP</a>
+        <a href="/regras-de-validacao-csv/">Regras de Validação</a>
+        <a href="/precos/">Preços</a>
+        <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Validar meu arquivo grátis</a>
+      </nav>
+    </div>
+  </header>
+    <main class="seo-main">
+      <div class="seo-container">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Início</a></li>
+          <li><a href="/regras-de-validacao-csv/">Regras de Validação CSV</a></li>
+          <li aria-current="page">Validar CPF e CNPJ em Massa no CSV</li>
+        </ol>
+      </nav>
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">Código: INVALID_DOCUMENT_FORMAT</span>
+              <span class="seo-pill-outline">Severidade: Erro (Error)</span>
+            </div>
+            <h1>Como Validar CPF e CNPJ em Massa na Planilha CSV (Dígito Verificador Módulo 11)</h1>
+            <p class="seo-lead">Audite milhares de documentos fiscais em segundos antes de importar clientes e fornecedores no seu ERP. O DataConform valida matematicamente os dois dígitos verificadores de CPF (11 dígitos) e CNPJ (14 dígitos) linha a linha.</p>
+            <div class="seo-cta-row">
+              <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/regras-de-validacao-csv/" class="seo-btn seo-btn-secondary">Ver todas as 17 regras</a>
+            </div>
+          </header>
+
+          <section class="seo-section">
+            <h2>Por que esse erro acontece na planilha CSV e trava o ERP</h2>
+            <p>Em migrações de sistemas ERP e cargas cadastrais recorrentes, a validação apenas da quantidade de caracteres de um CPF ou CNPJ não é suficiente. Planilhas editadas no Microsoft Excel frequentemente perdem o zero à esquerda quando a coluna é tratada como número (transformando um CNPJ de 14 dígitos iniciado por 0 em uma sequência inválida de 13 dígitos). Além disso, cadastros legados costumam conter CNPJs fictícios (como 11.111.111/1111-11 ou 00.000.000/0000-00) ou erros de digitação nos últimos dois números que travam a emissão de NF-e na SEFAZ.</p>
+          <p>O motor de conformidade do DataConform executa a regra INVALID_DOCUMENT_FORMAT sobre todas as linhas do arquivo CSV. Ele higieniza máscaras de pontuação (pontos, barras e hífens), verifica se o documento possui exatamente 11 dígitos (CPF) ou 14 dígitos (CNPJ), rejeita sequências de dígitos todos iguais e executa o cálculo algorítmico oficial de Módulo 11 da Receita Federal sobre o primeiro e o segundo dígito verificador.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>Como o Motor do DataConform Executa a Regra <code>INVALID_DOCUMENT_FORMAT</code></h2>
+            <p>Para o CPF (11 dígitos), o validador multiplica os 9 primeiros dígitos pelos pesos decrescentes de 10 a 2, calcula o resto da divisão por 11 para aferir o 1º dígito verificador e repete o processo com os 10 primeiros dígitos (pesos de 11 a 2) para aferir o 2º dígito verificador. Para o CNPJ (14 dígitos), são aplicados os vetores de pesos oficiais [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] para o 13º dígito e [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] para o 14º dígito.</p>
+          <p>Qualquer linha cujo documento não passe no teste matemático recebe imediatamente o apontamento INVALID_DOCUMENT_FORMAT no laudo, exibindo o número exato da linha, o nome da coluna (ex.: A1_CGC ou LicTradNum) e o valor bruto rejeitado para facilitar o saneamento.</p>
+            <div class="seo-detected-box">
+              <h3>Colunas e Dicionários Inspecionados Automaticamente:</h3>
+              <div class="seo-chips-wrap">
+                <span class="seo-col-chip">A1_CGC (TOTVS Protheus SA1)</span>
+              <span class="seo-col-chip">A2_CGC (TOTVS Protheus SA2)</span>
+              <span class="seo-col-chip">LicTradNum (SAP Business One OCRD)</span>
+              <span class="seo-col-chip">TaxId0 (SAP S/4HANA BP)</span>
+              <span class="seo-col-chip">CgcCpf (Senior ERP E085CLI)</span>
+              <span class="seo-col-chip">CGC_CPF (Sankhya TGFPAR)</span>
+              <span class="seo-col-chip">cnpj_cpf / cpf_cnpj (Omie, ContaAzul, Genérico)</span>
+              <span class="seo-col-chip">nu_cpf / nu_cnpj / qualquer coluna contendo &quot;cpf&quot; ou &quot;cnpj&quot;</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Exemplos Práticos: Valores Aprovados vs. Valores Rejeitados</h2>
+            <p>Confira como o validador classifica diferentes entradas encontradas em planilhas reais durante a auditoria:</p>
+            <div class="seo-table-wrap">
+              <table class="seo-table">
+                <thead>
+                  <tr>
+                    <th>Valor na Célula / Linha CSV</th>
+                    <th>Resultado no Laudo</th>
+                    <th>Explicação Técnica</th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><code>12.345.678/0001-95</code></td>
+                <td><span class="seo-code-pill seo-code-ok">Válido (Aprovado)</span></td>
+                <td>CNPJ de 14 dígitos com ambos os dígitos verificadores (95) matematicamente corretos pelo Módulo 11.</td>
+              </tr>
+              <tr>
+                <td><code>06990590000123</code></td>
+                <td><span class="seo-code-pill seo-code-ok">Válido (Aprovado)</span></td>
+                <td>CNPJ enviado sem pontuação contendo 14 dígitos e Módulo 11 íntegro (zeros à esquerda preservados).</td>
+              </tr>
+              <tr>
+                <td><code>12.345.678/0001-00</code></td>
+                <td><span class="seo-code-pill seo-code-error">Rejeitado (INVALID_DOCUMENT_FORMAT)</span></td>
+                <td>Possui 14 dígitos, mas o sufixo verificador 00 diverge do cálculo Módulo 11 (que exigiria 95).</td>
+              </tr>
+              <tr>
+                <td><code>6990590000123</code></td>
+                <td><span class="seo-code-pill seo-code-error">Rejeitado (INVALID_DOCUMENT_FORMAT)</span></td>
+                <td>Possui apenas 13 dígitos porque o zero inicial foi removido pela formatação numérica do Excel.</td>
+              </tr>
+              <tr>
+                <td><code>111.111.111-11</code></td>
+                <td><span class="seo-code-pill seo-code-error">Rejeitado (INVALID_DOCUMENT_FORMAT)</span></td>
+                <td>Sequência de dígitos idênticos bloqueada explicitamente pela validação de documentos fiscais.</td>
+              </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Passo a Passo para Auditar e Sanear sua Planilha</h2>
+            <ol class="seo-steps-list">
+          <li class="seo-step-item">
+            <span class="seo-step-num">1</span>
+            <div>
+              <strong>Passo 1</strong>
+              <p>Exporte sua planilha de clientes, fornecedores ou parceiros em formato CSV mantendo a coluna de documento fiscal (como A1_CGC, LicTradNum, CGC_CPF ou cnpj_cpf).</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">2</span>
+            <div>
+              <strong>Passo 2</strong>
+              <p>Faça o upload do arquivo no DataConform selecionando o preset do seu ERP ou o layout Genérico / CSV.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">3</span>
+            <div>
+              <strong>Passo 3</strong>
+              <p>No laudo gerado, filtre pelo código INVALID_DOCUMENT_FORMAT, baixe o CSV apenas com as linhas inválidas para correção e emita o laudo em PDF.</p>
+            </div>
+          </li>
+            </ol>
+          </section>
+
+          <section class="seo-section">
+            <h2>Perguntas Frequentes (FAQ) — Validar CPF e CNPJ em Massa no CSV</h2>
+            <div class="seo-faq-list">
+          <div class="seo-faq-item">
+            <h3>Posso misturar CPFs (11 dígitos) e CNPJs (14 dígitos) na mesma coluna da planilha?</h3>
+            <p>Sim. O DataConform avalia cada célula individualmente: se após remover a pontuação restarem 11 dígitos, aplica a regra de Módulo 11 de CPF; se restarem 14 dígitos, aplica a regra de Módulo 11 de CNPJ.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>Preciso remover pontos, traços e barras antes de validar o CSV?</h3>
+            <p>Não. O validador aceita documentos formatados (12.345.678/0001-95) ou apenas números (12345678000195) de forma transparente.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>Como corrigir zeros à esquerda perdidos no CPF ou CNPJ no Excel?</h3>
+            <p>Formate a coluna como Texto antes de exportar ou utilize a função =TEXTO(A2;&quot;00000000000000&quot;) para CNPJ (14 posições) e =TEXTO(A2;&quot;00000000000&quot;) para CPF (11 posições), salvando em seguida como CSV UTF-8.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-cta-banner">
+            <div>
+              <h2>Audite sua planilha CSV contra o erro <code>INVALID_DOCUMENT_FORMAT</code> agora mesmo</h2>
+              <p>Experimente o simulador interativo na página inicial ou valide até 20 arquivos por mês gratuitamente no plano Starter com exportação de inconsistências e laudo em PDF.</p>
+            </div>
+            <div class="seo-cta-row">
+              <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/precos/" class="seo-btn seo-btn-secondary">Consultar planos e cotas</a>
+            </div>
+          </section>
+
+          <aside class="seo-related-box" aria-label="Links Relacionados">
+            <div class="seo-related-col">
+              <h3>Outras Regras de Alta Intenção</h3>
+              <ul>
+                <li><a href="/validar-cep-em-lote-csv/"><strong>Validar CEP em Lote na Planilha CSV</strong> (INVALID_CEP_FORMAT)</a></li>
+              <li><a href="/validar-uf-estado-planilha-csv/"><strong>Validar Sigla de UF e Estado no CSV</strong> (INVALID_UF_CODE)</a></li>
+              <li><a href="/validar-email-em-lote-planilha-csv/"><strong>Validar E-mails em Lote no CSV</strong> (INVALID_EMAIL_FORMAT)</a></li>
+              <li><a href="/remover-identificar-linhas-duplicadas-csv/"><strong>Identificar Linhas Duplicadas no CSV</strong> (DUPLICATE_ROW)</a></li>
+                <li><a href="/regras-de-validacao-csv/"><strong>Ver catálogo completo das 17 regras →</strong></a></li>
+              </ul>
+            </div>
+            <div class="seo-related-col">
+              <h3>Layouts de ERP que Utilizam esta Regra</h3>
+              <ul>
+                <li><a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus</strong> (SA1 (Clientes))</a></li>
+              <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/"><strong>SAP Business One</strong> (OCRD (Business Partners))</a></li>
+              <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/"><strong>Sankhya</strong> (TGFPAR (Parceiros))</a></li>
+              <li><a href="/layout-importacao-omie-clientes/"><strong>Omie</strong> (Planilha de Clientes e Fornecedores)</a></li>
+              </ul>
+            </div>
+          </aside>
+        </article>
+      </div>
+    </main>
+  <footer class="seo-footer">
+    <div class="seo-container">
+      <div class="seo-footer-grid">
+        <div class="seo-footer-col">
+          <strong>DataConform</strong>
+          <p>Plataforma SaaS de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP. Diagnóstico linha a linha com exportação CSV e laudo em PDF.</p>
+          <p class="seo-footer-links-inline">
+            <a href="/">Início &amp; Simulador</a> •
+            <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
+            <a href="/regras-de-validacao-csv/">Regras CSV</a> •
+            <a href="/precos/">Preços</a>
+          </p>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 1)</strong>
+          <ul>
+            <li><a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1 (Clientes))</a></li>
+            <li><a href="/layout-importacao-protheus-sa2-fornecedores/">TOTVS Protheus - Fornecedores (SA2 (Fornecedores))</a></li>
+            <li><a href="/layout-importacao-protheus-sb1-produtos/">TOTVS Protheus - Produtos (SB1 (Produtos))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD (Business Partners))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-oitm-itens/">SAP Business One - Itens (OITM (Item Master Data))</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 2)</strong>
+          <ul>
+            <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
+            <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
+            <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Regras de Validação CSV</strong>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="seo-footer-bottom">
+        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Caracteres Estranhos no CSV: Como Detectar e Corrigir Encoding UTF-8 | DataConform</title>
+    <meta name="description" content="Resolva o problema de caracteres estranhos (acentos e cedilha corrompidos) na importação CSV para o ERP. Valide a codificação UTF-8 linha a linha grátis." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://dataconform.com.br/erro-encoding-utf8-caracteres-estranhos-csv/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Caracteres Estranhos no CSV: Como Detectar e Corrigir Encoding UTF-8 | DataConform" />
+    <meta property="og:description" content="Resolva o problema de caracteres estranhos (acentos e cedilha corrompidos) na importação CSV para o ERP. Valide a codificação UTF-8 linha a linha grátis." />
+    <meta property="og:url" content="https://dataconform.com.br/erro-encoding-utf8-caracteres-estranhos-csv/" />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Caracteres Estranhos no CSV: Como Detectar e Corrigir Encoding UTF-8 | DataConform" />
+    <meta name="twitter:description" content="Resolva o problema de caracteres estranhos (acentos e cedilha corrompidos) na importação CSV para o ERP. Valide a codificação UTF-8 linha a linha grátis." />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <link rel="stylesheet" href="/seo.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Corrigir Erro de Encoding UTF-8 no CSV","item":"https://dataconform.com.br/erro-encoding-utf8-caracteres-estranhos-csv/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Qual a diferença entre \"CSV ( separado por vírgulas )\" e \"CSV UTF-8\" no Excel?","acceptedAnswer":{"@type":"Answer","text":"No Windows em português, a opção antiga \"CSV (separado por vírgulas)\" costuma salvar em codificação Windows-1252 (ANSI), enquanto \"CSV UTF-8 (Delimitado por vírgulas)\" salva no padrão universal UTF-8 exigido pela maioria das APIs e ERPs modernos."}},{"@type":"Question","name":"O DataConform aceita arquivos CSV UTF-8 com BOM (Byte Order Mark)?","acceptedAnswer":{"@type":"Answer","text":"Sim. O leitor do DataConform possui detectEncodingFromByteOrderMarks ativado, tratando arquivos UTF-8 com ou sem BOM sem corromper o nome da primeira coluna do cabeçalho."}},{"@type":"Question","name":"E se alguém tentar enviar um arquivo Excel (.xlsx) renomeado para .csv?","acceptedAnswer":{"@type":"Answer","text":"O DataConform possui proteção contra arquivos binários disfarçados (assinatura ZIP/PK de arquivos XLSX ou PDF), bloqueando o arquivo antes mesmo do processamento."}}]}</script>
+  </head>
+  <body>
+  <header class="seo-navbar">
+    <div class="seo-container seo-navbar-inner">
+      <a href="/" class="seo-brand" aria-label="DataConform - Página Inicial">
+        <img src="/favicon.svg" alt="Logo DataConform" width="32" height="32" />
+        <span class="seo-brand-title">DataConform</span>
+        <span class="seo-brand-badge">Validador CSV ERP</span>
+      </a>
+      <nav class="seo-nav-links" aria-label="Navegação Principal">
+        <a href="/layouts-de-importacao-erp/">Layouts de ERP</a>
+        <a href="/regras-de-validacao-csv/">Regras de Validação</a>
+        <a href="/precos/">Preços</a>
+        <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Validar meu arquivo grátis</a>
+      </nav>
+    </div>
+  </header>
+    <main class="seo-main">
+      <div class="seo-container">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Início</a></li>
+          <li><a href="/regras-de-validacao-csv/">Regras de Validação CSV</a></li>
+          <li aria-current="page">Corrigir Erro de Encoding UTF-8 no CSV</li>
+        </ol>
+      </nav>
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">Código: ENCODING_CORRUPTION</span>
+              <span class="seo-pill-outline">Severidade: Erro (Error)</span>
+            </div>
+            <h1>Caracteres Estranhos na Importação CSV (Erro de Encoding UTF-8): Como Detectar e Resolver</h1>
+            <p class="seo-lead">Evite gravar razões sociais, endereços e descrições de produtos com símbolos corrompidos () no banco de dados do seu ERP. O DataConform inspeciona o cabeçalho e todas as linhas em busca de falhas de codificação UTF-8.</p>
+            <div class="seo-cta-row">
+              <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/regras-de-validacao-csv/" class="seo-btn seo-btn-secondary">Ver todas as 17 regras</a>
+            </div>
+          </header>
+
+          <section class="seo-section">
+            <h2>Por que esse erro acontece na planilha CSV e trava o ERP</h2>
+            <p>Um dos problemas mais destrutivos e silenciosos em cargas de dados no Brasil é o conflito entre codificações de caracteres: Windows-1252 (ANSI / ISO-8859-1) versus UTF-8. Quando o Microsoft Excel ou um sistema legado exporta um arquivo CSV no padrão ANSI brasileiro e o importador do ERP (ou banco PostgreSQL, SQL Server, Oracle, SAP HANA) lê o fluxo esperando UTF-8, todas as letras acentuadas (Á, É, Í, Ó, Ú, Ã, Õ, Â, Ê) e o cedilha (Ç) são substituídos pelo caractere de erro Unicode U+FFFD () ou por sequências ilegíveis.</p>
+          <p>Uma vez importados no ERP, esses caracteres corrompidos contaminam a impressão de DANFEs, quebram a assinatura digital de XMLs de NF-e (erro de schema XML por caractere inválido) e exigem scripts complexos de UPDATE diretamente no banco de dados para limpeza.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>Como o Motor do DataConform Executa a Regra <code>ENCODING_CORRUPTION</code></h2>
+            <p>O motor de leitura do DataConform processa o arquivo em fluxo UTF-8 com detecção automática de BOM (Byte Order Mark) e verifica, tanto na linha de cabeçalho quanto em cada uma das linhas de dados, a presença do caractere de substituição Unicode (\uFFFD).</p>
+          <p>Sempre que um byte inválido de codificação ANSI/ISO-8859-1 é detectado na leitura UTF-8, o DataConform dispara imediatamente o erro ENCODING_CORRUPTION, exibindo o número exato da linha afetada e um trecho de até 120 caracteres do conteúdo bruto para que você identifique e converta a planilha antes da carga no ERP.</p>
+            <div class="seo-detected-box">
+              <h3>Colunas e Dicionários Inspecionados Automaticamente:</h3>
+              <div class="seo-chips-wrap">
+                <span class="seo-col-chip">Cabeçalho completo do arquivo (Linha #1)</span>
+              <span class="seo-col-chip">Todas as linhas de dados (A1_NOME, B1_DESC, CardName, Name1, NOMEPARC, razao_social, etc.)</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Exemplos Práticos: Valores Aprovados vs. Valores Rejeitados</h2>
+            <p>Confira como o validador classifica diferentes entradas encontradas em planilhas reais durante a auditoria:</p>
+            <div class="seo-table-wrap">
+              <table class="seo-table">
+                <thead>
+                  <tr>
+                    <th>Valor na Célula / Linha CSV</th>
+                    <th>Resultado no Laudo</th>
+                    <th>Explicação Técnica</th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><code>Metalúrgica São José Comércio e Indústria LTDA</code></td>
+                <td><span class="seo-code-pill seo-code-ok">Válido (Aprovado em UTF-8)</span></td>
+                <td>Texto acentuado codificado corretamente em UTF-8 (com ou sem BOM).</td>
+              </tr>
+              <tr>
+                <td><code>Metal�gica S�o Jos� Com�rcio LTDA</code></td>
+                <td><span class="seo-code-pill seo-code-error">Rejeitado (ENCODING_CORRUPTION)</span></td>
+                <td>Arquivo salvo em ANSI/Windows-1252 contendo bytes inválidos que geram \uFFFD ao serem lidos em UTF-8.</td>
+              </tr>
+              <tr>
+                <td><code>C�digo_Cliente;Raz�o_Social;Endere�o</code></td>
+                <td><span class="seo-code-pill seo-code-error">Rejeitado na Linha #1 (ENCODING_CORRUPTION)</span></td>
+                <td>Cabeçalho da planilha com acentuação corrompida, impedindo até mesmo o reconhecimento dos nomes das colunas.</td>
+              </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Passo a Passo para Auditar e Sanear sua Planilha</h2>
+            <ol class="seo-steps-list">
+          <li class="seo-step-item">
+            <span class="seo-step-num">1</span>
+            <div>
+              <strong>Passo 1</strong>
+              <p>No Excel, clique em &quot;Salvar Como&quot; e escolha explicitamente a opção &quot;CSV UTF-8 (Delimitado por vírgulas) (*.csv)&quot; — ou no Bloco de Notas/VS Code salve com codificação UTF-8.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">2</span>
+            <div>
+              <strong>Passo 2</strong>
+              <p>Envie o arquivo no DataConform para verificar se restou algum caractere corrompido herdado de sistemas anteriores.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">3</span>
+            <div>
+              <strong>Passo 3</strong>
+              <p>Confirme que o laudo apresenta zero ocorrências de ENCODING_CORRUPTION e gere o PDF de homologação para liberar a importação.</p>
+            </div>
+          </li>
+            </ol>
+          </section>
+
+          <section class="seo-section">
+            <h2>Perguntas Frequentes (FAQ) — Corrigir Erro de Encoding UTF-8 no CSV</h2>
+            <div class="seo-faq-list">
+          <div class="seo-faq-item">
+            <h3>Qual a diferença entre &quot;CSV ( separado por vírgulas )&quot; e &quot;CSV UTF-8&quot; no Excel?</h3>
+            <p>No Windows em português, a opção antiga &quot;CSV (separado por vírgulas)&quot; costuma salvar em codificação Windows-1252 (ANSI), enquanto &quot;CSV UTF-8 (Delimitado por vírgulas)&quot; salva no padrão universal UTF-8 exigido pela maioria das APIs e ERPs modernos.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>O DataConform aceita arquivos CSV UTF-8 com BOM (Byte Order Mark)?</h3>
+            <p>Sim. O leitor do DataConform possui detectEncodingFromByteOrderMarks ativado, tratando arquivos UTF-8 com ou sem BOM sem corromper o nome da primeira coluna do cabeçalho.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>E se alguém tentar enviar um arquivo Excel (.xlsx) renomeado para .csv?</h3>
+            <p>O DataConform possui proteção contra arquivos binários disfarçados (assinatura ZIP/PK de arquivos XLSX ou PDF), bloqueando o arquivo antes mesmo do processamento.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-cta-banner">
+            <div>
+              <h2>Audite sua planilha CSV contra o erro <code>ENCODING_CORRUPTION</code> agora mesmo</h2>
+              <p>Experimente o simulador interativo na página inicial ou valide até 20 arquivos por mês gratuitamente no plano Starter com exportação de inconsistências e laudo em PDF.</p>
+            </div>
+            <div class="seo-cta-row">
+              <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/precos/" class="seo-btn seo-btn-secondary">Consultar planos e cotas</a>
+            </div>
+          </section>
+
+          <aside class="seo-related-box" aria-label="Links Relacionados">
+            <div class="seo-related-col">
+              <h3>Outras Regras de Alta Intenção</h3>
+              <ul>
+                <li><a href="/erro-colunas-delimitador-quebrado-csv/"><strong>Erro de Colunas e Delimitador Quebrado no CSV</strong> (COLUMN_COUNT_MISMATCH)</a></li>
+              <li><a href="/validar-cpf-cnpj-em-massa-csv/"><strong>Validar CPF e CNPJ em Massa no CSV</strong> (INVALID_DOCUMENT_FORMAT)</a></li>
+              <li><a href="/validar-ncm-planilha-csv/"><strong>Validar NCM em Planilha CSV</strong> (INVALID_NCM_FORMAT)</a></li>
+              <li><a href="/remover-identificar-linhas-duplicadas-csv/"><strong>Identificar Linhas Duplicadas no CSV</strong> (DUPLICATE_ROW)</a></li>
+                <li><a href="/regras-de-validacao-csv/"><strong>Ver catálogo completo das 17 regras →</strong></a></li>
+              </ul>
+            </div>
+            <div class="seo-related-col">
+              <h3>Layouts de ERP que Utilizam esta Regra</h3>
+              <ul>
+                <li><a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus</strong> (SA1 (Clientes))</a></li>
+              <li><a href="/layout-importacao-protheus-sb1-produtos/"><strong>TOTVS Protheus - Produtos</strong> (SB1 (Produtos))</a></li>
+              <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/"><strong>SAP Business One</strong> (OCRD (Business Partners))</a></li>
+              <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/"><strong>Sankhya</strong> (TGFPAR (Parceiros))</a></li>
+              </ul>
+            </div>
+          </aside>
+        </article>
+      </div>
+    </main>
+  <footer class="seo-footer">
+    <div class="seo-container">
+      <div class="seo-footer-grid">
+        <div class="seo-footer-col">
+          <strong>DataConform</strong>
+          <p>Plataforma SaaS de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP. Diagnóstico linha a linha com exportação CSV e laudo em PDF.</p>
+          <p class="seo-footer-links-inline">
+            <a href="/">Início &amp; Simulador</a> •
+            <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
+            <a href="/regras-de-validacao-csv/">Regras CSV</a> •
+            <a href="/precos/">Preços</a>
+          </p>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 1)</strong>
+          <ul>
+            <li><a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1 (Clientes))</a></li>
+            <li><a href="/layout-importacao-protheus-sa2-fornecedores/">TOTVS Protheus - Fornecedores (SA2 (Fornecedores))</a></li>
+            <li><a href="/layout-importacao-protheus-sb1-produtos/">TOTVS Protheus - Produtos (SB1 (Produtos))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD (Business Partners))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-oitm-itens/">SAP Business One - Itens (OITM (Item Master Data))</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 2)</strong>
+          <ul>
+            <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
+            <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
+            <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Regras de Validação CSV</strong>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="seo-footer-bottom">
+        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Layout de Importação SAP Business One OCRD (DTW Parceiros) CSV | DataConform</title>
+    <meta name="description" content="Valide planilhas CSV para o objeto OCRD (Parceiros de Negócios) no DTW do SAP Business One. Audite CardCode, CardName, LicTradNum, E_Mail, CreditLine e ZipCode." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://dataconform.com.br/layout-importacao-sap-business-one-ocrd-parceiros/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Layout de Importação SAP Business One OCRD (DTW Parceiros) CSV | DataConform" />
+    <meta property="og:description" content="Valide planilhas CSV para o objeto OCRD (Parceiros de Negócios) no DTW do SAP Business One. Audite CardCode, CardName, LicTradNum, E_Mail, CreditLine e ZipCode." />
+    <meta property="og:url" content="https://dataconform.com.br/layout-importacao-sap-business-one-ocrd-parceiros/" />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Layout de Importação SAP Business One OCRD (DTW Parceiros) CSV | DataConform" />
+    <meta name="twitter:description" content="Valide planilhas CSV para o objeto OCRD (Parceiros de Negócios) no DTW do SAP Business One. Audite CardCode, CardName, LicTradNum, E_Mail, CreditLine e ZipCode." />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <link rel="stylesheet" href="/seo.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"SAP Business One — OCRD (Business Partners)","item":"https://dataconform.com.br/layout-importacao-sap-business-one-ocrd-parceiros/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Posso manter colunas extras do DTW como CardType ou Phone1 no CSV?","acceptedAnswer":{"@type":"Answer","text":"Sim. O DataConform exige as 6 colunas obrigatórias do preset e também aplica validações semânticas caso encontre colunas como Phone1 ou State."}},{"@type":"Question","name":"O DataConform reconhece a coluna LicTradNum automaticamente como CPF/CNPJ?","acceptedAnswer":{"@type":"Answer","text":"Sim. O motor possui mapeamento nativo do dicionário SAP Business One e aplica o cálculo de Módulo 11 diretamente sobre LicTradNum."}},{"@type":"Question","name":"É possível testar uma amostra do arquivo OCRD sem criar conta?","acceptedAnswer":{"@type":"Answer","text":"Sim. Na página inicial você pode usar o simulador interativo com o cenário SAP Business One (DTW / OCRD) ou criar conta grátis no plano Starter."}}]}</script>
+  </head>
+  <body>
+  <header class="seo-navbar">
+    <div class="seo-container seo-navbar-inner">
+      <a href="/" class="seo-brand" aria-label="DataConform - Página Inicial">
+        <img src="/favicon.svg" alt="Logo DataConform" width="32" height="32" />
+        <span class="seo-brand-title">DataConform</span>
+        <span class="seo-brand-badge">Validador CSV ERP</span>
+      </a>
+      <nav class="seo-nav-links" aria-label="Navegação Principal">
+        <a href="/layouts-de-importacao-erp/">Layouts de ERP</a>
+        <a href="/regras-de-validacao-csv/">Regras de Validação</a>
+        <a href="/precos/">Preços</a>
+        <a href="/?erp=sap-b1-ocrd#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Validar meu arquivo grátis</a>
+      </nav>
+    </div>
+  </header>
+    <main class="seo-main">
+      <div class="seo-container">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Início</a></li>
+          <li><a href="/layouts-de-importacao-erp/">Layouts de Importação ERP</a></li>
+          <li aria-current="page">SAP Business One — OCRD (Business Partners)</li>
+        </ol>
+      </nav>
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">SAP Business One</span>
+              <span class="seo-pill-outline">Objeto OCRD (Business Partners — DTW / Data Transfer Workbench)</span>
+            </div>
+            <h1>Layout de Importação SAP Business One OCRD (DTW): Homologação de Parceiros de Negócios</h1>
+            <p class="seo-lead">Prepare e valide arquivos CSV para o Data Transfer Workbench (DTW) do SAP Business One (objeto OCRD). Detecte erros em LicTradNum (CNPJ/CPF), E_Mail, CreditLine e ZipCode antes da execução da DI API.</p>
+            <div class="seo-cta-row">
+              <a href="/?erp=sap-b1-ocrd#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/layouts-de-importacao-erp/" class="seo-btn seo-btn-secondary">Ver todos os layouts de ERP</a>
+            </div>
+          </header>
+
+          <section class="seo-section">
+            <h2>Para que serve o layout OCRD (Business Partners) no SAP Business One</h2>
+            <p>No SAP Business One, a carga inicial e atualização em massa de clientes, fornecedores e leads ocorrem via Data Transfer Workbench (DTW) apontando para o objeto OCRD (Business Partners). Como o DTW processa registros via DI API, inconsistências em documentos fiscais brasileiros, limites de crédito negativos ou CEPs truncados geram logs de erro extensos e atrasam o go-live.</p>
+          <p>O preset &quot;SAP Business One&quot; do DataConform audita planilhas do objeto OCRD antes de abri-las no DTW. O motor verifica a presença obrigatória das colunas CardCode, CardName, LicTradNum, E_Mail, CreditLine e ZipCode, aplicando validação de Módulo 11 sobre LicTradNum e validação postal de 8 dígitos sobre ZipCode.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>Tabela de Colunas Obrigatórias Reais do Preset (OCRD (Business Partners))</h2>
+            <p>O preset oficial do DataConform para <strong>SAP Business One</strong> exige as seguintes colunas no cabeçalho da planilha CSV (arquivo de referência: <code>layout_sap_b1_ocrd.csv</code>):</p>
+            <div class="seo-table-wrap">
+              <table class="seo-table">
+                <thead>
+                  <tr>
+                    <th>Coluna Obrigatória</th>
+                    <th>Descrição Técnica no ERP</th>
+                    <th>Exemplo Válido</th>
+                    <th>Regra Aplicada no DataConform</th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><code>CardCode</code></td>
+                <td>Código alfanumérico único do Parceiro de Negócios no SAP Business One.</td>
+                <td><code>C10001</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING</span></td>
+              </tr>
+              <tr>
+                <td><code>CardName</code></td>
+                <td>Razão social ou nome completo do parceiro no objeto OCRD.</td>
+                <td><code>Horizonte Suprimentos Industriais SA</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING / ENCODING_CORRUPTION</span></td>
+              </tr>
+              <tr>
+                <td><code>LicTradNum</code></td>
+                <td>Identificador fiscal principal (CNPJ 14 dígitos ou CPF 11 dígitos).</td>
+                <td><code>12.345.678/0001-95</code></td>
+                <td><span class="seo-code-pill">INVALID_DOCUMENT_FORMAT</span></td>
+              </tr>
+              <tr>
+                <td><code>E_Mail</code></td>
+                <td>E-mail principal utilizado para comunicação e mensageria de NF-e.</td>
+                <td><code>nfe@horizontesupri.com.br</code></td>
+                <td><span class="seo-code-pill">INVALID_EMAIL_FORMAT</span></td>
+              </tr>
+              <tr>
+                <td><code>CreditLine</code></td>
+                <td>Limite de crédito concedido ao parceiro (decimal não negativo).</td>
+                <td><code>85000.00</code></td>
+                <td><span class="seo-code-pill">INVALID_NUMERIC_VALUE / NEGATIVE_AMOUNT_NOT_ALLOWED</span></td>
+              </tr>
+              <tr>
+                <td><code>ZipCode</code></td>
+                <td>CEP do endereço principal contendo exatamente 8 dígitos numéricos.</td>
+                <td><code>01001-000</code></td>
+                <td><span class="seo-code-pill">INVALID_CEP_FORMAT</span></td>
+              </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Exemplo de Estrutura CSV Homologada (layout_sap_b1_ocrd.csv)</h2>
+            <p>Abaixo está a estrutura real do arquivo CSV utilizado pelo DataConform para homologar cargas deste módulo, incluindo linhas íntegras e linhas de teste para captura de inconsistências:</p>
+            <pre class="seo-code-block"><code>CardCode,CardName,CardType,LicTradNum,E_Mail,CreditLine,ZipCode
+C10001,Horizonte Suprimentos Industriais SA,C,12.345.678/0001-95,nfe@horizontesupri.com.br,85000.00,01001-000
+C10002,Vanguarda Metalurgica LTDA,C,11.222.333/0001-81,compras@vanguarda.ind.br,140000.00,80020-100
+C10003,Parceiro Documento Invalido SA,C,12.345.678/0001-00,contato@parceiro.com,30000.00,88010-000
+C10004,Parceiro Credito Negativo ME,C,06.990.590/0001-23,email-incompleto.com,-9200.00,0000</code></pre>
+          </section>
+
+          <section class="seo-section">
+            <h2>Erros Mais Comuns na Importação do SAP Business One e Regras do DataConform</h2>
+            <p>Durante a preparação da carga de dados, os seguintes desvios costumam bloquear a importação no ERP e são interceptados automaticamente pelo motor de validação:</p>
+            <div class="seo-cards-grid">
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_DOCUMENT_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>LicTradNum</code></span>
+            </div>
+            <h3>Documento fiscal LicTradNum rejeitado nos add-ons fiscais do SAP B1</h3>
+            <p>Sequências fictícias (99.999.999/0001-99) ou CNPJs com dígito verificador incorreto falham nos add-ons fiscais e no B1iSN. O DataConform valida o Módulo 11 de cada LicTradNum.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_CEP_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>ZipCode</code></span>
+            </div>
+            <h3>ZipCode com menos de 8 dígitos ou preenchido com zeros</h3>
+            <p>Planilhas DTW editadas no Excel perdem o zero inicial em CEPs de SP. O motor sinaliza qualquer ZipCode diferente de 8 dígitos ou igual a 00000000.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">NEGATIVE_AMOUNT_NOT_ALLOWED</span>
+              <span class="seo-field-tag">Campo: <code>CreditLine</code></span>
+            </div>
+            <h3>Saldo devedor mapeado acidentalmente na coluna CreditLine</h3>
+            <p>Exportar saldo negativo no lugar do limite de crédito causa rejeição no DTW. O validador bloqueia valores menores que zero em CreditLine.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_EMAIL_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>E_Mail</code></span>
+            </div>
+            <h3>E-mails sem domínio válido ou com espaços em branco</h3>
+            <p>A coluna E_Mail exige endereço eletrônico íntegro. Cadastros malformados travam o envio automático de boletos e XMLs.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Passo a Passo para Validar sua Planilha antes da Carga no ERP</h2>
+            <ol class="seo-steps-list">
+          <li class="seo-step-item">
+            <span class="seo-step-num">1</span>
+            <div>
+              <strong>Passo 1</strong>
+              <p>Exporte seu template DTW do objeto OCRD em CSV mantendo as colunas CardCode, CardName, LicTradNum, E_Mail, CreditLine e ZipCode.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">2</span>
+            <div>
+              <strong>Passo 2</strong>
+              <p>Envie o arquivo no DataConform com o preset &quot;SAP Business One&quot; selecionado para inspecionar todos os parceiros.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">3</span>
+            <div>
+              <strong>Passo 3</strong>
+              <p>Corrija os registros listados no CSV de inconsistências e emita o laudo PDF antes de rodar a carga no DTW.</p>
+            </div>
+          </li>
+            </ol>
+          </section>
+
+          <section class="seo-section">
+            <h2>Perguntas Frequentes (FAQ) — Importação SAP Business One</h2>
+            <div class="seo-faq-list">
+          <div class="seo-faq-item">
+            <h3>Posso manter colunas extras do DTW como CardType ou Phone1 no CSV?</h3>
+            <p>Sim. O DataConform exige as 6 colunas obrigatórias do preset e também aplica validações semânticas caso encontre colunas como Phone1 ou State.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>O DataConform reconhece a coluna LicTradNum automaticamente como CPF/CNPJ?</h3>
+            <p>Sim. O motor possui mapeamento nativo do dicionário SAP Business One e aplica o cálculo de Módulo 11 diretamente sobre LicTradNum.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>É possível testar uma amostra do arquivo OCRD sem criar conta?</h3>
+            <p>Sim. Na página inicial você pode usar o simulador interativo com o cenário SAP Business One (DTW / OCRD) ou criar conta grátis no plano Starter.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-cta-banner">
+            <div>
+              <h2>Pronto para homologar sua planilha do SAP Business One?</h2>
+              <p>Teste agora mesmo no simulador interativo sem cadastro ou crie sua conta gratuita no plano Starter (até 20 arquivos/mês e laudo em PDF).</p>
+            </div>
+            <div class="seo-cta-row">
+              <a href="/?erp=sap-b1-ocrd#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/precos/" class="seo-btn seo-btn-secondary">Conhecer planos e limites</a>
+            </div>
+          </section>
+
+          <aside class="seo-related-box" aria-label="Conteúdos Relacionados">
+            <div class="seo-related-col">
+              <h3>Regras de Validação Aplicadas neste Layout</h3>
+              <ul>
+                <li><a href="/validar-cpf-cnpj-em-massa-csv/"><strong>Validar CPF e CNPJ em Massa no CSV</strong> (INVALID_DOCUMENT_FORMAT)</a></li>
+              <li><a href="/validar-cep-em-lote-csv/"><strong>Validar CEP em Lote na Planilha CSV</strong> (INVALID_CEP_FORMAT)</a></li>
+              <li><a href="/validar-email-em-lote-planilha-csv/"><strong>Validar E-mails em Lote no CSV</strong> (INVALID_EMAIL_FORMAT)</a></li>
+              <li><a href="/erro-colunas-delimitador-quebrado-csv/"><strong>Erro de Colunas e Delimitador Quebrado no CSV</strong> (COLUMN_COUNT_MISMATCH)</a></li>
+              </ul>
+            </div>
+            <div class="seo-related-col">
+              <h3>Outros Layouts de Importação ERP</h3>
+              <ul>
+                <li><a href="/layout-importacao-sap-business-one-oitm-itens/"><strong>SAP Business One - Itens</strong> — Objeto OITM (Item Master Data — DTW / Data Transfer Workbench)</a></li>
+              <li><a href="/layout-importacao-sap-s4hana-business-partner/"><strong>SAP S/4HANA</strong> — SAP S/4HANA Migration Cockpit — Business Partner (BP)</a></li>
+              <li><a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus</strong> — Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotina MATA030</a></li>
+                <li><a href="/layouts-de-importacao-erp/"><strong>Ver todos os 10 presets de ERP →</strong></a></li>
+              </ul>
+            </div>
+          </aside>
+        </article>
+      </div>
+    </main>
+  <footer class="seo-footer">
+    <div class="seo-container">
+      <div class="seo-footer-grid">
+        <div class="seo-footer-col">
+          <strong>DataConform</strong>
+          <p>Plataforma SaaS de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP. Diagnóstico linha a linha com exportação CSV e laudo em PDF.</p>
+          <p class="seo-footer-links-inline">
+            <a href="/">Início &amp; Simulador</a> •
+            <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
+            <a href="/regras-de-validacao-csv/">Regras CSV</a> •
+            <a href="/precos/">Preços</a>
+          </p>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 1)</strong>
+          <ul>
+            <li><a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1 (Clientes))</a></li>
+            <li><a href="/layout-importacao-protheus-sa2-fornecedores/">TOTVS Protheus - Fornecedores (SA2 (Fornecedores))</a></li>
+            <li><a href="/layout-importacao-protheus-sb1-produtos/">TOTVS Protheus - Produtos (SB1 (Produtos))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD (Business Partners))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-oitm-itens/">SAP Business One - Itens (OITM (Item Master Data))</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 2)</strong>
+          <ul>
+            <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
+            <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
+            <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Regras de Validação CSV</strong>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="seo-footer-bottom">
+        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>

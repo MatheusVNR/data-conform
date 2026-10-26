@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Erro de Colunas a Mais ou Delimitador Quebrado no CSV (RFC 4180) | DataConform</title>
+    <meta name="description" content="Descubra qual linha da sua planilha CSV tem colunas a mais ou a menos por causa de vírgula ou ponto e vírgula fora de aspas. Validação RFC 4180 para ERPs." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://dataconform.com.br/erro-colunas-delimitador-quebrado-csv/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Erro de Colunas a Mais ou Delimitador Quebrado no CSV (RFC 4180) | DataConform" />
+    <meta property="og:description" content="Descubra qual linha da sua planilha CSV tem colunas a mais ou a menos por causa de vírgula ou ponto e vírgula fora de aspas. Validação RFC 4180 para ERPs." />
+    <meta property="og:url" content="https://dataconform.com.br/erro-colunas-delimitador-quebrado-csv/" />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Erro de Colunas a Mais ou Delimitador Quebrado no CSV (RFC 4180) | DataConform" />
+    <meta name="twitter:description" content="Descubra qual linha da sua planilha CSV tem colunas a mais ou a menos por causa de vírgula ou ponto e vírgula fora de aspas. Validação RFC 4180 para ERPs." />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <link rel="stylesheet" href="/seo.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Erro de Colunas e Delimitador Quebrado no CSV","item":"https://dataconform.com.br/erro-colunas-delimitador-quebrado-csv/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Preciso configurar se meu CSV usa vírgula (,) ou ponto e vírgula (;)?","acceptedAnswer":{"@type":"Answer","text":"Não. O algoritmo DetectDelimiter do DataConform analisa o cabeçalho do arquivo ignorando textos entre aspas e seleciona automaticamente vírgula, ponto e vírgula ou tabulação."}},{"@type":"Question","name":"O DataConform suporta células que contêm vírgulas ou ponto e vírgula dentro de aspas duplas?","acceptedAnswer":{"@type":"Answer","text":"Sim. O parser RFC 4180 do DataConform respeita campos delimitados por aspas duplas (\"...\") e aspas escapadas (\"\"), contando corretamente as colunas."}},{"@type":"Question","name":"O que significa o aviso EMPTY_HEADER_NAME na Linha #1?","acceptedAnswer":{"@type":"Answer","text":"Significa que sua planilha possui um delimitador sobrando no final do cabeçalho ou uma coluna sem título no Excel, gerando uma coluna em branco na posição indicada."}}]}</script>
+  </head>
+  <body>
+  <header class="seo-navbar">
+    <div class="seo-container seo-navbar-inner">
+      <a href="/" class="seo-brand" aria-label="DataConform - Página Inicial">
+        <img src="/favicon.svg" alt="Logo DataConform" width="32" height="32" />
+        <span class="seo-brand-title">DataConform</span>
+        <span class="seo-brand-badge">Validador CSV ERP</span>
+      </a>
+      <nav class="seo-nav-links" aria-label="Navegação Principal">
+        <a href="/layouts-de-importacao-erp/">Layouts de ERP</a>
+        <a href="/regras-de-validacao-csv/">Regras de Validação</a>
+        <a href="/precos/">Preços</a>
+        <a href="/#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Validar meu arquivo grátis</a>
+      </nav>
+    </div>
+  </header>
+    <main class="seo-main">
+      <div class="seo-container">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Início</a></li>
+          <li><a href="/regras-de-validacao-csv/">Regras de Validação CSV</a></li>
+          <li aria-current="page">Erro de Colunas e Delimitador Quebrado no CSV</li>
+        </ol>
+      </nav>
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">Código: COLUMN_COUNT_MISMATCH</span>
+              <span class="seo-pill-outline">Severidade: Erro (Error)</span>
+            </div>
+            <h1>Colunas a Mais ou Delimitador Quebrado no CSV: Como Localizar a Linha Exata do Erro</h1>
+            <p class="seo-lead">Quando uma única linha tem uma vírgula ou ponto e vírgula fora de aspas, todas as colunas seguintes deslocam para a direita e quebram a importação no ERP. O DataConform audita a estrutura RFC 4180 linha a linha.</p>
+            <div class="seo-cta-row">
+              <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/regras-de-validacao-csv/" class="seo-btn seo-btn-secondary">Ver todas as 17 regras</a>
+            </div>
+          </header>
+
+          <section class="seo-section">
+            <h2>Por que esse erro acontece na planilha CSV e trava o ERP</h2>
+            <p>Em arquivos CSV de grande porte (com dezenas de milhares de linhas), o erro mais difícil de achar visualmente é o deslocamento de colunas (Column Shift). Isso acontece quando um endereço contém vírgula (ex.: Rua Paulista, 1000) em um CSV separado por vírgulas sem estar envolto por aspas duplas, ou quando uma observação contém ponto e vírgula em um CSV exportado pelo Excel brasileiro.</p>
+          <p>Nessa linha específica, o importador do ERP passa a enxergar uma coluna extra: o complemento do endereço cai na coluna de CNPJ, o CNPJ cai na coluna de e-mail e o e-mail cai na coluna de limite de crédito. O ERP rejeita a linha com mensagens genéricas de erro de tipo de dado, fazendo o analista perder horas procurando o problema.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>Como o Motor do DataConform Executa a Regra <code>COLUMN_COUNT_MISMATCH</code></h2>
+            <p>O parser do DataConform segue o padrão RFC 4180. Primeiro, ele inspeciona a linha de cabeçalho ignorando trechos entre aspas duplas para detectar automaticamente qual é o delimitador predominante do arquivo: vírgula (,), ponto e vírgula (;) ou tabulação (Tab). Ele também verifica cabeçalhos em branco (EMPTY_HEADER_NAME), colunas repetidas (DUPLICATE_HEADER) e colunas obrigatórias ausentes (REQUIRED_HEADER_MISSING).</p>
+          <p>Em seguida, ao processar cada linha de dados (respeitando campos entre aspas e escape de aspas duplas &quot;&quot;), o validador compara a quantidade de células encontradas com o número de colunas do cabeçalho. Qualquer divergência gera o erro COLUMN_COUNT_MISMATCH informando exatamente quantas colunas a linha possui versus quantas o cabeçalho exige.</p>
+            <div class="seo-detected-box">
+              <h3>Colunas e Dicionários Inspecionados Automaticamente:</h3>
+              <div class="seo-chips-wrap">
+                <span class="seo-col-chip">Comparação estrutural entre o total de colunas do cabeçalho (Linha #1) e cada linha de dados</span>
+              <span class="seo-col-chip">Detecção automática de delimitador: vírgula (,), ponto e vírgula (;) ou tabulação (\t)</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Exemplos Práticos: Valores Aprovados vs. Valores Rejeitados</h2>
+            <p>Confira como o validador classifica diferentes entradas encontradas em planilhas reais durante a auditoria:</p>
+            <div class="seo-table-wrap">
+              <table class="seo-table">
+                <thead>
+                  <tr>
+                    <th>Valor na Célula / Linha CSV</th>
+                    <th>Resultado no Laudo</th>
+                    <th>Explicação Técnica</th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><code>000101,&quot;Alpha Tecnologia, Sistemas LTDA&quot;,12.345.678/0001-95</code></td>
+                <td><span class="seo-code-pill seo-code-ok">Válido (3 colunas = 3 cabeçalhos)</span></td>
+                <td>A vírgula interna na razão social está protegida entre aspas duplas segundo a norma RFC 4180.</td>
+              </tr>
+              <tr>
+                <td><code>000101,Alpha Tecnologia, Sistemas LTDA,12.345.678/0001-95</code></td>
+                <td><span class="seo-code-pill seo-code-error">Rejeitado (COLUMN_COUNT_MISMATCH)</span></td>
+                <td>Vírgula sem aspas divide a razão social em duas células: a linha passa a ter 4 colunas enquanto o cabeçalho tem 3.</td>
+              </tr>
+              <tr>
+                <td><code>000101,Alpha Tecnologia LTDA</code></td>
+                <td><span class="seo-code-pill seo-code-error">Rejeitado (COLUMN_COUNT_MISMATCH)</span></td>
+                <td>Delimitador final ausente: a linha possui apenas 2 colunas quando o cabeçalho exige 3.</td>
+              </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Passo a Passo para Auditar e Sanear sua Planilha</h2>
+            <ol class="seo-steps-list">
+          <li class="seo-step-item">
+            <span class="seo-step-num">1</span>
+            <div>
+              <strong>Passo 1</strong>
+              <p>Faça o upload do seu arquivo CSV no DataConform (não importa se separado por vírgula, ponto e vírgula ou Tab).</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">2</span>
+            <div>
+              <strong>Passo 2</strong>
+              <p>Verifique no laudo se existem apontamentos de COLUMN_COUNT_MISMATCH, EMPTY_HEADER_NAME ou DUPLICATE_HEADER.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">3</span>
+            <div>
+              <strong>Passo 3</strong>
+              <p>Abra as linhas indicadas pelo número de linha do relatório, envolva textos com delimitadores internos entre aspas duplas e revalide o arquivo.</p>
+            </div>
+          </li>
+            </ol>
+          </section>
+
+          <section class="seo-section">
+            <h2>Perguntas Frequentes (FAQ) — Erro de Colunas e Delimitador Quebrado no CSV</h2>
+            <div class="seo-faq-list">
+          <div class="seo-faq-item">
+            <h3>Preciso configurar se meu CSV usa vírgula (,) ou ponto e vírgula (;)?</h3>
+            <p>Não. O algoritmo DetectDelimiter do DataConform analisa o cabeçalho do arquivo ignorando textos entre aspas e seleciona automaticamente vírgula, ponto e vírgula ou tabulação.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>O DataConform suporta células que contêm vírgulas ou ponto e vírgula dentro de aspas duplas?</h3>
+            <p>Sim. O parser RFC 4180 do DataConform respeita campos delimitados por aspas duplas (&quot;...&quot;) e aspas escapadas (&quot;&quot;), contando corretamente as colunas.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>O que significa o aviso EMPTY_HEADER_NAME na Linha #1?</h3>
+            <p>Significa que sua planilha possui um delimitador sobrando no final do cabeçalho ou uma coluna sem título no Excel, gerando uma coluna em branco na posição indicada.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-cta-banner">
+            <div>
+              <h2>Audite sua planilha CSV contra o erro <code>COLUMN_COUNT_MISMATCH</code> agora mesmo</h2>
+              <p>Experimente o simulador interativo na página inicial ou valide até 20 arquivos por mês gratuitamente no plano Starter com exportação de inconsistências e laudo em PDF.</p>
+            </div>
+            <div class="seo-cta-row">
+              <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/precos/" class="seo-btn seo-btn-secondary">Consultar planos e cotas</a>
+            </div>
+          </section>
+
+          <aside class="seo-related-box" aria-label="Links Relacionados">
+            <div class="seo-related-col">
+              <h3>Outras Regras de Alta Intenção</h3>
+              <ul>
+                <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/"><strong>Corrigir Erro de Encoding UTF-8 no CSV</strong> (ENCODING_CORRUPTION)</a></li>
+              <li><a href="/remover-identificar-linhas-duplicadas-csv/"><strong>Identificar Linhas Duplicadas no CSV</strong> (DUPLICATE_ROW)</a></li>
+              <li><a href="/validar-cpf-cnpj-em-massa-csv/"><strong>Validar CPF e CNPJ em Massa no CSV</strong> (INVALID_DOCUMENT_FORMAT)</a></li>
+              <li><a href="/validar-ncm-planilha-csv/"><strong>Validar NCM em Planilha CSV</strong> (INVALID_NCM_FORMAT)</a></li>
+                <li><a href="/regras-de-validacao-csv/"><strong>Ver catálogo completo das 17 regras →</strong></a></li>
+              </ul>
+            </div>
+            <div class="seo-related-col">
+              <h3>Layouts de ERP que Utilizam esta Regra</h3>
+              <ul>
+                <li><a href="/layout-importacao-protheus-sa2-fornecedores/"><strong>TOTVS Protheus - Fornecedores</strong> (SA2 (Fornecedores))</a></li>
+              <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/"><strong>SAP Business One</strong> (OCRD (Business Partners))</a></li>
+              <li><a href="/layout-importacao-senior-erp-e085cli-clientes/"><strong>Senior ERP</strong> (E085CLI (Clientes Sapiens))</a></li>
+              <li><a href="/layout-importacao-contaazul-clientes/"><strong>ContaAzul</strong> (Importação Cadastral e Financeira)</a></li>
+              </ul>
+            </div>
+          </aside>
+        </article>
+      </div>
+    </main>
+  <footer class="seo-footer">
+    <div class="seo-container">
+      <div class="seo-footer-grid">
+        <div class="seo-footer-col">
+          <strong>DataConform</strong>
+          <p>Plataforma SaaS de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP. Diagnóstico linha a linha com exportação CSV e laudo em PDF.</p>
+          <p class="seo-footer-links-inline">
+            <a href="/">Início &amp; Simulador</a> •
+            <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
+            <a href="/regras-de-validacao-csv/">Regras CSV</a> •
+            <a href="/precos/">Preços</a>
+          </p>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 1)</strong>
+          <ul>
+            <li><a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1 (Clientes))</a></li>
+            <li><a href="/layout-importacao-protheus-sa2-fornecedores/">TOTVS Protheus - Fornecedores (SA2 (Fornecedores))</a></li>
+            <li><a href="/layout-importacao-protheus-sb1-produtos/">TOTVS Protheus - Produtos (SB1 (Produtos))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD (Business Partners))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-oitm-itens/">SAP Business One - Itens (OITM (Item Master Data))</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 2)</strong>
+          <ul>
+            <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
+            <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
+            <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Regras de Validação CSV</strong>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="seo-footer-bottom">
+        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>

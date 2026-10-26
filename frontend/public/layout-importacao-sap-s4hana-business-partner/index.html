@@ -1,0 +1,310 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Layout de Importação SAP S/4HANA Business Partner (BP) CSV | DataConform</title>
+    <meta name="description" content="Homologue arquivos CSV para o SAP S/4HANA Migration Cockpit (Business Partner). Valide BP_Number, Name1, TaxId0 (CNPJ/CPF), E_Mail, CreditLine, ValidFrom e State." />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="canonical" href="https://dataconform.com.br/layout-importacao-sap-s4hana-business-partner/" />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="DataConform" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:title" content="Layout de Importação SAP S/4HANA Business Partner (BP) CSV | DataConform" />
+    <meta property="og:description" content="Homologue arquivos CSV para o SAP S/4HANA Migration Cockpit (Business Partner). Valide BP_Number, Name1, TaxId0 (CNPJ/CPF), E_Mail, CreditLine, ValidFrom e State." />
+    <meta property="og:url" content="https://dataconform.com.br/layout-importacao-sap-s4hana-business-partner/" />
+    <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Layout de Importação SAP S/4HANA Business Partner (BP) CSV | DataConform" />
+    <meta name="twitter:description" content="Homologue arquivos CSV para o SAP S/4HANA Migration Cockpit (Business Partner). Valide BP_Number, Name1, TaxId0 (CNPJ/CPF), E_Mail, CreditLine, ValidFrom e State." />
+    <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
+    <link rel="stylesheet" href="/seo.css" />
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"SAP S/4HANA — Business Partner (BP)","item":"https://dataconform.com.br/layout-importacao-sap-s4hana-business-partner/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quais formatos de data são aceitos na coluna ValidFrom?","acceptedAnswer":{"@type":"Answer","text":"Os formatos ISO 8601 (AAAA-MM-DD) recomendados pelo SAP S/4HANA e o padrão brasileiro DD/MM/AAAA, verificando se a data existe no calendário."}},{"@type":"Question","name":"A coluna State (UF) também é inspecionada se estiver presente na planilha?","acceptedAnswer":{"@type":"Answer","text":"Sim. O motor valida automaticamente se todas as siglas da coluna State correspondem às 27 UFs brasileiras ou EX."}},{"@type":"Question","name":"Qual a capacidade máxima de linhas para migrações SAP S/4HANA?","acceptedAnswer":{"@type":"Answer","text":"O plano Professional suporta até 50.000 linhas por arquivo (25 MB) e o plano Enterprise suporta até 1.000.000 de linhas por arquivo (50 MB)."}}]}</script>
+  </head>
+  <body>
+  <header class="seo-navbar">
+    <div class="seo-container seo-navbar-inner">
+      <a href="/" class="seo-brand" aria-label="DataConform - Página Inicial">
+        <img src="/favicon.svg" alt="Logo DataConform" width="32" height="32" />
+        <span class="seo-brand-title">DataConform</span>
+        <span class="seo-brand-badge">Validador CSV ERP</span>
+      </a>
+      <nav class="seo-nav-links" aria-label="Navegação Principal">
+        <a href="/layouts-de-importacao-erp/">Layouts de ERP</a>
+        <a href="/regras-de-validacao-csv/">Regras de Validação</a>
+        <a href="/precos/">Preços</a>
+        <a href="/?erp=sap-s4hana-bp#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Validar meu arquivo grátis</a>
+      </nav>
+    </div>
+  </header>
+    <main class="seo-main">
+      <div class="seo-container">
+      <nav class="seo-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Início</a></li>
+          <li><a href="/layouts-de-importacao-erp/">Layouts de Importação ERP</a></li>
+          <li aria-current="page">SAP S/4HANA — Business Partner (BP)</li>
+        </ol>
+      </nav>
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">SAP S/4HANA</span>
+              <span class="seo-pill-outline">SAP S/4HANA Migration Cockpit — Business Partner (BP)</span>
+            </div>
+            <h1>Layout de Importação SAP S/4HANA Business Partner (Migration Cockpit): Validação CSV</h1>
+            <p class="seo-lead">Audite cargas de Business Partner (BP) antes de submetê-las ao SAP S/4HANA Migration Cockpit (LTMC / Fiori Migrate Your Data). Intercepte falhas em TaxId0, ValidFrom, CreditLine e State.</p>
+            <div class="seo-cta-row">
+              <a href="/?erp=sap-s4hana-bp#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/layouts-de-importacao-erp/" class="seo-btn seo-btn-secondary">Ver todos os layouts de ERP</a>
+            </div>
+          </header>
+
+          <section class="seo-section">
+            <h2>Para que serve o layout Business Partner (BP) no SAP S/4HANA</h2>
+            <p>No SAP S/4HANA, os cadastros de clientes e fornecedores foram unificados no modelo central de Business Partner (BP). Em projetos de migração utilizando o SAP S/4HANA Migration Cockpit (Staging Tables ou CSV), a simulação rejeita lotes quando há inconsistências em documentos fiscais brasileiros (Tax Number BR1/BR2), datas fora do padrão ISO ou siglas de estado inválidas.</p>
+          <p>O preset &quot;SAP S/4HANA&quot; do DataConform funciona como pré-homologação para equipes de dados e consultores SD/MM/FI. Antes de subir os arquivos nas tabelas de staging, o DataConform verifica as colunas obrigatórias BP_Number, Name1, TaxId0, E_Mail, CreditLine e ValidFrom, validando o Módulo 11 em TaxId0 e o calendário em ValidFrom.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>Tabela de Colunas Obrigatórias Reais do Preset (Business Partner (BP))</h2>
+            <p>O preset oficial do DataConform para <strong>SAP S/4HANA</strong> exige as seguintes colunas no cabeçalho da planilha CSV (arquivo de referência: <code>layout_sap_s4hana_bp.csv</code>):</p>
+            <div class="seo-table-wrap">
+              <table class="seo-table">
+                <thead>
+                  <tr>
+                    <th>Coluna Obrigatória</th>
+                    <th>Descrição Técnica no ERP</th>
+                    <th>Exemplo Válido</th>
+                    <th>Regra Aplicada no DataConform</th>
+                  </tr>
+                </thead>
+                <tbody>
+              <tr>
+                <td><code>BP_Number</code></td>
+                <td>Identificador de agrupamento/numeração externa do Business Partner na migração.</td>
+                <td><code>BP0010</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING</span></td>
+              </tr>
+              <tr>
+                <td><code>Name1</code></td>
+                <td>Razão social ou nome principal da organização/pessoa no registro BUT000.</td>
+                <td><code>Atlas Engenharia Corporativa SA</code></td>
+                <td><span class="seo-code-pill">REQUIRED_FIELD_MISSING / ENCODING_CORRUPTION</span></td>
+              </tr>
+              <tr>
+                <td><code>TaxId0</code></td>
+                <td>Documento fiscal brasileiro (CNPJ 14 dígitos ou CPF 11 dígitos — BR1/BR2).</td>
+                <td><code>12.345.678/0001-95</code></td>
+                <td><span class="seo-code-pill">INVALID_DOCUMENT_FORMAT</span></td>
+              </tr>
+              <tr>
+                <td><code>E_Mail</code></td>
+                <td>Endereço de e-mail corporativo vinculado aos dados de comunicação (ADR6).</td>
+                <td><code>tesouraria@atlaseng.com.br</code></td>
+                <td><span class="seo-code-pill">INVALID_EMAIL_FORMAT</span></td>
+              </tr>
+              <tr>
+                <td><code>CreditLine</code></td>
+                <td>Limite de crédito para o segmento SAP Credit Management (FSCM).</td>
+                <td><code>250000.00</code></td>
+                <td><span class="seo-code-pill">INVALID_NUMERIC_VALUE / NEGATIVE_AMOUNT_NOT_ALLOWED</span></td>
+              </tr>
+              <tr>
+                <td><code>ValidFrom</code></td>
+                <td>Data de início de validade do registro (AAAA-MM-DD ou DD/MM/AAAA).</td>
+                <td><code>2026-01-15</code></td>
+                <td><span class="seo-code-pill">INVALID_DATE_FORMAT</span></td>
+              </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Exemplo de Estrutura CSV Homologada (layout_sap_s4hana_bp.csv)</h2>
+            <p>Abaixo está a estrutura real do arquivo CSV utilizado pelo DataConform para homologar cargas deste módulo, incluindo linhas íntegras e linhas de teste para captura de inconsistências:</p>
+            <pre class="seo-code-block"><code>BP_Number,Name1,TaxId0,E_Mail,CreditLine,ValidFrom,State
+BP0010,Atlas Engenharia Corporativa SA,12.345.678/0001-95,tesouraria@atlaseng.com.br,250000.00,2026-01-15,SP
+BP0011,Registro Fiscal Invalido LTDA,12.345.678/0001-00,erro-email,15000.00,data-invalida,XX</code></pre>
+          </section>
+
+          <section class="seo-section">
+            <h2>Erros Mais Comuns na Importação do SAP S/4HANA e Regras do DataConform</h2>
+            <p>Durante a preparação da carga de dados, os seguintes desvios costumam bloquear a importação no ERP e são interceptados automaticamente pelo motor de validação:</p>
+            <div class="seo-cards-grid">
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_DOCUMENT_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>TaxId0</code></span>
+            </div>
+            <h3>Falha de validação Tax Number BR1/BR2 no SAP S/4HANA</h3>
+            <p>O SAP S/4HANA executa checagem algorítmica para categorias fiscais brasileiras (BR1 CNPJ e BR2 CPF). Qualquer TaxId0 com dígito verificador incorreto trava a criação do BP.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_DATE_FORMAT</span>
+              <span class="seo-field-tag">Campo: <code>ValidFrom</code></span>
+            </div>
+            <h3>Datas inexistentes ou invertidas (MM/DD/AAAA) em ValidFrom</h3>
+            <p>Datas americanas ou inexistentes como 2026-15-99 são bloqueadas pelo DataConform com o código INVALID_DATE_FORMAT.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">INVALID_UF_CODE</span>
+              <span class="seo-field-tag">Campo: <code>State</code></span>
+            </div>
+            <h3>Região (State) fora da tabela T005S para o país BR</h3>
+            <p>Quando a coluna State consta na planilha do BP, o DataConform verifica se o valor pertence às 27 UFs do Brasil ou EX.</p>
+          </div>
+          <div class="seo-card">
+            <div class="seo-card-header">
+              <span class="seo-code-pill seo-code-error">NEGATIVE_AMOUNT_NOT_ALLOWED</span>
+              <span class="seo-field-tag">Campo: <code>CreditLine</code></span>
+            </div>
+            <h3>Limite de crédito negativo no segmento UKM000</h3>
+            <p>Valores negativos em CreditLine são rejeitados na criação do perfil de crédito. O validador aponta cada ocorrência antes da carga.</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-section">
+            <h2>Passo a Passo para Validar sua Planilha antes da Carga no ERP</h2>
+            <ol class="seo-steps-list">
+          <li class="seo-step-item">
+            <span class="seo-step-num">1</span>
+            <div>
+              <strong>Passo 1</strong>
+              <p>Gere o CSV de Business Partner com as colunas BP_Number, Name1, TaxId0, E_Mail, CreditLine e ValidFrom (além de State quando aplicável).</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">2</span>
+            <div>
+              <strong>Passo 2</strong>
+              <p>Submeta a planilha ao DataConform com o preset &quot;SAP S/4HANA&quot; selecionado para executar a auditoria.</p>
+            </div>
+          </li>
+          <li class="seo-step-item">
+            <span class="seo-step-num">3</span>
+            <div>
+              <strong>Passo 3</strong>
+              <p>Saneie os registros reprovados usando o CSV de inconsistências e gere o laudo PDF para o sign-off de migração.</p>
+            </div>
+          </li>
+            </ol>
+          </section>
+
+          <section class="seo-section">
+            <h2>Perguntas Frequentes (FAQ) — Importação SAP S/4HANA</h2>
+            <div class="seo-faq-list">
+          <div class="seo-faq-item">
+            <h3>Quais formatos de data são aceitos na coluna ValidFrom?</h3>
+            <p>Os formatos ISO 8601 (AAAA-MM-DD) recomendados pelo SAP S/4HANA e o padrão brasileiro DD/MM/AAAA, verificando se a data existe no calendário.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>A coluna State (UF) também é inspecionada se estiver presente na planilha?</h3>
+            <p>Sim. O motor valida automaticamente se todas as siglas da coluna State correspondem às 27 UFs brasileiras ou EX.</p>
+          </div>
+          <div class="seo-faq-item">
+            <h3>Qual a capacidade máxima de linhas para migrações SAP S/4HANA?</h3>
+            <p>O plano Professional suporta até 50.000 linhas por arquivo (25 MB) e o plano Enterprise suporta até 1.000.000 de linhas por arquivo (50 MB).</p>
+          </div>
+            </div>
+          </section>
+
+          <section class="seo-cta-banner">
+            <div>
+              <h2>Pronto para homologar sua planilha do SAP S/4HANA?</h2>
+              <p>Teste agora mesmo no simulador interativo sem cadastro ou crie sua conta gratuita no plano Starter (até 20 arquivos/mês e laudo em PDF).</p>
+            </div>
+            <div class="seo-cta-row">
+              <a href="/?erp=sap-s4hana-bp#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
+              <a href="/precos/" class="seo-btn seo-btn-secondary">Conhecer planos e limites</a>
+            </div>
+          </section>
+
+          <aside class="seo-related-box" aria-label="Conteúdos Relacionados">
+            <div class="seo-related-col">
+              <h3>Regras de Validação Aplicadas neste Layout</h3>
+              <ul>
+                <li><a href="/validar-cpf-cnpj-em-massa-csv/"><strong>Validar CPF e CNPJ em Massa no CSV</strong> (INVALID_DOCUMENT_FORMAT)</a></li>
+              <li><a href="/validar-uf-estado-planilha-csv/"><strong>Validar Sigla de UF e Estado no CSV</strong> (INVALID_UF_CODE)</a></li>
+              <li><a href="/validar-email-em-lote-planilha-csv/"><strong>Validar E-mails em Lote no CSV</strong> (INVALID_EMAIL_FORMAT)</a></li>
+              <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/"><strong>Corrigir Erro de Encoding UTF-8 no CSV</strong> (ENCODING_CORRUPTION)</a></li>
+              </ul>
+            </div>
+            <div class="seo-related-col">
+              <h3>Outros Layouts de Importação ERP</h3>
+              <ul>
+                <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/"><strong>SAP Business One</strong> — Objeto OCRD (Business Partners — DTW / Data Transfer Workbench)</a></li>
+              <li><a href="/layout-importacao-sap-business-one-oitm-itens/"><strong>SAP Business One - Itens</strong> — Objeto OITM (Item Master Data — DTW / Data Transfer Workbench)</a></li>
+              <li><a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus</strong> — Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotina MATA030</a></li>
+                <li><a href="/layouts-de-importacao-erp/"><strong>Ver todos os 10 presets de ERP →</strong></a></li>
+              </ul>
+            </div>
+          </aside>
+        </article>
+      </div>
+    </main>
+  <footer class="seo-footer">
+    <div class="seo-container">
+      <div class="seo-footer-grid">
+        <div class="seo-footer-col">
+          <strong>DataConform</strong>
+          <p>Plataforma SaaS de pré-validação e homologação de arquivos CSV antes da importação em sistemas ERP. Diagnóstico linha a linha com exportação CSV e laudo em PDF.</p>
+          <p class="seo-footer-links-inline">
+            <a href="/">Início &amp; Simulador</a> •
+            <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
+            <a href="/regras-de-validacao-csv/">Regras CSV</a> •
+            <a href="/precos/">Preços</a>
+          </p>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 1)</strong>
+          <ul>
+            <li><a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1 (Clientes))</a></li>
+            <li><a href="/layout-importacao-protheus-sa2-fornecedores/">TOTVS Protheus - Fornecedores (SA2 (Fornecedores))</a></li>
+            <li><a href="/layout-importacao-protheus-sb1-produtos/">TOTVS Protheus - Produtos (SB1 (Produtos))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD (Business Partners))</a></li>
+            <li><a href="/layout-importacao-sap-business-one-oitm-itens/">SAP Business One - Itens (OITM (Item Master Data))</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Layouts por ERP (Parte 2)</strong>
+          <ul>
+            <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
+            <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
+            <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
+          </ul>
+        </div>
+        <div class="seo-footer-col">
+          <strong>Regras de Validação CSV</strong>
+          <ul>
+            <li><a href="/validar-cpf-cnpj-em-massa-csv/">Validar CPF e CNPJ em Massa no CSV</a></li>
+            <li><a href="/validar-ncm-planilha-csv/">Validar NCM em Planilha CSV</a></li>
+            <li><a href="/validar-cep-em-lote-csv/">Validar CEP em Lote na Planilha CSV</a></li>
+            <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Corrigir Erro de Encoding UTF-8 no CSV</a></li>
+            <li><a href="/erro-colunas-delimitador-quebrado-csv/">Erro de Colunas e Delimitador Quebrado no CSV</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar Linhas Duplicadas no CSV</a></li>
+            <li><a href="/validar-email-em-lote-planilha-csv/">Validar E-mails em Lote no CSV</a></li>
+            <li><a href="/validar-uf-estado-planilha-csv/">Validar Sigla de UF e Estado no CSV</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="seo-footer-bottom">
+        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
+      </div>
+    </div>
+  </footer>
+  </body>
+</html>
