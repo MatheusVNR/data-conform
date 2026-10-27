@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using DataConform.Application.Common.Interfaces;
@@ -40,6 +41,10 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(DataConformDbContext).Assembly.FullName);
+            });
+            options.ConfigureWarnings(warnings =>
+            {
+                warnings.Log(RelationalEventId.PendingModelChangesWarning);
             });
         });
 

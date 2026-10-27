@@ -88,4 +88,25 @@ public class DataConformDbContextTests
         Assert.Equal(IssueSeverity.Error, savedIssue.Severity);
         Assert.Equal("NEGATIVE_VALUE", savedIssue.IssueCode);
     }
+
+    [Fact]
+    public void RelationalModel_ShouldNotHavePendingModelChanges()
+    {
+        DbContextOptions<DataConformDbContext> options = new DbContextOptionsBuilder<DataConformDbContext>()
+            .UseNpgsql(
+                "Host=localhost;Database=dataconform_model_check;Username=postgres;Password=postgres",
+                npgsqlOptions =>
+                {
+                    npgsqlOptions.MigrationsAssembly(typeof(DataConformDbContext).Assembly.FullName);
+                })
+            .Options;
+
+        using DataConformDbContext context = new DataConformDbContext(options);
+
+        bool hasPendingChanges = context.Database.HasPendingModelChanges();
+
+        Assert.False(
+            hasPendingChanges,
+            "O modelo EF Core possui alterações pendentes não refletidas em DataConformDbContextModelSnapshot. Execute 'dotnet ef migrations add' antes do deploy.");
+    }
 }

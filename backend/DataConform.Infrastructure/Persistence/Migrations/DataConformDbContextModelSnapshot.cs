@@ -308,12 +308,12 @@ namespace DataConform.Infrastructure.Persistence.Migrations
                     b.Property<int>("MaxRowsPerFile")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasDefaultValue(1000);
+                        .HasDefaultValue(500);
 
                     b.Property<int>("MonthlyFilesQuota")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasDefaultValue(20);
+                        .HasDefaultValue(5);
 
                     b.Property<int>("MonthlyFilesUploaded")
                         .ValueGeneratedOnAdd()
