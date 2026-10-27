@@ -67,8 +67,8 @@ public class WorkspaceService : IWorkspaceService
             Slug = normalizedSlug,
             OwnerUserId = currentUserId,
             Plan = PlanTier.Starter,
-            MonthlyFilesQuota = 20,
-            MaxRowsPerFile = 1000
+            MonthlyFilesQuota = 5,
+            MaxRowsPerFile = 500
         };
 
         _dbContext.Workspaces.Add(workspace);

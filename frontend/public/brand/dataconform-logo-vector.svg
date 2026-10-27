@@ -1,48 +1,32 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="dcBg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0F172A" />
-      <stop offset="55%" stop-color="#1E3A8A" />
-      <stop offset="100%" stop-color="#2563EB" />
-    </linearGradient>
-    <linearGradient id="dStroke" x1="12" y1="14" x2="36" y2="50" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="100%" stop-color="#93C5FD" />
-    </linearGradient>
-    <linearGradient id="cCheck" x1="26" y1="18" x2="54" y2="46" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#34D399" />
-      <stop offset="100%" stop-color="#10B981" />
-    </linearGradient>
-  </defs>
-  <!-- Squircle Emblem Base -->
-  <rect x="3" y="3" width="58" height="58" rx="16" fill="url(#dcBg)" />
-  <rect x="4.5" y="4.5" width="55" height="55" rx="14.5" stroke="#60A5FA" stroke-opacity="0.28" stroke-width="1.5" />
+  <!-- Architectural Base -->
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="#0B132B" />
+  <rect x="3" y="3" width="58" height="58" rx="11" stroke="#1E293B" stroke-width="1.5" />
 
-  <!-- Letter "D" Structured Data Spine + Curve -->
+  <!-- Left Spine: 3 Tabular Data Rows -->
+  <rect x="13" y="16" width="11" height="8" rx="1.5" fill="#2563EB" />
+  <rect x="13" y="28" width="11" height="8" rx="1.5" fill="#3B82F6" />
+  <rect x="13" y="40" width="11" height="8" rx="1.5" fill="#60A5FA" />
+
+  <!-- Right Arch: Geometric Monogram "D" -->
   <path
-    d="M15 17H24.5C32.5 17 38 22.8 38 32C38 41.2 32.5 47 24.5 47H15V17Z"
-    stroke="url(#dStroke)"
-    stroke-width="4.5"
-    stroke-linecap="round"
-    stroke-linejoin="round"
+    d="M27 16H33C41.8366 16 49 23.1634 49 32C49 40.8366 41.8366 48 33 48H27V41.5H33C38.2467 41.5 42.5 37.2467 42.5 32C42.5 26.7533 38.2467 22.5 33 22.5H27V16Z"
+    fill="#F8FAFC"
   />
-  <!-- Data Bars inside "D" -->
-  <line x1="20.5" y1="25" x2="27" y2="25" stroke="#93C5FD" stroke-width="3" stroke-linecap="round" />
-  <line x1="20.5" y1="32" x2="29.5" y2="32" stroke="#93C5FD" stroke-width="3" stroke-linecap="round" />
-  <line x1="20.5" y1="39" x2="25" y2="39" stroke="#93C5FD" stroke-width="3" stroke-linecap="round" />
 
-  <!-- Interlocking Letter "C" morphing into Conformity Checkmark -->
+  <!-- Negative Space Knockout + Precision Conformity Check -->
   <path
-    d="M44 21.5C40.8 18.8 36.2 18.8 33 21.5C28.8 25.2 28.8 38.8 33 42.5C36.5 45.5 41.5 45.2 45 41.5"
-    stroke="#60A5FA"
-    stroke-width="4.2"
-    stroke-linecap="round"
+    d="M31 33L36.5 38.5L50.5 24.5"
+    stroke="#0B132B"
+    stroke-width="9.5"
+    stroke-linecap="square"
+    stroke-linejoin="miter"
   />
   <path
-    d="M34.5 33.5L40.5 39.5L51.5 25.5"
-    stroke="url(#cCheck)"
+    d="M31 33L36.5 38.5L50.5 24.5"
+    stroke="#10B981"
     stroke-width="5"
-    stroke-linecap="round"
-    stroke-linejoin="round"
+    stroke-linecap="square"
+    stroke-linejoin="miter"
   />
 </svg>

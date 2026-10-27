@@ -25,6 +25,8 @@ public class SubscriptionQuotaService : ISubscriptionQuotaService
             return QuotaCheckResult.Denied("Organização (Workspace) não encontrada.");
         }
 
+        await EnsureMonthlyQuotaPeriodCurrentAsync(workspace, cancellationToken);
+
         if (workspace.MonthlyFilesUploaded >= workspace.MonthlyFilesQuota)
         {
             return QuotaCheckResult.Denied(
@@ -82,6 +84,8 @@ public class SubscriptionQuotaService : ISubscriptionQuotaService
             throw new KeyNotFoundException($"Workspace with ID '{workspaceId}' was not found.");
         }
 
+        await EnsureMonthlyQuotaPeriodCurrentAsync(workspace, cancellationToken);
+
         double usagePercentage = workspace.MonthlyFilesQuota > 0
             ? Math.Round(((double)workspace.MonthlyFilesUploaded / workspace.MonthlyFilesQuota) * 100.0, 1)
             : 0;
@@ -114,7 +118,7 @@ public class SubscriptionQuotaService : ISubscriptionQuotaService
         {
             case PlanTier.Professional:
                 workspace.MonthlyFilesQuota = 500;
-                workspace.MaxRowsPerFile = 50_000;
+                workspace.MaxRowsPerFile = 15_000;
                 break;
             case PlanTier.Enterprise:
                 workspace.MonthlyFilesQuota = 10_000;
@@ -122,8 +126,8 @@ public class SubscriptionQuotaService : ISubscriptionQuotaService
                 break;
             case PlanTier.Starter:
             default:
-                workspace.MonthlyFilesQuota = 20;
-                workspace.MaxRowsPerFile = 1_000;
+                workspace.MonthlyFilesQuota = 5;
+                workspace.MaxRowsPerFile = 500;
                 break;
         }
 
@@ -142,5 +146,21 @@ public class SubscriptionQuotaService : ISubscriptionQuotaService
             MaxRowsPerFile = workspace.MaxRowsPerFile,
             UsagePercentage = usagePercentage
         };
+    }
+
+    private async Task EnsureMonthlyQuotaPeriodCurrentAsync(Workspace workspace, CancellationToken cancellationToken)
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        DateTimeOffset referenceDate = workspace.UpdatedAt ?? workspace.CreatedAt;
+
+        bool isPreviousMonth = referenceDate.UtcDateTime.Year < now.UtcDateTime.Year ||
+            (referenceDate.UtcDateTime.Year == now.UtcDateTime.Year && referenceDate.UtcDateTime.Month < now.UtcDateTime.Month);
+
+        if (isPreviousMonth && workspace.MonthlyFilesUploaded > 0)
+        {
+            workspace.MonthlyFilesUploaded = 0;
+            workspace.UpdatedAt = now;
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 }

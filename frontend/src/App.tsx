@@ -937,6 +937,7 @@ export const App: FC = () => {
         projectName={activeProject?.name ?? (demoErpName ? 'Simulação Interativa de Homologação' : undefined)}
         targetSystem={activeProject?.targetSystem ?? demoErpName}
         workspaceName={activeWorkspace?.name ?? 'Ambiente de Demonstração DataConform'}
+        workspacePlan={activeWorkspace?.plan ?? 'Starter'}
         onClose={() => {
           setActiveReport(null);
           setDemoErpName(null);

@@ -213,7 +213,10 @@ export const FileList: FC<FileListProps> = ({
                       <button
                         type="button"
                         className="btn btn-primary btn-xs"
-                        onClick={() => setSelectedFileForRules(file.id)}
+                        onClick={() => {
+                          setSelectedFileForRules(file.id);
+                          setRequiredColumnsInput(erpPreset.requiredColumns.join(', '));
+                        }}
                         disabled={isValidatingThis || deletingId === file.id}
                       >
                         {isValidatingThis ? 'Validando...' : isDone ? '↻ Revalidar' : '▶ Validar Arquivo'}

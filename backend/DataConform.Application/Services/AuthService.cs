@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using DataConform.Application.Common.Interfaces;
 using DataConform.Application.Common.Models;
@@ -77,8 +77,8 @@ public class AuthService : IAuthService
             Slug = uniqueSlug,
             Plan = PlanTier.Starter,
             MonthlyFilesUploaded = 0,
-            MonthlyFilesQuota = 20,
-            MaxRowsPerFile = 1000,
+            MonthlyFilesQuota = 5,
+            MaxRowsPerFile = 500,
             CreatedAt = DateTimeOffset.UtcNow
         };
 
@@ -96,7 +96,20 @@ public class AuthService : IAuthService
             CreatedAt = DateTimeOffset.UtcNow
         };
 
+        workspace.OwnerUserId = user.Id;
         _dbContext.Users.Add(user);
+
+        ImportProject defaultProject = new ImportProject
+        {
+            Id = Guid.NewGuid(),
+            WorkspaceId = workspace.Id,
+            Name = "Homologação Inicial ERP",
+            TargetSystem = "TOTVS Protheus",
+            Description = "Projeto inicial criado automaticamente para validação imediata de layouts CSV.",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        _dbContext.ImportProjects.Add(defaultProject);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         string token = _tokenGenerator.GenerateToken(user, workspace);

@@ -272,6 +272,7 @@ public class FileService : IFileService
         }
 
         ImportProject? project = await _dbContext.ImportProjects
+            .Include(p => p.Workspace)
             .FirstOrDefaultAsync(p => p.Id == importFile.ProjectId, cancellationToken);
 
         if (project == null)
@@ -318,18 +319,13 @@ public class FileService : IFileService
                 requiredColumnsList,
                 cancellationToken);
 
-            QuotaCheckResult rowQuotaCheck = await _quotaService.CheckUploadQuotaAsync(
-                project.WorkspaceId,
-                validationResult.TotalRows,
-                cancellationToken);
-
-            if (!rowQuotaCheck.IsAllowed)
+            if (project.Workspace != null && validationResult.TotalRows > project.Workspace.MaxRowsPerFile)
             {
                 importFile.Status = FileStatus.Failed;
                 await _dbContext.SaveChangesAsync(cancellationToken);
                 return ServiceResult<ValidationReportDto>.Failure(
                     ServiceErrorType.QuotaExceeded,
-                    rowQuotaCheck.Reason ?? "Limite de linhas do plano excedido.",
+                    $"O arquivo contém {validationResult.TotalRows:N0} linhas, excedendo o teto de {project.Workspace.MaxRowsPerFile:N0} linhas por arquivo do plano atual ({project.Workspace.Plan}). Para validar bases com esse volume, faça upgrade para o plano Professional ou Enterprise.",
                     "Limite de linhas do plano excedido");
             }
 
@@ -497,9 +493,22 @@ public class FileService : IFileService
 
         Guid workspaceId = importFile.Project.WorkspaceId;
         string fileName = importFile.OriginalFileName;
+        string storedFileName = importFile.StoredFileName;
 
         _dbContext.ImportFiles.Remove(importFile);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(storedFileName))
+        {
+            try
+            {
+                await _fileStorage.DeleteFileAsync(storedFileName, cancellationToken);
+            }
+            catch (Exception)
+            {
+                // Ignora caso o armazenamento efêmero já tenha removido o arquivo físico
+            }
+        }
 
         await _auditService.LogAsync(
             workspaceId,

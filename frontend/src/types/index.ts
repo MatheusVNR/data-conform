@@ -42,13 +42,13 @@ export const PLAN_LIMITS: Record<string, PlanLimitsConfig> = {
   Starter: {
     maxFileSizeMb: 5,
     maxConcurrentFiles: 2,
-    maxRowsPerFile: 1000,
-    monthlyFilesQuota: 20,
+    maxRowsPerFile: 500,
+    monthlyFilesQuota: 5,
   },
   Professional: {
     maxFileSizeMb: 25,
     maxConcurrentFiles: 5,
-    maxRowsPerFile: 50000,
+    maxRowsPerFile: 15000,
     monthlyFilesQuota: 500,
   },
   Enterprise: {

@@ -39,16 +39,16 @@ const PLANS: PlanOption[] = [
     key: 'Starter',
     name: 'Starter',
     price: 'Gratuito',
-    monthlyFiles: 20,
+    monthlyFiles: 5,
     maxFileSize: 'Até 5 MB / arquivo',
     maxConcurrent: 'Até 2 arquivos por lote',
-    maxRows: '1.000 linhas / arquivo',
+    maxRows: '500 linhas / arquivo',
     description: 'Ideal para validação inicial de layouts, testes de homologação e pequenas cargas.',
     features: [
-      '20 validações de arquivos por mês',
-      'Até 1.000 linhas e 5 MB por planilha',
+      '5 validações de arquivos por mês',
+      'Até 500 linhas e 5 MB por planilha',
       'Dicionários nativos de ERPs inclusos',
-      'Exportação de laudo de inconsistências CSV',
+      'Laudo técnico preliminar em PDF e CSV',
     ],
   },
   {
@@ -58,13 +58,13 @@ const PLANS: PlanOption[] = [
     monthlyFiles: 500,
     maxFileSize: 'Até 25 MB / arquivo',
     maxConcurrent: 'Até 5 arquivos por lote',
-    maxRows: '50.000 linhas / arquivo',
+    maxRows: '15.000 linhas / arquivo',
     description: 'Para operações comerciais, consultorias de implantação e escritórios contábeis ativos.',
     features: [
-      '500 validações de arquivos por mês (25x mais)',
-      'Até 50.000 linhas e 25 MB por planilha',
-      'Upload em lote de até 5 arquivos simultâneos',
-      'Trilha completa de auditoria e governança',
+      '500 validações de arquivos por mês (100x mais)',
+      'Até 15.000 linhas e 25 MB por planilha',
+      'Laudo Executivo White-Label c/ Termo de Aceite',
+      'Upload em lote de até 5 arquivos e trilha de auditoria',
     ],
     highlight: true,
   },
@@ -81,7 +81,7 @@ const PLANS: PlanOption[] = [
       '10.000 validações de arquivos por mês',
       'Até 1.000.000 de linhas e 50 MB por planilha',
       'Upload em lote de até 10 arquivos simultâneos',
-      'Governança corporativa e retenção estendida',
+      'Laudo White-Label, multi-organização e governança',
     ],
   },
 ];
@@ -426,7 +426,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
               <div>
                 <h4>Retornar ao Plano Starter (Gratuito)?</h4>
                 <p>
-                  Ao retornar para o plano <strong>Starter</strong>, sua organização passará ao limite de 20 arquivos/mês (máx. 1.000 linhas e 5 MB por arquivo). Seus projetos e laudos históricos permanecem 100% seguros.
+                  Ao retornar para o plano <strong>Starter</strong>, sua organização passará ao limite de 5 arquivos/mês (máx. 500 linhas e 5 MB por arquivo). Seus projetos e laudos históricos permanecem 100% seguros.
                 </p>
               </div>
 
@@ -542,16 +542,18 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
                 <span>
                   🔒 <strong>Checkout 100% Seguro via Stripe:</strong> A liberação do plano ocorre automaticamente após a conclusão do pagamento e retorno à plataforma.
                 </span>
-                <button
-                  type="button"
-                  className="btn-link text-xs"
-                  onClick={() => setShowManualSession((prev: boolean) => !prev)}
-                >
-                  {showManualSession ? 'Ocultar validação manual' : 'Já concluiu o pagamento em outra aba?'}
-                </button>
+                {import.meta.env.DEV && (
+                  <button
+                    type="button"
+                    className="btn-link text-xs"
+                    onClick={() => setShowManualSession((prev: boolean) => !prev)}
+                  >
+                    {showManualSession ? 'Ocultar validação manual' : 'Já concluiu o pagamento em outra aba?'}
+                  </button>
+                )}
               </div>
 
-              {showManualSession && (
+              {import.meta.env.DEV && showManualSession && (
                 <div className="manual-session-box">
                   <input
                     type="text"

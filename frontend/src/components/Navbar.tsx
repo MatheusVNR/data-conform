@@ -47,54 +47,29 @@ export const Navbar: FC<NavbarProps> = ({
         <div className="navbar-brand">
           <div className="brand-logo-svg" aria-hidden="true">
             <svg width="34" height="34" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#dcNavBgGrad)" />
-              <rect x="3" y="3" width="58" height="58" rx="15" stroke="url(#dcNavBorderGrad)" strokeOpacity="0.4" strokeWidth="1.5" />
+              <rect x="2" y="2" width="60" height="60" rx="12" fill="#0B132B" />
+              <rect x="3" y="3" width="58" height="58" rx="11" stroke="#1E293B" strokeWidth="1.5" />
+              <rect x="13" y="16" width="11" height="8" rx="1.5" fill="#2563EB" />
+              <rect x="13" y="28" width="11" height="8" rx="1.5" fill="#3B82F6" />
+              <rect x="13" y="40" width="11" height="8" rx="1.5" fill="#60A5FA" />
               <path
-                d="M14 17H24.5C32.5 17 38 22.8 38 32C38 41.2 32.5 47 24.5 47H14V17Z"
-                stroke="url(#dcNavBlueLetter)"
-                strokeWidth="5.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                d="M27 16H33C41.8366 16 49 23.1634 49 32C49 40.8366 41.8366 48 33 48H27V41.5H33C38.2467 41.5 42.5 37.2467 42.5 32C42.5 26.7533 38.2467 22.5 33 22.5H27V16Z"
+                fill="#F8FAFC"
               />
-              <line x1="19.5" y1="25" x2="26" y2="25" stroke="#93C5FD" strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />
-              <line x1="19.5" y1="32" x2="29" y2="32" stroke="#93C5FD" strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />
-              <line x1="19.5" y1="39" x2="24.5" y2="39" stroke="#93C5FD" strokeWidth="2.5" strokeLinecap="round" opacity="0.85" />
               <path
-                d="M46 21.5C43.2 18.8 39.2 17.5 35 18.2C28.2 19.3 24 25.2 24 32C24 38.8 28.5 44.8 35.5 45.8C39.8 46.4 43.8 44.8 46.5 42"
-                stroke="url(#dcNavCyanArc)"
+                d="M31 33L36.5 38.5L50.5 24.5"
+                stroke="#0B132B"
+                strokeWidth="9.5"
+                strokeLinecap="square"
+                strokeLinejoin="miter"
+              />
+              <path
+                d="M31 33L36.5 38.5L50.5 24.5"
+                stroke="#10B981"
                 strokeWidth="5"
-                strokeLinecap="round"
+                strokeLinecap="square"
+                strokeLinejoin="miter"
               />
-              <path
-                d="M33.5 32.5L39.5 38.5L52.5 23.5"
-                stroke="url(#dcNavEmeraldCheck)"
-                strokeWidth="5.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <defs>
-                <linearGradient id="dcNavBgGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#0F172A" />
-                  <stop offset="55%" stopColor="#1E3A8A" />
-                  <stop offset="100%" stopColor="#1D4ED8" />
-                </linearGradient>
-                <linearGradient id="dcNavBorderGrad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#60A5FA" />
-                  <stop offset="100%" stopColor="#34D399" />
-                </linearGradient>
-                <linearGradient id="dcNavBlueLetter" x1="14" y1="17" x2="38" y2="47" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#FFFFFF" />
-                  <stop offset="100%" stopColor="#93C5FD" />
-                </linearGradient>
-                <linearGradient id="dcNavCyanArc" x1="24" y1="18" x2="46" y2="46" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#38BDF8" />
-                  <stop offset="100%" stopColor="#60A5FA" />
-                </linearGradient>
-                <linearGradient id="dcNavEmeraldCheck" x1="33" y1="39" x2="53" y2="23" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#10B981" />
-                  <stop offset="100%" stopColor="#34D399" />
-                </linearGradient>
-              </defs>
             </svg>
           </div>
           <div className="brand-text">

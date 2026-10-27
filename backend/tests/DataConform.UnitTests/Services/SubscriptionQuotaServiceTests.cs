@@ -120,13 +120,43 @@ public class SubscriptionQuotaServiceTests
 
         Assert.Equal(PlanTier.Professional, upgraded.Plan);
         Assert.Equal(500, upgraded.MonthlyFilesQuota);
-        Assert.Equal(50_000, upgraded.MaxRowsPerFile);
+        Assert.Equal(15_000, upgraded.MaxRowsPerFile);
         Assert.Equal(2.0, upgraded.UsagePercentage);
 
         Workspace? reloaded = await context.Workspaces.FirstOrDefaultAsync(w => w.Id == workspace.Id);
         Assert.NotNull(reloaded);
         Assert.Equal(PlanTier.Professional, reloaded.Plan);
         Assert.Equal(500, reloaded.MonthlyFilesQuota);
-        Assert.Equal(50_000, reloaded.MaxRowsPerFile);
+        Assert.Equal(15_000, reloaded.MaxRowsPerFile);
+    }
+
+    [Fact]
+    public async Task CheckUploadQuotaAsync_WhenPreviousMonth_ShouldAutoResetMonthlyFilesUploaded()
+    {
+        using DataConformDbContext context = CreateInMemoryContext();
+        SubscriptionQuotaService service = new SubscriptionQuotaService(context);
+
+        Workspace workspace = new Workspace
+        {
+            Id = Guid.NewGuid(),
+            Name = "Monthly Reset Workspace",
+            Slug = "monthly-reset-workspace",
+            Plan = PlanTier.Starter,
+            MonthlyFilesUploaded = 5,
+            MonthlyFilesQuota = 5,
+            MaxRowsPerFile = 500,
+            CreatedAt = DateTimeOffset.UtcNow.AddMonths(-2),
+            UpdatedAt = DateTimeOffset.UtcNow.AddMonths(-1)
+        };
+
+        context.Workspaces.Add(workspace);
+        await context.SaveChangesAsync();
+
+        QuotaCheckResult result = await service.CheckUploadQuotaAsync(workspace.Id, 200);
+
+        Assert.True(result.IsAllowed);
+        Workspace? reloaded = await context.Workspaces.FirstOrDefaultAsync(w => w.Id == workspace.Id);
+        Assert.NotNull(reloaded);
+        Assert.Equal(0, reloaded.MonthlyFilesUploaded);
     }
 }

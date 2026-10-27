@@ -13,8 +13,8 @@ public class Workspace
     public PlanTier Plan { get; set; } = PlanTier.Starter;
     public Guid? OwnerUserId { get; set; }
     public int MonthlyFilesUploaded { get; set; } = 0;
-    public int MonthlyFilesQuota { get; set; } = 20;
-    public int MaxRowsPerFile { get; set; } = 1000;
+    public int MonthlyFilesQuota { get; set; } = 5;
+    public int MaxRowsPerFile { get; set; } = 500;
 
     public ICollection<ImportProject> Projects { get; set; } = new List<ImportProject>();
     public ICollection<User> Users { get; set; } = new List<User>();

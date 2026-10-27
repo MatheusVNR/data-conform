@@ -42,11 +42,11 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
 
         builder.Property(w => w.MonthlyFilesQuota)
             .IsRequired()
-            .HasDefaultValue(20);
+            .HasDefaultValue(5);
 
         builder.Property(w => w.MaxRowsPerFile)
             .IsRequired()
-            .HasDefaultValue(1000);
+            .HasDefaultValue(500);
 
         builder.HasMany(w => w.Projects)
             .WithOne(p => p.Workspace)

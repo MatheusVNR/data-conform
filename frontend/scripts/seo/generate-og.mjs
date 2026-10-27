@@ -8,7 +8,10 @@ const __dirname = path.dirname(__filename);
 const frontendRoot = path.resolve(__dirname, '..', '..');
 const ogDir = path.join(frontendRoot, 'public', 'og');
 const outputPng = path.join(ogDir, 'dataconform-og.png');
-const logoSvgPath = path.join(frontendRoot, 'public', 'brand', 'dataconform-logo-vector.svg');
+const brandDir = path.join(frontendRoot, 'public', 'brand');
+const logo512Png = path.join(brandDir, 'dataconform-logo-512.png');
+const logoFlat512Png = path.join(brandDir, 'dataconform-logo-flat-512.png');
+const logoSvgPath = path.join(brandDir, 'dataconform-logo-vector.svg');
 
 const BROWSER_CANDIDATES = [
   process.env.CHROME_PATH,
@@ -341,13 +344,33 @@ async function generateOgImage() {
 
   try {
     const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
     await page.screenshot({
       path: outputPng,
       type: 'png',
       clip: { x: 0, y: 0, width: 1200, height: 630 },
     });
     console.log(`✓ Imagem Open Graph 1200x630 gerada em: ${outputPng}`);
+
+    const logoPage = await browser.newPage();
+    await logoPage.setViewport({ width: 512, height: 512, deviceScaleFactor: 1 });
+    await logoPage.setContent(
+      `<!doctype html><html><head><style>*{margin:0;padding:0;box-sizing:border-box;}body{width:512px;height:512px;background:transparent;display:flex;align-items:center;justify-content:center;}svg{width:512px;height:512px;}</style></head><body>${svgContent}</body></html>`,
+      { waitUntil: 'domcontentloaded' }
+    );
+    await logoPage.screenshot({
+      path: logo512Png,
+      type: 'png',
+      omitBackground: true,
+      clip: { x: 0, y: 0, width: 512, height: 512 },
+    });
+    await logoPage.screenshot({
+      path: logoFlat512Png,
+      type: 'png',
+      omitBackground: true,
+      clip: { x: 0, y: 0, width: 512, height: 512 },
+    });
+    console.log(`✓ Logos PNG 512x512 geradas em: ${brandDir}`);
   } finally {
     await browser.close();
   }

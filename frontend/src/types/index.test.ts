@@ -27,10 +27,10 @@ describe('getErpPreset', () => {
 
 describe('PLAN_LIMITS', () => {
   it('mantém limites coerentes com o backend (SubscriptionQuotaService)', () => {
-    expect(PLAN_LIMITS.Starter.monthlyFilesQuota).toBe(20);
-    expect(PLAN_LIMITS.Starter.maxRowsPerFile).toBe(1000);
+    expect(PLAN_LIMITS.Starter.monthlyFilesQuota).toBe(5);
+    expect(PLAN_LIMITS.Starter.maxRowsPerFile).toBe(500);
     expect(PLAN_LIMITS.Professional.monthlyFilesQuota).toBe(500);
-    expect(PLAN_LIMITS.Professional.maxRowsPerFile).toBe(50000);
+    expect(PLAN_LIMITS.Professional.maxRowsPerFile).toBe(15000);
     expect(PLAN_LIMITS.Enterprise.monthlyFilesQuota).toBe(10000);
     expect(PLAN_LIMITS.Enterprise.maxRowsPerFile).toBe(1000000);
   });

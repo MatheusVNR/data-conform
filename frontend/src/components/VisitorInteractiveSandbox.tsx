@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import type { FC } from 'react';
-import type { ValidationReportDto } from '../types';
+import { useRef, useState } from 'react';
+import type { ChangeEvent, FC } from 'react';
+import type { ValidationIssueDto, ValidationReportDto } from '../types';
+import { getErpPreset } from '../types';
 
 interface VisitorInteractiveSandboxProps {
   initialErpKey?: string | null;
@@ -501,9 +502,153 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
     return 0;
   });
 
+  const [customLines, setCustomLines] = useState<string[] | null>(null);
+  const [customReport, setCustomReport] = useState<ValidationReportDto | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const scenario: SandboxErpScenario = SANDBOX_SCENARIOS[selectedIndex] ?? SANDBOX_SCENARIOS[0];
-  const report: ValidationReportDto = scenario.simulatedReport;
-  const conformityRate: number = Math.round((report.validRows / report.totalRows) * 100);
+  const activeLines: string[] = customLines ?? scenario.sampleCsvLines;
+  const report: ValidationReportDto = customReport ?? scenario.simulatedReport;
+  const conformityRate: number =
+    report.totalRows > 0 ? Math.round((report.validRows / report.totalRows) * 100) : 100;
+
+  const handleSelectScenario = (idx: number): void => {
+    setSelectedIndex(idx);
+    setCustomLines(null);
+    setCustomReport(null);
+  };
+
+  const handleLocalFileChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    const file: File | undefined = e.target.files?.[0];
+    if (!file) return;
+
+    const reader: FileReader = new FileReader();
+    reader.onload = () => {
+      const text: string = typeof reader.result === 'string' ? reader.result : '';
+      const rawLines: string[] = text
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .split('\n')
+        .map((l: string) => l.trim())
+        .filter((l: string) => l.length > 0);
+
+      if (rawLines.length === 0) return;
+
+      const headerLine: string = rawLines[0];
+      const delimiter: string = headerLine.includes(';') ? ';' : ',';
+      const headers: string[] = headerLine.split(delimiter).map((h: string) => h.trim().replace(/^"|"$/g, ''));
+      const dataLines: string[] = rawLines.slice(1, 101);
+      const preset = getErpPreset(scenario.erpKey);
+      const issues: ValidationIssueDto[] = [];
+
+      for (const reqCol of preset.requiredColumns) {
+        const hasCol: boolean = headers.some((h: string) => h.toLowerCase() === reqCol.toLowerCase());
+        if (!hasCol) {
+          issues.push({
+            id: `local-hdr-${reqCol}`,
+            rowNumber: 1,
+            columnName: reqCol,
+            severity: 'Error',
+            issueCode: 'REQUIRED_HEADER_MISSING',
+            message: `Coluna obrigatória '${reqCol}' do dicionário ${scenario.erpLabel} ausente no cabeçalho.`,
+            rawValue: headerLine.slice(0, 60),
+            createdAt: new Date().toISOString(),
+          });
+        }
+      }
+
+      let validRowCount: number = 0;
+      let errorRowCount: number = 0;
+
+      dataLines.forEach((line: string, idx: number) => {
+        const rowNum: number = idx + 1;
+        const cells: string[] = line.split(delimiter).map((c: string) => c.trim().replace(/^"|"$/g, ''));
+        let rowHasError: boolean = false;
+
+        if (cells.length !== headers.length) {
+          rowHasError = true;
+          issues.push({
+            id: `local-col-${rowNum}`,
+            rowNumber: rowNum,
+            columnName: 'ESTRUTURA',
+            severity: 'Error',
+            issueCode: 'COLUMN_COUNT_MISMATCH',
+            message: `Linha possui ${cells.length} colunas, mas o cabeçalho define ${headers.length}.`,
+            rawValue: line.slice(0, 60),
+            createdAt: new Date().toISOString(),
+          });
+        }
+
+        headers.forEach((colName: string, colIdx: number) => {
+          const val: string = cells[colIdx] ?? '';
+          const lowerCol: string = colName.toLowerCase();
+
+          if (preset.requiredColumns.some((r: string) => r.toLowerCase() === lowerCol) && val === '') {
+            rowHasError = true;
+            issues.push({
+              id: `local-req-${rowNum}-${colIdx}`,
+              rowNumber: rowNum,
+              columnName: colName,
+              severity: 'Error',
+              issueCode: 'REQUIRED_FIELD_MISSING',
+              message: `Campo obrigatório '${colName}' está em branco na linha #${rowNum}.`,
+              rawValue: '(vazio)',
+              createdAt: new Date().toISOString(),
+            });
+          } else if (
+            (lowerCol.includes('cgc') || lowerCol.includes('cnpj') || lowerCol.includes('cpf') || lowerCol.includes('lictradnum') || lowerCol.includes('taxid')) &&
+            val !== ''
+          ) {
+            const digits: string = val.replace(/\D/g, '');
+            if ((digits.length !== 11 && digits.length !== 14) || /^(\d)\1+$/.test(digits) || digits.endsWith('00')) {
+              rowHasError = true;
+              issues.push({
+                id: `local-doc-${rowNum}-${colIdx}`,
+                rowNumber: rowNum,
+                columnName: colName,
+                severity: 'Error',
+                issueCode: 'INVALID_DOCUMENT_FORMAT',
+                message: `Documento fiscal inválido na coluna '${colName}' (Módulo 11 / comprimento reprovado).`,
+                rawValue: val,
+                createdAt: new Date().toISOString(),
+              });
+            }
+          } else if (lowerCol.includes('mail') && val !== '' && (!val.includes('@') || !val.includes('.'))) {
+            rowHasError = true;
+            issues.push({
+              id: `local-mail-${rowNum}-${colIdx}`,
+              rowNumber: rowNum,
+              columnName: colName,
+              severity: 'Error',
+              issueCode: 'INVALID_EMAIL_FORMAT',
+              message: `Formato de e-mail inválido na coluna '${colName}'.`,
+              rawValue: val,
+              createdAt: new Date().toISOString(),
+            });
+          }
+        });
+
+        if (rowHasError) {
+          errorRowCount++;
+        } else {
+          validRowCount++;
+        }
+      });
+
+      setCustomLines(rawLines.slice(0, 8));
+      setCustomReport({
+        fileId: `local-${Date.now().toString(36)}`,
+        originalFileName: file.name,
+        status: 2,
+        totalRows: dataLines.length,
+        validRows: validRowCount,
+        errorRows: errorRowCount,
+        issues: issues.slice(0, 25),
+      });
+    };
+    reader.readAsText(file, 'utf-8');
+    e.target.value = '';
+  };
 
   return (
     <section id="sandbox" className="visitor-sandbox-section">
@@ -512,7 +657,7 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
           <span className="sandbox-eyebrow">⚡ DEMONSTRAÇÃO INTERATIVA (ZERO SETUP)</span>
           <h2>Simulador de Homologação Ao Vivo</h2>
           <p className="section-subtitle">
-            Selecione um ERP abaixo para ver como o motor do DataConform intercepta erros fiscais e cadastrais antes que a carga falhe no banco de dados.
+            Selecione um ERP abaixo ou carregue uma amostra da sua própria planilha CSV para inspecionar erros fiscais e cadastrais instantaneamente no navegador.
           </p>
         </div>
 
@@ -524,7 +669,7 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
               role="tab"
               aria-selected={selectedIndex === idx}
               className={`sandbox-tab-btn ${selectedIndex === idx ? 'active' : ''}`}
-              onClick={() => setSelectedIndex(idx)}
+              onClick={() => handleSelectScenario(idx)}
             >
               <strong>{item.erpLabel}</strong>
               <span className="sandbox-tab-sub">{item.moduleTag}</span>
@@ -541,14 +686,31 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
               <span className="pane-step-badge">1. Entrada Bruta (.CSV)</span>
               <span className="pane-mobile-swipe-hint">⟷ Arraste p/ ver colunas</span>
             </div>
-            <code className="pane-filename" title={report.originalFileName}>
-              {report.originalFileName}
-            </code>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <code className="pane-filename" title={report.originalFileName}>
+                {report.originalFileName}
+              </code>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.txt"
+                style={{ display: 'none' }}
+                onChange={handleLocalFileChange}
+              />
+              <button
+                type="button"
+                className="btn btn-outline btn-xs"
+                onClick={() => fileInputRef.current?.click()}
+                title="Testar rapidamente até 100 linhas de um arquivo CSV do seu computador sem enviar ao servidor"
+              >
+                Testar Meu CSV
+              </button>
+            </div>
           </div>
           <div className="sandbox-code-box">
-            {scenario.sampleCsvLines.map((line: string, lineIdx: number) => {
+            {activeLines.map((line: string, lineIdx: number) => {
               const isHeader: boolean = lineIdx === 0;
-              const isValidRow: boolean = lineIdx === 1;
+              const isValidRow: boolean = lineIdx === 1 && !customLines;
               return (
                 <div
                   key={`${scenario.erpKey}-line-${lineIdx}`}

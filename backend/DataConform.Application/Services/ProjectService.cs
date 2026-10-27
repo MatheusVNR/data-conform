@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using DataConform.Application.Common.Interfaces;
 using DataConform.Application.Common.Models;
 using DataConform.Application.Projects.Dtos;
@@ -14,15 +14,18 @@ public class ProjectService : IProjectService
     private readonly IApplicationDbContext _dbContext;
     private readonly IAuditService _auditService;
     private readonly ITenantAccessService _tenantAccessService;
+    private readonly IFileStorageService? _fileStorage;
 
     public ProjectService(
         IApplicationDbContext dbContext,
         IAuditService auditService,
-        ITenantAccessService tenantAccessService)
+        ITenantAccessService tenantAccessService,
+        IFileStorageService? fileStorage = null)
     {
         _dbContext = dbContext;
         _auditService = auditService;
         _tenantAccessService = tenantAccessService;
+        _fileStorage = fileStorage;
     }
 
     public async Task<ServiceResult<ImportProjectDto>> CreateProjectAsync(
@@ -162,20 +165,40 @@ public class ProjectService : IProjectService
         CancellationToken cancellationToken = default)
     {
         ImportProject? project = await _dbContext.ImportProjects
+            .Include(p => p.Files)
             .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
 
         if (project == null)
         {
             return ServiceResult.Failure(
                 ServiceErrorType.NotFound,
-                "Projeto de importaÃ§Ã£o nÃ£o encontrado.");
+                "Projeto de importação não encontrado.");
         }
 
         Guid workspaceId = project.WorkspaceId;
         string projectName = project.Name;
+        List<string> storedFileNames = project.Files
+            .Select(f => f.StoredFileName)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .ToList();
 
         _dbContext.ImportProjects.Remove(project);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (_fileStorage != null)
+        {
+            foreach (string storedFileName in storedFileNames)
+            {
+                try
+                {
+                    await _fileStorage.DeleteFileAsync(storedFileName, cancellationToken);
+                }
+                catch (Exception)
+                {
+                    // Ignora caso o arquivo físico não exista no disco efêmero
+                }
+            }
+        }
 
         await _auditService.LogAsync(
             workspaceId,

@@ -46,7 +46,8 @@ public class WorkspaceServiceTests
         Assert.Equal("Filial Sul", result.Data.Name);
         Assert.Equal("filial-sul", result.Data.Slug);
         Assert.Equal(PlanTier.Starter, result.Data.Plan);
-        Assert.Equal(20, result.Data.MonthlyFilesQuota);
+        Assert.Equal(5, result.Data.MonthlyFilesQuota);
+        Assert.Equal(500, result.Data.MaxRowsPerFile);
     }
 
     [Fact]
