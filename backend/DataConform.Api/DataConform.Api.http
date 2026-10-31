@@ -1,6 +1,18 @@
 @DataConform.Api_HostAddress = http://localhost:5039
 
-GET {{DataConform.Api_HostAddress}}/weatherforecast/
+### Health Check
+GET {{DataConform.Api_HostAddress}}/health
 Accept: application/json
 
-###
+### OpenAPI Specification
+GET {{DataConform.Api_HostAddress}}/openapi/v1.json
+Accept: application/json
+
+### Login
+POST {{DataConform.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@empresa.com",
+  "password": "senhaSegura123!"
+}

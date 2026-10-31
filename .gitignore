@@ -74,6 +74,7 @@ Thumbs.db
 .Trashes
 
 # ------------------------------------------------------------------------------
-# Test Screenshots
+# Documentação e Artefatos Locais de Homologação
 # ------------------------------------------------------------------------------
-scripts/screenshots/
+docs/homologacao/
+scripts/
