@@ -25,7 +25,7 @@
     <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Identificar Linhas Duplicadas no CSV","item":"https://dataconform.com.br/remover-identificar-linhas-duplicadas-csv/"}]}</script>
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"O DataConform detecta linhas duplicadas mesmo se uma estiver em maiúsculas e outra em minúsculas?","acceptedAnswer":{"@type":"Answer","text":"Sim. Antes de calcular o hash XxHash64 de 64 bits, o motor normaliza a linha para maiúsculas (ToUpperInvariant) e remove espaços nas extremidades, capturando duplicidades independentemente de caixa alta ou baixa."}},{"@type":"Question","name":"E se houver duas colunas com o mesmo nome no cabeçalho da planilha?","acceptedAnswer":{"@type":"Answer","text":"Para colunas repetidas na linha #1, o DataConform emite um erro específico chamado DUPLICATE_HEADER, impedindo ambiguidade no mapeamento de campos do ERP."}},{"@type":"Question","name":"Qual o limite de linhas para verificar duplicidades no DataConform?","acceptedAnswer":{"@type":"Answer","text":"Graças ao uso de hashes de 64 bits (XxHash64) em memória durante a leitura em stream, o DataConform processa até 1.000 linhas no plano Starter, 50.000 linhas no Professional e 1.000.000 de linhas no Enterprise."}}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"O DataConform detecta linhas duplicadas mesmo se uma estiver em maiúsculas e outra em minúsculas?","acceptedAnswer":{"@type":"Answer","text":"Sim. Antes de calcular o hash XxHash64 de 64 bits, o motor normaliza a linha para maiúsculas (ToUpperInvariant) e remove espaços nas extremidades, capturando duplicidades independentemente de caixa alta ou baixa."}},{"@type":"Question","name":"E se houver duas colunas com o mesmo nome no cabeçalho da planilha?","acceptedAnswer":{"@type":"Answer","text":"Para colunas repetidas na linha #1, o DataConform emite um erro específico chamado DUPLICATE_HEADER, impedindo ambiguidade no mapeamento de campos do ERP."}},{"@type":"Question","name":"Qual o limite de linhas para verificar duplicidades no DataConform?","acceptedAnswer":{"@type":"Answer","text":"Graças ao uso de hashes de 64 bits (XxHash64) em memória durante a leitura em stream, o DataConform processa até 500 linhas no plano Starter, 15.000 linhas no Professional e 1.000.000 de linhas no Enterprise."}}]}</script>
   </head>
   <body>
   <header class="seo-navbar">
@@ -152,7 +152,7 @@
           </div>
           <div class="seo-faq-item">
             <h3>Qual o limite de linhas para verificar duplicidades no DataConform?</h3>
-            <p>Graças ao uso de hashes de 64 bits (XxHash64) em memória durante a leitura em stream, o DataConform processa até 1.000 linhas no plano Starter, 50.000 linhas no Professional e 1.000.000 de linhas no Enterprise.</p>
+            <p>Graças ao uso de hashes de 64 bits (XxHash64) em memória durante a leitura em stream, o DataConform processa até 500 linhas no plano Starter, 15.000 linhas no Professional e 1.000.000 de linhas no Enterprise.</p>
           </div>
             </div>
           </section>
@@ -160,7 +160,7 @@
           <section class="seo-cta-banner">
             <div>
               <h2>Audite sua planilha CSV contra o erro <code>DUPLICATE_ROW</code> agora mesmo</h2>
-              <p>Experimente o simulador interativo na página inicial ou valide até 20 arquivos por mês gratuitamente no plano Starter com exportação de inconsistências e laudo em PDF.</p>
+              <p>Experimente o simulador interativo na página inicial ou valide até 5 arquivos por mês gratuitamente no plano Starter com exportação de inconsistências e laudo em PDF.</p>
             </div>
             <div class="seo-cta-row">
               <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>

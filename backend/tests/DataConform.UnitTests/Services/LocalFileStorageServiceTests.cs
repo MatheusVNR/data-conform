@@ -48,6 +48,28 @@ public class LocalFileStorageServiceTests : IDisposable
         await Assert.ThrowsAsync<FileNotFoundException>(() => _storageService.GetFileStreamAsync(storedFileName));
     }
 
+    [Fact]
+    public async Task PurgeExpiredFilesAsync_ShouldDeleteExpiredFilesAndKeepRecentFiles()
+    {
+        byte[] sampleBytes = Encoding.UTF8.GetBytes("ColA,ColB\n1,2");
+        using MemoryStream oldStream = new MemoryStream(sampleBytes);
+        using MemoryStream recentStream = new MemoryStream(sampleBytes);
+
+        string expiredFileName = await _storageService.SaveFileAsync(oldStream, "antigo.csv");
+        string recentFileName = await _storageService.SaveFileAsync(recentStream, "recente.csv");
+
+        string expiredFullPath = Path.Combine(_testDirectory, expiredFileName);
+        File.SetLastWriteTimeUtc(expiredFullPath, DateTime.UtcNow.AddHours(-26));
+
+        int purgedCount = await _storageService.PurgeExpiredFilesAsync(TimeSpan.FromHours(24));
+
+        Assert.Equal(1, purgedCount);
+        await Assert.ThrowsAsync<FileNotFoundException>(() => _storageService.GetFileStreamAsync(expiredFileName));
+
+        using Stream stillAvailable = await _storageService.GetFileStreamAsync(recentFileName);
+        Assert.True(stillAvailable.CanRead);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_testDirectory))

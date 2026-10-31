@@ -8,6 +8,7 @@ interface AuthModalProps {
   initialMode?: 'login' | 'register';
   onClose: () => void;
   onSuccess: (authData: AuthResponseDto) => Promise<void> | void;
+  onOpenLegalModal?: () => void;
 }
 
 export const AuthModal: FC<AuthModalProps> = ({
@@ -15,6 +16,7 @@ export const AuthModal: FC<AuthModalProps> = ({
   initialMode = 'login',
   onClose,
   onSuccess,
+  onOpenLegalModal,
 }) => {
   const [isRegister, setIsRegister] = useState<boolean>(initialMode === 'register');
   const [email, setEmail] = useState<string>('');
@@ -90,7 +92,7 @@ export const AuthModal: FC<AuthModalProps> = ({
             <h2>{isRegister ? 'Criar Conta Corporativa' : 'Acessar sua Organização'}</h2>
             <span className="modal-subtitle">
               {isRegister
-                ? 'Comece gratuitamente com 20 validações mensais no plano Starter'
+                ? 'Comece gratuitamente com 5 validações mensais (até 500 linhas/arquivo) no plano Starter'
                 : 'Entre com suas credenciais corporativas para gerenciar seus projetos'}
             </span>
           </div>
@@ -218,6 +220,24 @@ export const AuthModal: FC<AuthModalProps> = ({
                 </button>
               </div>
             </div>
+
+            {isRegister && (
+              <p className="form-hint" style={{ marginTop: '0.5rem' }}>
+                🔒 <strong>Proteção LGPD:</strong> arquivos CSV enviados são expurgados automaticamente em até 24h. Ao criar sua conta, você concorda com os{' '}
+                {onOpenLegalModal ? (
+                  <button
+                    type="button"
+                    className="btn-link text-xs"
+                    onClick={onOpenLegalModal}
+                  >
+                    Termos de Uso e Política de Privacidade
+                  </button>
+                ) : (
+                  <strong>Termos de Uso e Política de Privacidade</strong>
+                )}
+                .
+              </p>
+            )}
           </div>
 
           <div className="modal-footer">

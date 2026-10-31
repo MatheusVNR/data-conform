@@ -467,7 +467,7 @@ export const RULE_SEO_PAGES = [
       {
         question: 'Qual o limite de linhas para verificar duplicidades no DataConform?',
         answer:
-          'Graças ao uso de hashes de 64 bits (XxHash64) em memória durante a leitura em stream, o DataConform processa até 1.000 linhas no plano Starter, 50.000 linhas no Professional e 1.000.000 de linhas no Enterprise.',
+          'Graças ao uso de hashes de 64 bits (XxHash64) em memória durante a leitura em stream, o DataConform processa até 500 linhas no plano Starter, 15.000 linhas no Professional e 1.000.000 de linhas no Enterprise.',
       },
     ],
     relatedRules: [

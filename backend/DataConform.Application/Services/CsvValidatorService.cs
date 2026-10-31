@@ -130,6 +130,9 @@ public class CsvValidatorService : ICsvValidatorService
             }
         }
 
+        ErpPrimaryKeySpec? primaryKeySpec = ResolveErpPrimaryKeySpec(headerIndexMap, headers);
+        Dictionary<string, int> seenPrimaryKeys = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
         int currentRowIndex = 1;
         string? line;
 
@@ -161,7 +164,8 @@ public class CsvValidatorService : ICsvValidatorService
 
             string normalizedLine = line.Trim();
             ulong rowHash = XxHash64.HashToUInt64(Encoding.UTF8.GetBytes(normalizedLine.ToUpperInvariant()));
-            if (!seenRowHashes.Add(rowHash))
+            bool isExactDuplicateRow = !seenRowHashes.Add(rowHash);
+            if (isExactDuplicateRow)
             {
                 result.Issues.Add(new ValidationIssue
                 {
@@ -176,6 +180,44 @@ public class CsvValidatorService : ICsvValidatorService
             }
 
             string[] cells = ParseCsvLine(line, delimiter);
+
+            if (primaryKeySpec != null && primaryKeySpec.PrimaryColumnIndex < cells.Length)
+            {
+                string primaryKeyPart = cells[primaryKeySpec.PrimaryColumnIndex].Trim();
+                if (!string.IsNullOrWhiteSpace(primaryKeyPart))
+                {
+                    string secondaryKeyPart = primaryKeySpec.SecondaryColumnIndex.HasValue &&
+                                              primaryKeySpec.SecondaryColumnIndex.Value < cells.Length
+                        ? cells[primaryKeySpec.SecondaryColumnIndex.Value].Trim()
+                        : string.Empty;
+
+                    string compositeKey = string.IsNullOrWhiteSpace(secondaryKeyPart)
+                        ? primaryKeyPart
+                        : $"{primaryKeyPart}/{secondaryKeyPart}";
+
+                    if (seenPrimaryKeys.TryGetValue(compositeKey, out int firstSeenRow))
+                    {
+                        if (!isExactDuplicateRow)
+                        {
+                            result.Issues.Add(new ValidationIssue
+                            {
+                                FileId = fileId,
+                                RowNumber = currentRowIndex,
+                                ColumnName = primaryKeySpec.DisplayColumnName,
+                                IssueCode = "DUPLICATE_PRIMARY_KEY",
+                                Message = $"Chave primária de ERP duplicada ('{compositeKey}') em '{primaryKeySpec.DisplayColumnName}' — já utilizada na linha #{firstSeenRow}.",
+                                Severity = IssueSeverity.Error,
+                                RawValue = compositeKey
+                            });
+                            rowHasError = true;
+                        }
+                    }
+                    else
+                    {
+                        seenPrimaryKeys.Add(compositeKey, currentRowIndex);
+                    }
+                }
+            }
 
             if (cells.Length != headers.Length)
             {
@@ -591,5 +633,65 @@ public class CsvValidatorService : ICsvValidatorService
         }
 
         return ',';
+    }
+
+    private static ErpPrimaryKeySpec? ResolveErpPrimaryKeySpec(
+        Dictionary<string, int> headerIndexMap,
+        string[] headers)
+    {
+        if (headerIndexMap.TryGetValue("A1_COD", out int a1CodIdx))
+        {
+            if (headerIndexMap.TryGetValue("A1_LOJA", out int a1LojaIdx))
+            {
+                return new ErpPrimaryKeySpec(a1CodIdx, a1LojaIdx, $"{headers[a1CodIdx]} + {headers[a1LojaIdx]}");
+            }
+
+            return new ErpPrimaryKeySpec(a1CodIdx, null, headers[a1CodIdx]);
+        }
+
+        if (headerIndexMap.TryGetValue("A2_COD", out int a2CodIdx))
+        {
+            if (headerIndexMap.TryGetValue("A2_LOJA", out int a2LojaIdx))
+            {
+                return new ErpPrimaryKeySpec(a2CodIdx, a2LojaIdx, $"{headers[a2CodIdx]} + {headers[a2LojaIdx]}");
+            }
+
+            return new ErpPrimaryKeySpec(a2CodIdx, null, headers[a2CodIdx]);
+        }
+
+        string[] singleKeyCandidates = new string[]
+        {
+            "B1_COD",
+            "CardCode",
+            "ItemCode",
+            "BP_Number",
+            "CodCli",
+            "CODPARC",
+            "codigo_cliente"
+        };
+
+        foreach (string candidate in singleKeyCandidates)
+        {
+            if (headerIndexMap.TryGetValue(candidate, out int colIdx))
+            {
+                return new ErpPrimaryKeySpec(colIdx, null, headers[colIdx]);
+            }
+        }
+
+        return null;
+    }
+
+    private sealed class ErpPrimaryKeySpec
+    {
+        public ErpPrimaryKeySpec(int primaryColumnIndex, int? secondaryColumnIndex, string displayColumnName)
+        {
+            PrimaryColumnIndex = primaryColumnIndex;
+            SecondaryColumnIndex = secondaryColumnIndex;
+            DisplayColumnName = displayColumnName;
+        }
+
+        public int PrimaryColumnIndex { get; }
+        public int? SecondaryColumnIndex { get; }
+        public string DisplayColumnName { get; }
     }
 }

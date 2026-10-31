@@ -16,17 +16,20 @@ public class WorkspaceService : IWorkspaceService
     private readonly ISubscriptionQuotaService _quotaService;
     private readonly IAuditService _auditService;
     private readonly ITenantAccessService _tenantAccessService;
+    private readonly IStripeBillingService? _stripeBillingService;
 
     public WorkspaceService(
         IApplicationDbContext dbContext,
         ISubscriptionQuotaService quotaService,
         IAuditService auditService,
-        ITenantAccessService tenantAccessService)
+        ITenantAccessService tenantAccessService,
+        IStripeBillingService? stripeBillingService = null)
     {
         _dbContext = dbContext;
         _quotaService = quotaService;
         _auditService = auditService;
         _tenantAccessService = tenantAccessService;
+        _stripeBillingService = stripeBillingService;
     }
 
     public async Task<ServiceResult<WorkspaceDto>> CreateWorkspaceAsync(
@@ -279,6 +282,33 @@ public class WorkspaceService : IWorkspaceService
 
         try
         {
+            Workspace? workspace = await _dbContext.Workspaces
+                .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
+
+            if (workspace == null)
+            {
+                return ServiceResult<WorkspaceQuotaDto>.Failure(
+                    ServiceErrorType.NotFound,
+                    "Workspace não encontrado.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(workspace.StripeSubscriptionId) && _stripeBillingService != null)
+            {
+                bool canceledOnStripe = await _stripeBillingService.CancelSubscriptionAsync(
+                    workspace.StripeSubscriptionId,
+                    cancellationToken);
+
+                if (!canceledOnStripe)
+                {
+                    return ServiceResult<WorkspaceQuotaDto>.Failure(
+                        ServiceErrorType.Validation,
+                        "Não foi possível cancelar a cobrança recorrente na Stripe neste instante. Tente novamente em alguns segundos ou contate o suporte.");
+                }
+            }
+
+            workspace.StripeSubscriptionId = null;
+            workspace.PlanExpiresAtUtc = null;
+
             WorkspaceQuotaDto updated = await _quotaService.UpdatePlanAsync(id, request.Plan, cancellationToken);
             string actionDetail = $"Assinatura retornada ao plano gratuito Starter.{(string.IsNullOrWhiteSpace(request.Reason) ? "" : $" Motivo: {request.Reason}")}";
 
@@ -336,12 +366,75 @@ public class WorkspaceService : IWorkspaceService
 
         string trimmedSessionId = request.SessionId.Trim();
 
+        bool usedByAnotherWorkspace = await _dbContext.AuditLogs
+            .IgnoreQueryFilters()
+            .AnyAsync(
+                a => a.Action == "StripeCheckoutConfirmed" &&
+                     a.EntityId == trimmedSessionId &&
+                     a.WorkspaceId != id,
+                cancellationToken);
+
+        if (usedByAnotherWorkspace)
+        {
+            return ServiceResult<WorkspaceQuotaDto>.Failure(
+                ServiceErrorType.Conflict,
+                "Esta sessão de checkout do Stripe já foi utilizada por outra organização.");
+        }
+
+        PlanTier effectivePlan = request.Plan;
+        string? stripeCustomerId = null;
+        string? stripeSubscriptionId = null;
+
+        if (_stripeBillingService != null)
+        {
+            StripeSessionVerificationResult verification = await _stripeBillingService.VerifyCheckoutSessionAsync(
+                trimmedSessionId,
+                request.Plan,
+                cancellationToken);
+
+            if (!verification.IsValid)
+            {
+                return ServiceResult<WorkspaceQuotaDto>.Failure(
+                    ServiceErrorType.Validation,
+                    verification.ErrorMessage ?? "Não foi possível confirmar o pagamento da sessão na Stripe.");
+            }
+
+            if (verification.ClientReferenceWorkspaceId.HasValue &&
+                verification.ClientReferenceWorkspaceId.Value != id)
+            {
+                return ServiceResult<WorkspaceQuotaDto>.Failure(
+                    ServiceErrorType.Forbidden,
+                    "A sessão de pagamento informada pertence a outra organização.",
+                    ForbiddenTitle);
+            }
+
+            effectivePlan = verification.VerifiedPlan ?? request.Plan;
+            stripeCustomerId = verification.CustomerId;
+            stripeSubscriptionId = verification.SubscriptionId;
+        }
+
         bool alreadyProcessed = await _dbContext.AuditLogs
             .AnyAsync(a => a.Action == "StripeCheckoutConfirmed" && a.EntityId == trimmedSessionId, cancellationToken);
 
         try
         {
-            WorkspaceQuotaDto updated = await _quotaService.UpdatePlanAsync(id, request.Plan, cancellationToken);
+            Workspace? workspace = await _dbContext.Workspaces
+                .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
+
+            if (workspace != null)
+            {
+                if (!string.IsNullOrWhiteSpace(stripeCustomerId))
+                {
+                    workspace.StripeCustomerId = stripeCustomerId;
+                }
+
+                if (!string.IsNullOrWhiteSpace(stripeSubscriptionId))
+                {
+                    workspace.StripeSubscriptionId = stripeSubscriptionId;
+                }
+            }
+
+            WorkspaceQuotaDto updated = await _quotaService.UpdatePlanAsync(id, effectivePlan, cancellationToken);
 
             if (!alreadyProcessed)
             {
@@ -351,7 +444,7 @@ public class WorkspaceService : IWorkspaceService
                     "StripeCheckoutConfirmed",
                     "StripeSession",
                     trimmedSessionId,
-                    $"Pagamento confirmado via Stripe (Sessão: {trimmedSessionId[..Math.Min(18, trimmedSessionId.Length)]}...). Plano ativado: {request.Plan}.",
+                    $"Pagamento confirmado via Stripe (Sessão: {trimmedSessionId[..Math.Min(18, trimmedSessionId.Length)]}...). Plano ativado: {effectivePlan}.",
                     cancellationToken);
             }
 
@@ -363,6 +456,136 @@ public class WorkspaceService : IWorkspaceService
                 ServiceErrorType.NotFound,
                 "Workspace não encontrado.");
         }
+    }
+
+    public async Task<ServiceResult> HandleStripeWebhookAsync(
+        string rawPayload,
+        string? stripeSignatureHeader,
+        CancellationToken cancellationToken = default)
+    {
+        if (_stripeBillingService == null)
+        {
+            return ServiceResult.Failure(
+                ServiceErrorType.InternalError,
+                "Serviço de faturamento Stripe não registrado.");
+        }
+
+        StripeWebhookEventResult webhookEvent = _stripeBillingService.ParseAndVerifyWebhookEvent(
+            rawPayload,
+            stripeSignatureHeader);
+
+        if (!webhookEvent.IsSignatureValid)
+        {
+            return ServiceResult.Failure(
+                ServiceErrorType.Validation,
+                webhookEvent.ErrorMessage ?? "Assinatura de webhook inválida.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(webhookEvent.EventId))
+        {
+            bool eventAlreadyHandled = await _dbContext.AuditLogs
+                .IgnoreQueryFilters()
+                .AnyAsync(
+                    a => a.Action == "StripeWebhookProcessed" && a.EntityId == webhookEvent.EventId,
+                    cancellationToken);
+
+            if (eventAlreadyHandled)
+            {
+                return ServiceResult.Success();
+            }
+        }
+
+        Workspace? targetWorkspace = null;
+
+        if (webhookEvent.ClientReferenceWorkspaceId.HasValue)
+        {
+            Guid refWsId = webhookEvent.ClientReferenceWorkspaceId.Value;
+            targetWorkspace = await _dbContext.Workspaces
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(w => w.Id == refWsId, cancellationToken);
+        }
+
+        if (targetWorkspace == null && !string.IsNullOrWhiteSpace(webhookEvent.SubscriptionId))
+        {
+            targetWorkspace = await _dbContext.Workspaces
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(w => w.StripeSubscriptionId == webhookEvent.SubscriptionId, cancellationToken);
+        }
+
+        if (targetWorkspace == null && !string.IsNullOrWhiteSpace(webhookEvent.CustomerId))
+        {
+            targetWorkspace = await _dbContext.Workspaces
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(w => w.StripeCustomerId == webhookEvent.CustomerId, cancellationToken);
+        }
+
+        if (targetWorkspace == null)
+        {
+            return ServiceResult.Success();
+        }
+
+        string eventType = webhookEvent.EventType ?? string.Empty;
+
+        if (string.Equals(eventType, "checkout.session.completed", StringComparison.OrdinalIgnoreCase))
+        {
+            PlanTier targetPlan = webhookEvent.ResolvedPlan ?? PlanTier.Professional;
+            if (!string.IsNullOrWhiteSpace(webhookEvent.CustomerId))
+            {
+                targetWorkspace.StripeCustomerId = webhookEvent.CustomerId;
+            }
+            if (!string.IsNullOrWhiteSpace(webhookEvent.SubscriptionId))
+            {
+                targetWorkspace.StripeSubscriptionId = webhookEvent.SubscriptionId;
+            }
+
+            await _quotaService.UpdatePlanAsync(targetWorkspace.Id, targetPlan, cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(webhookEvent.SessionId))
+            {
+                bool sessionLogged = await _dbContext.AuditLogs
+                    .IgnoreQueryFilters()
+                    .AnyAsync(
+                        a => a.Action == "StripeCheckoutConfirmed" && a.EntityId == webhookEvent.SessionId,
+                        cancellationToken);
+
+                if (!sessionLogged)
+                {
+                    await _auditService.LogAsync(
+                        targetWorkspace.Id,
+                        null,
+                        "StripeCheckoutConfirmed",
+                        "StripeSession",
+                        webhookEvent.SessionId,
+                        $"Assinatura ativada via Webhook Stripe ({targetPlan}).",
+                        cancellationToken);
+                }
+            }
+        }
+        else if (string.Equals(eventType, "customer.subscription.deleted", StringComparison.OrdinalIgnoreCase) ||
+                 string.Equals(eventType, "invoice.payment_failed", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.Equals(eventType, "customer.subscription.deleted", StringComparison.OrdinalIgnoreCase))
+            {
+                targetWorkspace.StripeSubscriptionId = null;
+                targetWorkspace.PlanExpiresAtUtc = null;
+            }
+
+            await _quotaService.UpdatePlanAsync(targetWorkspace.Id, PlanTier.Starter, cancellationToken);
+        }
+
+        if (!string.IsNullOrWhiteSpace(webhookEvent.EventId))
+        {
+            await _auditService.LogAsync(
+                targetWorkspace.Id,
+                null,
+                "StripeWebhookProcessed",
+                "StripeWebhook",
+                webhookEvent.EventId,
+                $"Evento Stripe '{eventType}' processado com sucesso.",
+                cancellationToken);
+        }
+
+        return ServiceResult.Success();
     }
 
     private static WorkspaceDto MapToWorkspaceDto(Workspace workspace, int projectsCount)

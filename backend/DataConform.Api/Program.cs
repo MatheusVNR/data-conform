@@ -12,6 +12,7 @@ using DataConform.Application;
 using DataConform.Application.Common.Interfaces;
 using DataConform.Infrastructure;
 using DataConform.Infrastructure.Persistence;
+using DataConform.Infrastructure.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,8 @@ builder.Services.AddResponseCompression(options =>
 });
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddHttpClient<IStripeBillingService, StripeBillingService>();
+builder.Services.AddHostedService<EphemeralStorageCleanupService>();
 
 string jwtSecret = builder.Configuration["Jwt:Secret"] ?? "DataConformSuperSecretJwtKey2026WithSufficientLengthForHmacSha256SecurityStandards!";
 string jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "DataConform";
@@ -226,9 +229,11 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Map Health & Functional Endpoints (Protected by Global FallbackPolicy + TenantIsolationEndpointFilter)
+// Map Health & Public Webhook Endpoints
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "DataConform.Api", timestamp = DateTime.UtcNow }))
     .AllowAnonymous();
+
+app.MapWebhookEndpoints();
 
 RouteGroupBuilder apiGroup = app.MapGroup("")
     .AddEndpointFilter<TenantIsolationEndpointFilter>();

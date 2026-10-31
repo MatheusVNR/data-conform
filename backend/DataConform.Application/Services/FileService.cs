@@ -298,6 +298,7 @@ public class FileService : IFileService
                 "Este arquivo jÃ¡ estÃ¡ sendo processado no momento. Aguarde a conclusÃ£o.");
         }
 
+        FileStatus previousStatus = importFile.Status;
         importFile.Status = FileStatus.Processing;
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -408,6 +409,14 @@ public class FileService : IFileService
             };
 
             return ServiceResult<ValidationReportDto>.Success(report);
+        }
+        catch (FileNotFoundException)
+        {
+            importFile.Status = previousStatus == FileStatus.Completed ? FileStatus.Completed : FileStatus.Failed;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return ServiceResult<ValidationReportDto>.Failure(
+                ServiceErrorType.Validation,
+                "O arquivo CSV bruto original já foi expurgado automaticamente após a janela de segurança de 24h (processamento efêmero LGPD). Seu laudo anterior permanece íntegro; para revalidar com novas regras, envie a planilha novamente.");
         }
         catch (Exception)
         {

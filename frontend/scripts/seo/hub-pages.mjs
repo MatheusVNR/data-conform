@@ -101,6 +101,12 @@ export const ALL_BACKEND_RULES_SUMMARY = [
     category: 'Cadastro / Contato',
     description: 'Valida telefones fixos (10 dígitos) e celulares (11 dígitos) com código DDD nacional válido entre 11 e 99.',
   },
+  {
+    code: 'DUPLICATE_PRIMARY_KEY',
+    severity: 'Erro',
+    category: 'Integridade de Chave ERP',
+    description: 'Bloqueia códigos/chaves primárias repetidas em linhas distintas da planilha (A1_COD+A1_LOJA, A2_COD+A2_LOJA, B1_COD, CardCode, ItemCode, BP_Number, CodCli, CODPARC, codigo_cliente).',
+  },
 ];
 
 export const PRICING_PLANS = [

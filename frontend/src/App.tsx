@@ -22,6 +22,9 @@ const ComplianceRulesModal = lazy(() =>
 const FeedbackModal = lazy(() =>
   import('./components/FeedbackModal').then((m) => ({ default: m.FeedbackModal }))
 );
+const LegalPrivacyModal = lazy(() =>
+  import('./components/LegalPrivacyModal').then((m) => ({ default: m.LegalPrivacyModal }))
+);
 import {
   confirmStripeCheckout,
   createProject,
@@ -94,6 +97,7 @@ export const App: FC = () => {
   const [isAuditOpen, setIsAuditOpen] = useState<boolean>(false);
   const [isRulesOpen, setIsRulesOpen] = useState<boolean>(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState<boolean>(false);
+  const [isLegalOpen, setIsLegalOpen] = useState<boolean>(false);
   const [alert, setAlert] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
@@ -622,7 +626,7 @@ export const App: FC = () => {
                     <strong>✓ Diagnóstico Instantâneo:</strong> Laudo interativo com cópia rápida e exportação CSV
                   </li>
                   <li>
-                    <strong>✓ Zero Exposição:</strong> Seus dados nunca são compartilhados com outros locatários
+                    <strong>✓ Zero Exposição & LGPD:</strong> Isolamento por cliente e expurgo físico do CSV bruto em 24h
                   </li>
                 </ul>
                 <button
@@ -710,6 +714,98 @@ export const App: FC = () => {
                     </div>
                   );
                 })}
+              </div>
+            </section>
+
+            <section id="planos" className="visitor-pricing-section">
+              <div className="section-header">
+                <div>
+                  <h2>Planos Transparentes & Capacidade Sob Medida</h2>
+                  <p className="section-subtitle">
+                    Comece gratuitamente sem cartão de crédito e escale conforme o volume das suas implantações ou rotinas mensais de carga.
+                  </p>
+                </div>
+                <a href="/precos/" className="btn btn-outline btn-sm">
+                  Comparativo Completo →
+                </a>
+              </div>
+
+              <div className="plans-grid">
+                <div className="plan-card">
+                  <div className="plan-card-top">
+                    <h3>Starter</h3>
+                    <div className="plan-price">Gratuito</div>
+                    <p className="plan-desc">
+                      Para homologação inicial de layouts, testes rápidos e pequenas cargas sem custo.
+                    </p>
+                  </div>
+                  <ul className="plan-features-list">
+                    <li><span className="feat-check">✓</span><span>5 validações de arquivos por mês</span></li>
+                    <li><span className="feat-check">✓</span><span>Até 500 linhas e 5 MB por planilha</span></li>
+                    <li><span className="feat-check">✓</span><span>10 presets de ERP + 18 regras fiscais/chaves</span></li>
+                    <li><span className="feat-check">✓</span><span>Laudo preliminar em PDF e amostra CSV</span></li>
+                  </ul>
+                  <div className="plan-card-action">
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm btn-full"
+                      onClick={() => handleOpenAuth('register')}
+                    >
+                      Criar Conta Gratuita
+                    </button>
+                  </div>
+                </div>
+
+                <div className="plan-card plan-card-highlight">
+                  <div className="plan-popular-ribbon">Mais Escolhido</div>
+                  <div className="plan-card-top">
+                    <h3>Professional</h3>
+                    <div className="plan-price">R$ 79,90 / mês</div>
+                    <p className="plan-desc">
+                      Ideal para consultores de implantação ERP, escritórios de BPO financeiro e TI ativa.
+                    </p>
+                  </div>
+                  <ul className="plan-features-list">
+                    <li><span className="feat-check">✓</span><span>500 validações de arquivos por mês</span></li>
+                    <li><span className="feat-check">✓</span><span>Até 15.000 linhas e 25 MB por planilha</span></li>
+                    <li><span className="feat-check">✓</span><span>Laudo Executivo PDF White-Label c/ Termo de Aceite</span></li>
+                    <li><span className="feat-check">✓</span><span>Exportação CSV integral e trilha de auditoria</span></li>
+                  </ul>
+                  <div className="plan-card-action">
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm btn-full"
+                      onClick={() => handleOpenAuth('register')}
+                    >
+                      Começar & Fazer Upgrade
+                    </button>
+                  </div>
+                </div>
+
+                <div className="plan-card">
+                  <div className="plan-card-top">
+                    <h3>Enterprise</h3>
+                    <div className="plan-price">R$ 249,90 / mês</div>
+                    <p className="plan-desc">
+                      Para migrações massivas de bases legadas, múltiplas organizações e alta volumetria.
+                    </p>
+                  </div>
+                  <ul className="plan-features-list">
+                    <li><span className="feat-check">✓</span><span>10.000 validações de arquivos por mês</span></li>
+                    <li><span className="feat-check">✓</span><span>Até 1.000.000 de linhas e 50 MB por planilha</span></li>
+                    <li><span className="feat-check">✓</span><span>Lotes de até 10 arquivos simultâneos</span></li>
+                    <li><span className="feat-check">✓</span><span>Múltiplos Workspaces isolados por cliente</span></li>
+                  </ul>
+                  <div className="plan-card-action">
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm btn-full"
+                      onClick={() => handleOpenAuth('register')}
+                    >
+                      Criar Conta Corporativa
+                    </button>
+                  </div>
+                </div>
               </div>
             </section>
           </div>
@@ -839,6 +935,7 @@ export const App: FC = () => {
                     plan={activeWorkspace?.plan}
                     targetSystem={activeProject.targetSystem}
                     onOpenRules={() => setIsRulesOpen(true)}
+                    onOpenPlans={() => setIsPlanOpen(true)}
                   />
                 </div>
 
@@ -901,6 +998,9 @@ export const App: FC = () => {
                 Trilha de Auditoria
               </button>
             )}
+            <button type="button" className="footer-link-btn" onClick={() => setIsLegalOpen(true)}>
+              Termos & Privacidade (LGPD)
+            </button>
             <button type="button" className="footer-link-btn" onClick={() => setIsFeedbackOpen(true)}>
               💬 Enviar Feedback / Sugestão
             </button>
@@ -950,6 +1050,7 @@ export const App: FC = () => {
         initialMode={authInitialMode}
         onClose={() => setIsAuthOpen(false)}
         onSuccess={handleAuthSuccess}
+        onOpenLegalModal={() => setIsLegalOpen(true)}
       />
 
       <Suspense fallback={null}>
@@ -959,9 +1060,17 @@ export const App: FC = () => {
             isOpen={isPlanOpen}
             workspace={activeWorkspace}
             isAuthenticated={Boolean(currentUser)}
+            userEmail={currentUser?.email}
             onClose={() => setIsPlanOpen(false)}
             onPlanChanged={handlePlanChanged}
             onRequireAuth={() => handleOpenAuth('register')}
+          />
+        )}
+
+        {isLegalOpen && (
+          <LegalPrivacyModal
+            isOpen={isLegalOpen}
+            onClose={() => setIsLegalOpen(false)}
           />
         )}
 

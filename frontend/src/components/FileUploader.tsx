@@ -9,6 +9,7 @@ interface FileUploaderProps {
   targetSystem?: string | null;
   disabled?: boolean;
   onOpenRules?: () => void;
+  onOpenPlans?: () => void;
 }
 
 export const FileUploader: FC<FileUploaderProps> = ({
@@ -17,6 +18,7 @@ export const FileUploader: FC<FileUploaderProps> = ({
   targetSystem,
   disabled = false,
   onOpenRules,
+  onOpenPlans,
 }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -192,6 +194,12 @@ export const FileUploader: FC<FileUploaderProps> = ({
           <span className="limit-pill" title="Quantidade máxima de arquivos que podem ser anexados simultaneamente">
             📚 Lote: <strong>Até {limits.maxConcurrentFiles} arquivos</strong>
           </span>
+          <span
+            className="limit-pill"
+            title="Proteção de privacidade LGPD: arquivos CSV brutos são removidos automaticamente do servidor em até 24 horas"
+          >
+            🔒 LGPD: <strong>Expurgo em 24h</strong>
+          </span>
         </div>
 
         <div className="uploader-toolbar-actions">
@@ -314,7 +322,20 @@ export const FileUploader: FC<FileUploaderProps> = ({
         </div>
       </div>
 
-      {error && <div className="inline-alert-error">{error}</div>}
+      {error && (
+        <div className="inline-alert-error uploader-error-banner">
+          <span>{error}</span>
+          {onOpenPlans && /limite|plano|upgrade|excede|cota|linhas|lote/i.test(error) && (
+            <button
+              type="button"
+              className="btn btn-primary btn-xs"
+              onClick={onOpenPlans}
+            >
+              🚀 Fazer Upgrade de Plano
+            </button>
+          )}
+        </div>
+      )}
 
       {selectedFiles.length > 0 && (
         <div className="file-queue-panel">

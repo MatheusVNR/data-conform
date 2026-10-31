@@ -67,8 +67,8 @@
 
           <section class="seo-section">
             <h2>Arquitetura de Validação Estrutural e Semântica</h2>
-            <p>A carga de um arquivo CSV falha por dois tipos de desvios: corrupção estrutural do arquivo (encoding incompatível com UTF-8, vírgulas fora de aspas que deslocam colunas ou cabeçalhos duplicados) e inconsistência semântica dos dados (CNPJ inválido, NCM de 7 dígitos, UF inexistente ou limite negativo).</p>
-            <p>O DataConform lê o CSV em streaming, detecta automaticamente o delimitador (vírgula, ponto e vírgula ou tabulação), rastreia linhas duplicadas com hash de 64 bits (XxHash64) e aplica regras fiscais sobre as colunas dos dicionários TOTVS Protheus, SAP, Senior, Sankhya, Omie e ContaAzul.</p>
+            <p>Cargas CSV falham por corrupção estrutural (encoding fora de UTF-8, vírgulas fora de aspas ou cabeçalhos repetidos) e por inconsistência semântica (CNPJ inválido, NCM incompleto, UF inexistente, limite negativo ou chave primária duplicada).</p>
+            <p>O DataConform processa o CSV em streaming, detecta delimitadores automaticamente, aplica hash XxHash64 e valida os dicionários TOTVS Protheus, SAP, Senior, Sankhya, Omie e ContaAzul.</p>
           </section>
 
           <section class="seo-section">
@@ -280,6 +280,12 @@
                 <td><span class="seo-code-pill seo-code-error">Erro</span></td>
                 <td>Cadastro / Contato</td>
                 <td>Valida telefones fixos (10 dígitos) e celulares (11 dígitos) com código DDD nacional válido entre 11 e 99.</td>
+              </tr>
+              <tr>
+                <td><code>DUPLICATE_PRIMARY_KEY</code></td>
+                <td><span class="seo-code-pill seo-code-error">Erro</span></td>
+                <td>Integridade de Chave ERP</td>
+                <td>Bloqueia códigos/chaves primárias repetidas em linhas distintas da planilha (A1_COD+A1_LOJA, A2_COD+A2_LOJA, B1_COD, CardCode, ItemCode, BP_Number, CodCli, CODPARC, codigo_cliente).</td>
               </tr>
                 </tbody>
               </table>

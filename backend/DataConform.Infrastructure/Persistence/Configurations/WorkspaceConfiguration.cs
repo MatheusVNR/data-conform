@@ -48,6 +48,21 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
             .IsRequired()
             .HasDefaultValue(500);
 
+        builder.Property(w => w.StripeCustomerId)
+            .HasMaxLength(100)
+            .IsRequired(false);
+
+        builder.HasIndex(w => w.StripeCustomerId);
+
+        builder.Property(w => w.StripeSubscriptionId)
+            .HasMaxLength(100)
+            .IsRequired(false);
+
+        builder.HasIndex(w => w.StripeSubscriptionId);
+
+        builder.Property(w => w.PlanExpiresAtUtc)
+            .IsRequired(false);
+
         builder.HasMany(w => w.Projects)
             .WithOne(p => p.Workspace)
             .HasForeignKey(p => p.WorkspaceId)

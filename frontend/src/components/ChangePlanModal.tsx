@@ -8,6 +8,7 @@ interface ChangePlanModalProps {
   isOpen: boolean;
   workspace: WorkspaceDto | null;
   isAuthenticated: boolean;
+  userEmail?: string | null;
   onClose: () => void;
   onPlanChanged: (updatedQuota: WorkspaceQuotaDto) => void;
   onRequireAuth: () => void;
@@ -27,8 +28,9 @@ interface PlanOption {
 }
 
 const DEFAULT_STRIPE_PRO_TEST_URL: string = 'https://buy.stripe.com/test_3cIeVdbxq6962QW36Ef7i00';
+const CONFIGURED_STRIPE_PRO_URL: string = ((import.meta.env.VITE_STRIPE_PRO_URL as string | undefined) ?? '').trim();
 const STRIPE_PRO_URL: string =
-  ((import.meta.env.VITE_STRIPE_PRO_URL as string | undefined) ?? '').trim() || DEFAULT_STRIPE_PRO_TEST_URL;
+  CONFIGURED_STRIPE_PRO_URL || (import.meta.env.DEV ? DEFAULT_STRIPE_PRO_TEST_URL : '');
 const STRIPE_ENTERPRISE_URL: string = ((import.meta.env.VITE_STRIPE_ENTERPRISE_URL as string | undefined) ?? '').trim();
 
 import { PENDING_CHECKOUT_STORAGE_KEY } from '../types';
@@ -90,6 +92,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
   isOpen,
   workspace,
   isAuthenticated,
+  userEmail,
   onClose,
   onPlanChanged,
   onRequireAuth,
@@ -159,8 +162,20 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
         : STRIPE_ENTERPRISE_URL;
 
     if (!targetUrl) {
-      setError('Link de checkout do Stripe não configurado para este plano.');
+      setError('O checkout online deste plano está em manutenção momentânea. Contate contato@dataconform.com.br para liberação prioritária.');
       return;
+    }
+
+    let checkoutRedirectUrl: string = targetUrl;
+    try {
+      const parsedUrl: URL = new URL(targetUrl);
+      parsedUrl.searchParams.set('client_reference_id', workspace.id);
+      if (userEmail && userEmail.trim().length > 0) {
+        parsedUrl.searchParams.set('prefilled_email', userEmail.trim());
+      }
+      checkoutRedirectUrl = parsedUrl.toString();
+    } catch {
+      // Mantém URL base caso não seja URL absoluta padrão
     }
 
     localStorage.setItem(
@@ -172,7 +187,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
       })
     );
 
-    window.location.assign(targetUrl);
+    window.location.assign(checkoutRedirectUrl);
   };
 
   const handleManualSessionVerify = async (): Promise<void> => {

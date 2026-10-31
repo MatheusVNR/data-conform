@@ -333,8 +333,19 @@ namespace DataConform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<DateTimeOffset?>("PlanExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Slug")
                         .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("StripeCustomerId")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("StripeSubscriptionId")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
@@ -347,6 +358,10 @@ namespace DataConform.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Slug")
                         .IsUnique();
+
+                    b.HasIndex("StripeCustomerId");
+
+                    b.HasIndex("StripeSubscriptionId");
 
                     b.ToTable("workspaces", (string)null);
                 });

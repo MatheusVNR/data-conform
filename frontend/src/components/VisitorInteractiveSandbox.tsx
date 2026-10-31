@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { ChangeEvent, FC } from 'react';
 import type { ValidationIssueDto, ValidationReportDto } from '../types';
 import { getErpPreset } from '../types';
+import { isValidBrazilianDocument } from '../utils/documentValidator';
 
 interface VisitorInteractiveSandboxProps {
   initialErpKey?: string | null;
@@ -599,8 +600,7 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
             (lowerCol.includes('cgc') || lowerCol.includes('cnpj') || lowerCol.includes('cpf') || lowerCol.includes('lictradnum') || lowerCol.includes('taxid')) &&
             val !== ''
           ) {
-            const digits: string = val.replace(/\D/g, '');
-            if ((digits.length !== 11 && digits.length !== 14) || /^(\d)\1+$/.test(digits) || digits.endsWith('00')) {
+            if (!isValidBrazilianDocument(val)) {
               rowHasError = true;
               issues.push({
                 id: `local-doc-${rowNum}-${colIdx}`,

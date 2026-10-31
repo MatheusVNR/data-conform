@@ -210,16 +210,31 @@ export const FileList: FC<FileListProps> = ({
                         </button>
                       )}
 
+                      {!isDone && (
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-xs"
+                          title={`Executar auditoria imediata aplicando o dicionário ${erpPreset.systemName}`}
+                          onClick={() => {
+                            void onValidate(file.id, erpPreset.requiredColumns.join(', '));
+                          }}
+                          disabled={isValidatingThis || deletingId === file.id}
+                        >
+                          {isValidatingThis ? 'Validando...' : '⚡ Validar Agora'}
+                        </button>
+                      )}
+
                       <button
                         type="button"
-                        className="btn btn-primary btn-xs"
+                        className={`btn ${isDone ? 'btn-primary' : 'btn-outline'} btn-xs`}
+                        title="Revisar ou customizar as colunas obrigatórias antes de auditar"
                         onClick={() => {
                           setSelectedFileForRules(file.id);
                           setRequiredColumnsInput(erpPreset.requiredColumns.join(', '));
                         }}
                         disabled={isValidatingThis || deletingId === file.id}
                       >
-                        {isValidatingThis ? 'Validando...' : isDone ? '↻ Revalidar' : '▶ Validar Arquivo'}
+                        {isValidatingThis ? 'Validando...' : isDone ? '↻ Revalidar' : '⚙ Colunas'}
                       </button>
 
                       {onDeleteFile && (

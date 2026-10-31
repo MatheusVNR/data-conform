@@ -48,4 +48,9 @@ public interface IWorkspaceService
         Guid? userId,
         Guid? primaryWorkspaceId,
         CancellationToken cancellationToken = default);
+
+    Task<ServiceResult> HandleStripeWebhookAsync(
+        string rawPayload,
+        string? stripeSignatureHeader,
+        CancellationToken cancellationToken = default);
 }

@@ -342,7 +342,7 @@ ${faqsHtml}
           <section class="seo-cta-banner">
             <div>
               <h2>Pronto para homologar sua planilha do ${escapeHtml(page.systemName)}?</h2>
-              <p>Teste agora mesmo no simulador interativo sem cadastro ou crie sua conta gratuita no plano Starter (até 20 arquivos/mês e laudo em PDF).</p>
+              <p>Teste agora mesmo no simulador interativo sem cadastro ou crie sua conta gratuita no plano Starter (até 5 arquivos/mês de 500 linhas e laudo em PDF).</p>
             </div>
             <div class="seo-cta-row">
               <a href="${escapeHtml(ctaHref)}" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
@@ -521,7 +521,7 @@ ${faqsHtml}
           <section class="seo-cta-banner">
             <div>
               <h2>Audite sua planilha CSV contra o erro <code>${escapeHtml(rule.issueCode)}</code> agora mesmo</h2>
-              <p>Experimente o simulador interativo na página inicial ou valide até 20 arquivos por mês gratuitamente no plano Starter com exportação de inconsistências e laudo em PDF.</p>
+              <p>Experimente o simulador interativo na página inicial ou valide até 5 arquivos por mês gratuitamente no plano Starter com exportação de inconsistências e laudo em PDF.</p>
             </div>
             <div class="seo-cta-row">
               <a href="${escapeHtml(ctaHref)}" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
@@ -690,7 +690,7 @@ ${faqsHtml}
           <section class="seo-cta-banner">
             <div>
               <h2>Valide suas planilhas de migração ERP em segundos</h2>
-              <p>Experimente gratuitamente no simulador interativo ou crie sua conta no plano Starter Gratuito para auditar até 20 arquivos por mês.</p>
+              <p>Experimente gratuitamente no simulador interativo ou crie sua conta no plano Starter Gratuito para auditar até 5 arquivos por mês.</p>
             </div>
             <div class="seo-cta-row">
               <a href="${escapeHtml(ctaHref)}" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
@@ -795,8 +795,8 @@ ${renderBreadcrumbs(breadcrumbItems)}
 
           <section class="seo-section">
             <h2>Arquitetura de Validação Estrutural e Semântica</h2>
-            <p>A carga de um arquivo CSV falha por dois tipos de desvios: corrupção estrutural do arquivo (encoding incompatível com UTF-8, vírgulas fora de aspas que deslocam colunas ou cabeçalhos duplicados) e inconsistência semântica dos dados (CNPJ inválido, NCM de 7 dígitos, UF inexistente ou limite negativo).</p>
-            <p>O DataConform lê o CSV em streaming, detecta automaticamente o delimitador (vírgula, ponto e vírgula ou tabulação), rastreia linhas duplicadas com hash de 64 bits (XxHash64) e aplica regras fiscais sobre as colunas dos dicionários TOTVS Protheus, SAP, Senior, Sankhya, Omie e ContaAzul.</p>
+            <p>Cargas CSV falham por corrupção estrutural (encoding fora de UTF-8, vírgulas fora de aspas ou cabeçalhos repetidos) e por inconsistência semântica (CNPJ inválido, NCM incompleto, UF inexistente, limite negativo ou chave primária duplicada).</p>
+            <p>O DataConform processa o CSV em streaming, detecta delimitadores automaticamente, aplica hash XxHash64 e valida os dicionários TOTVS Protheus, SAP, Senior, Sankhya, Omie e ContaAzul.</p>
           </section>
 
           <section class="seo-section">
@@ -868,7 +868,7 @@ function buildPricingPageHtml() {
     {
       question: 'O plano Starter é gratuito e sem cartão de crédito?',
       answer:
-        'Sim. O plano Starter é 100% gratuito (R$ 0/mês), não exige cartão no cadastro e inclui até 20 arquivos validados por mês (até 1.000 linhas e 5 MB por arquivo), com acesso a todos os presets de ERP, às 17 regras e ao laudo em PDF.',
+        'Sim. O plano Starter é 100% gratuito (R$ 0/mês), não exige cartão no cadastro e inclui até 5 arquivos validados por mês (até 500 linhas e 5 MB por arquivo), com acesso a todos os presets de ERP, às regras fiscais e ao laudo preliminar em PDF.',
     },
     {
       question: 'Como funciona o pagamento dos planos Professional e Enterprise?',
@@ -878,12 +878,12 @@ function buildPricingPageHtml() {
     {
       question: 'Há diferença nas regras ou nos ERPs suportados entre os planos?',
       answer:
-        'Não. Todos os planos incluem os 10 presets de ERP, as 17 regras de validação, exportação CSV de erros e laudo PDF. A diferença está apenas na capacidade operacional (cota mensal, linhas por planilha, MB e arquivos simultâneos).',
+        'Não. Todos os planos incluem os 10 presets de ERP, todas as regras de validação, exportação CSV de erros e laudo PDF (com versão executiva White-Label e Termo de Aceite nos planos pagos).',
     },
     {
       question: 'Qual plano escolher para migrações de médio ou grande porte?',
       answer:
-        'Para planilhas de até 50.000 linhas (25 MB) e 500 arquivos/mês, escolha o Professional (R$ 79,90/mês). Para bases de até 1.000.000 de linhas por arquivo (50 MB) e 10.000 arquivos/mês, escolha o Enterprise (R$ 249,90/mês).',
+        'Para planilhas de até 15.000 linhas (25 MB) e 500 arquivos/mês, escolha o Professional (R$ 79,90/mês). Para bases de até 1.000.000 de linhas por arquivo (50 MB) e 10.000 arquivos/mês, escolha o Enterprise (R$ 249,90/mês).',
     },
   ];
 
@@ -996,14 +996,14 @@ ${pricingCardsHtml}
                   </tr>
                   <tr>
                     <td><strong>Cota Mensal de Uploads</strong></td>
-                    <td>20 arquivos</td>
+                    <td>5 arquivos</td>
                     <td>500 arquivos</td>
                     <td>10.000 arquivos</td>
                   </tr>
                   <tr>
                     <td><strong>Linhas por Arquivo CSV</strong></td>
-                    <td>Até 1.000 linhas</td>
-                    <td>Até 50.000 linhas</td>
+                    <td>Até 500 linhas</td>
+                    <td>Até 15.000 linhas</td>
                     <td>Até 1.000.000 de linhas</td>
                   </tr>
                   <tr>

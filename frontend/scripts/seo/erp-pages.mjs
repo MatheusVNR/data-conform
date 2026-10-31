@@ -379,7 +379,7 @@ export const ERP_SEO_PAGES = [
       {
         question: 'Quantos produtos posso validar por arquivo CSV da SB1?',
         answer:
-          'Até 1.000 linhas no plano Starter Gratuito, até 50.000 linhas no plano Professional e até 1.000.000 de linhas no plano Enterprise.',
+          'Até 500 linhas no plano Starter Gratuito, até 15.000 linhas no plano Professional e até 1.000.000 de linhas no plano Enterprise.',
       },
     ],
     relatedRules: [
@@ -750,7 +750,7 @@ export const ERP_SEO_PAGES = [
       {
         question: 'Qual a capacidade máxima de linhas para migrações SAP S/4HANA?',
         answer:
-          'O plano Professional suporta até 50.000 linhas por arquivo (25 MB) e o plano Enterprise suporta até 1.000.000 de linhas por arquivo (50 MB).',
+          'O plano Professional suporta até 15.000 linhas por arquivo (25 MB) e o plano Enterprise suporta até 1.000.000 de linhas por arquivo (50 MB).',
       },
     ],
     relatedRules: [
@@ -996,7 +996,7 @@ export const ERP_SEO_PAGES = [
       {
         question: 'Posso testar o cenário da tabela TGFPAR do Sankhya gratuitamente?',
         answer:
-          'Sim. O simulador na página inicial já conta com aba dedicada ao Sankhya Om (TGFPAR), e o plano Starter Gratuito valida até 20 arquivos reais por mês.',
+          'Sim. O simulador na página inicial já conta com aba dedicada ao Sankhya Om (TGFPAR), e o plano Starter Gratuito valida até 5 arquivos reais por mês (até 500 linhas/arquivo).',
       },
       {
         question: 'A coluna CGC_CPF aceita documentos com máscara?',
@@ -1139,7 +1139,7 @@ export const ERP_SEO_PAGES = [
       {
         question: 'Quanto custa validar planilhas para o Omie no DataConform?',
         answer:
-          'O plano Starter é gratuito (até 20 arquivos/mês de 1.000 linhas). O plano Professional custa R$ 79,90/mês (até 500 arquivos de 50.000 linhas).',
+          'O plano Starter é gratuito (até 5 arquivos/mês de 500 linhas). O plano Professional custa R$ 79,90/mês (até 500 arquivos de 15.000 linhas).',
       },
     ],
     relatedRules: [
@@ -1258,7 +1258,7 @@ export const ERP_SEO_PAGES = [
       {
         question: 'Preciso cadastrar cartão de crédito para usar o plano gratuito?',
         answer:
-          'Não. O plano Starter Gratuito é ativado imediatamente ao criar sua conta corporativa, sem necessidade de informar cartão de crédito, oferecendo até 20 validações de arquivos por mês.',
+          'Não. O plano Starter Gratuito é ativado imediatamente ao criar sua conta corporativa, sem necessidade de informar cartão de crédito, oferecendo até 5 validações de arquivos por mês.',
       },
     ],
     relatedRules: [

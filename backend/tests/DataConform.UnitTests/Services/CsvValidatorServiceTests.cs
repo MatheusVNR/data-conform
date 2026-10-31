@@ -286,4 +286,28 @@ public class CsvValidatorServiceTests
         Assert.Equal(3, result.TotalRows);
         Assert.Contains(result.Issues, i => i.IssueCode == "DUPLICATE_ROW" && i.RowNumber == 3);
     }
+
+    [Fact]
+    public async Task ValidateCsvStreamAsync_DuplicateErpPrimaryKeysAcrossDistinctRows_ShouldReportDuplicatePrimaryKey()
+    {
+        string protheusCsv = "A1_COD,A1_LOJA,A1_NOME,A1_CGC\n" +
+                             "000100,01,Cliente Matriz LTDA,12.345.678/0001-95\n" +
+                             "000100,02,Cliente Filial LTDA,11.222.333/0001-81\n" +
+                             "000100,01,Outro Cliente Com Mesma Chave SA,06.990.590/0001-23";
+        byte[] bytes = Encoding.UTF8.GetBytes(protheusCsv);
+        using MemoryStream stream = new MemoryStream(bytes);
+        Guid fileId = Guid.NewGuid();
+
+        FileValidationResult result = await _validator.ValidateCsvStreamAsync(stream, fileId);
+
+        Assert.Equal(3, result.TotalRows);
+        Assert.Equal(2, result.ValidRows);
+        Assert.Equal(1, result.ErrorRows);
+        Assert.Contains(
+            result.Issues,
+            i => i.IssueCode == "DUPLICATE_PRIMARY_KEY" &&
+                 i.RowNumber == 4 &&
+                 i.Severity == IssueSeverity.Error &&
+                 i.RawValue == "000100/01");
+    }
 }

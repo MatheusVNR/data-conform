@@ -70,4 +70,24 @@ describe('FileList', () => {
 
     expect(screen.getAllByRole('button', { name: /Ver Laudo/i })).toHaveLength(1);
   });
+
+  it('dispara validação em 1 clique aplicando automaticamente o dicionário obrigatório do ERP', async () => {
+    const onValidateMock = vi.fn().mockResolvedValue(undefined);
+    render(
+      <FileList
+        files={buildFiles(1)}
+        targetSystem="TOTVS Protheus"
+        onValidate={onValidateMock}
+        onViewReport={vi.fn()}
+        validatingFileId={null}
+      />
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /Validar Agora/i }));
+
+    expect(onValidateMock).toHaveBeenCalledTimes(1);
+    expect(onValidateMock.mock.calls[0][0]).toBe('f1');
+    expect(String(onValidateMock.mock.calls[0][1])).toContain('A1_COD');
+    expect(String(onValidateMock.mock.calls[0][1])).toContain('A1_CGC');
+  });
 });

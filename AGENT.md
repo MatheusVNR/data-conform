@@ -129,8 +129,8 @@ export async function updateWorkspace(
 
 ### 4.2. Invariantes de Negócio (Regras Invioláveis)
 1. **Isolamento de Cota e Limites por Plano (`PlanTier`)**:
-   - `Starter`: Máx. **20 arquivos/mês**, **1.000 linhas/arquivo**, **5 MB/arquivo**, até **2 arquivos simultâneos** por lote.
-   - `Professional`: Máx. **500 arquivos/mês**, **50.000 linhas/arquivo**, **25 MB/arquivo**, até **5 arquivos simultâneos** por lote.
+   - `Starter`: Máx. **5 arquivos/mês**, **500 linhas/arquivo**, **5 MB/arquivo**, até **2 arquivos simultâneos** por lote.
+   - `Professional`: Máx. **500 arquivos/mês**, **15.000 linhas/arquivo**, **25 MB/arquivo**, até **5 arquivos simultâneos** por lote.
    - `Enterprise`: Máx. **10.000 arquivos/mês**, **1.000.000 linhas/arquivo**, **50 MB/arquivo**, até **10 arquivos simultâneos** por lote.
 2. **Idempotência de Confirmação Stripe**: Um mesmo `session_id` de pagamento do Stripe nunca pode ser reutilizado para múltiplos upgrades (verificado via `AuditLogs` com `Action == "StripeCheckoutConfirmed"`).
 3. **Proteção contra Orfandade de Workspace**: O último `Workspace` remanescente ou o workspace primário vinculado a usuários ativos não pode ser excluído.

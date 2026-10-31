@@ -15,6 +15,9 @@ public class Workspace
     public int MonthlyFilesUploaded { get; set; } = 0;
     public int MonthlyFilesQuota { get; set; } = 5;
     public int MaxRowsPerFile { get; set; } = 500;
+    public string? StripeCustomerId { get; set; }
+    public string? StripeSubscriptionId { get; set; }
+    public DateTimeOffset? PlanExpiresAtUtc { get; set; }
 
     public ICollection<ImportProject> Projects { get; set; } = new List<ImportProject>();
     public ICollection<User> Users { get; set; } = new List<User>();

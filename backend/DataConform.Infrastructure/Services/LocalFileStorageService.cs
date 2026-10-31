@@ -55,4 +55,41 @@ public class LocalFileStorageService : IFileStorageService
 
         return Task.CompletedTask;
     }
+
+    public Task<int> PurgeExpiredFilesAsync(TimeSpan maxAge, CancellationToken cancellationToken = default)
+    {
+        if (!Directory.Exists(_storageDirectory))
+        {
+            return Task.FromResult(0);
+        }
+
+        DateTime cutoffUtc = DateTime.UtcNow.Subtract(maxAge);
+        string[] files = Directory.GetFiles(_storageDirectory);
+        int deletedCount = 0;
+
+        foreach (string filePath in files)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                DateTime lastWriteUtc = File.GetLastWriteTimeUtc(filePath);
+                if (lastWriteUtc <= cutoffUtc)
+                {
+                    File.Delete(filePath);
+                    deletedCount++;
+                }
+            }
+            catch (IOException)
+            {
+                // Ignora arquivo temporariamente em uso por leitura concorrente
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Ignora falhas transitórias de permissão de sistema de arquivos
+            }
+        }
+
+        return Task.FromResult(deletedCount);
+    }
 }
