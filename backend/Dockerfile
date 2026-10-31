@@ -18,8 +18,8 @@ RUN dotnet restore DataConform.sln
 # Copy the remaining source files
 COPY . .
 
-# Run automated tests during build
-RUN dotnet test tests/DataConform.UnitTests/DataConform.UnitTests.csproj --configuration Release --no-restore
+# Run automated tests during build (gerenciado pela esteira de CI do GitHub Actions para acelerar o deploy)
+# RUN dotnet test tests/DataConform.UnitTests/DataConform.UnitTests.csproj --configuration Release --no-restore
 
 # Publish the API in Release mode
 RUN dotnet publish DataConform.Api/DataConform.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
