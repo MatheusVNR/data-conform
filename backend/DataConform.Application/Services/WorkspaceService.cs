@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.EntityFrameworkCore;
 using DataConform.Application.Common.Interfaces;
 using DataConform.Application.Common.Models;
@@ -9,6 +10,8 @@ namespace DataConform.Application.Services;
 
 public class WorkspaceService : IWorkspaceService
 {
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> WebhookEventLocks = new();
+
     private const string ForbiddenTitle = "Acesso negado à organização";
     private const string ForbiddenMessage = "Você não possui permissão para visualizar ou modificar recursos desta organização.";
 
@@ -482,119 +485,151 @@ public class WorkspaceService : IWorkspaceService
                 webhookEvent.ErrorMessage ?? "Assinatura de webhook inválida.");
         }
 
+        SemaphoreSlim? eventLock = null;
         if (!string.IsNullOrWhiteSpace(webhookEvent.EventId))
         {
-            bool eventAlreadyHandled = await _dbContext.AuditLogs
-                .IgnoreQueryFilters()
-                .AnyAsync(
-                    a => a.Action == "StripeWebhookProcessed" && a.EntityId == webhookEvent.EventId,
-                    cancellationToken);
+            eventLock = WebhookEventLocks.GetOrAdd(webhookEvent.EventId, _ => new SemaphoreSlim(1, 1));
+            await eventLock.WaitAsync(cancellationToken);
+        }
 
-            if (eventAlreadyHandled)
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(webhookEvent.EventId))
+            {
+                bool eventAlreadyHandled = await _dbContext.AuditLogs
+                    .IgnoreQueryFilters()
+                    .AnyAsync(
+                        a => a.Action == "StripeWebhookProcessed" && a.EntityId == webhookEvent.EventId,
+                        cancellationToken);
+
+                if (eventAlreadyHandled)
+                {
+                    return ServiceResult.Success();
+                }
+            }
+
+            Workspace? targetWorkspace = null;
+
+            if (webhookEvent.ClientReferenceWorkspaceId.HasValue)
+            {
+                Guid refWsId = webhookEvent.ClientReferenceWorkspaceId.Value;
+                targetWorkspace = await _dbContext.Workspaces
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(w => w.Id == refWsId, cancellationToken);
+            }
+
+            if (targetWorkspace == null && !string.IsNullOrWhiteSpace(webhookEvent.SubscriptionId))
+            {
+                targetWorkspace = await _dbContext.Workspaces
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(w => w.StripeSubscriptionId == webhookEvent.SubscriptionId, cancellationToken);
+            }
+
+            if (targetWorkspace == null && !string.IsNullOrWhiteSpace(webhookEvent.CustomerId))
+            {
+                targetWorkspace = await _dbContext.Workspaces
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(w => w.StripeCustomerId == webhookEvent.CustomerId, cancellationToken);
+            }
+
+            if (targetWorkspace == null)
             {
                 return ServiceResult.Success();
             }
-        }
 
-        Workspace? targetWorkspace = null;
+            string eventType = webhookEvent.EventType ?? string.Empty;
 
-        if (webhookEvent.ClientReferenceWorkspaceId.HasValue)
-        {
-            Guid refWsId = webhookEvent.ClientReferenceWorkspaceId.Value;
-            targetWorkspace = await _dbContext.Workspaces
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(w => w.Id == refWsId, cancellationToken);
-        }
-
-        if (targetWorkspace == null && !string.IsNullOrWhiteSpace(webhookEvent.SubscriptionId))
-        {
-            targetWorkspace = await _dbContext.Workspaces
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(w => w.StripeSubscriptionId == webhookEvent.SubscriptionId, cancellationToken);
-        }
-
-        if (targetWorkspace == null && !string.IsNullOrWhiteSpace(webhookEvent.CustomerId))
-        {
-            targetWorkspace = await _dbContext.Workspaces
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(w => w.StripeCustomerId == webhookEvent.CustomerId, cancellationToken);
-        }
-
-        if (targetWorkspace == null)
-        {
-            return ServiceResult.Success();
-        }
-
-        string eventType = webhookEvent.EventType ?? string.Empty;
-
-        if (string.Equals(eventType, "checkout.session.completed", StringComparison.OrdinalIgnoreCase))
-        {
-            PlanTier targetPlan = webhookEvent.ResolvedPlan ?? PlanTier.Professional;
-            if (!string.IsNullOrWhiteSpace(webhookEvent.CustomerId))
+            if (string.Equals(eventType, "checkout.session.completed", StringComparison.OrdinalIgnoreCase))
             {
-                targetWorkspace.StripeCustomerId = webhookEvent.CustomerId;
-            }
-            if (!string.IsNullOrWhiteSpace(webhookEvent.SubscriptionId))
-            {
-                targetWorkspace.StripeSubscriptionId = webhookEvent.SubscriptionId;
-            }
+                // Proteção contra sobrescrita fora de ordem: se o workspace já possui uma assinatura diferente e ativa, não sobrescreve com uma sessão antiga atrasada
+                bool hasDifferentActiveSub = !string.IsNullOrWhiteSpace(targetWorkspace.StripeSubscriptionId) &&
+                    !string.IsNullOrWhiteSpace(webhookEvent.SubscriptionId) &&
+                    !string.Equals(targetWorkspace.StripeSubscriptionId, webhookEvent.SubscriptionId, StringComparison.OrdinalIgnoreCase);
 
-            await _quotaService.UpdatePlanAsync(targetWorkspace.Id, targetPlan, cancellationToken);
-
-            if (!string.IsNullOrWhiteSpace(webhookEvent.SessionId))
-            {
-                bool sessionLogged = await _dbContext.AuditLogs
-                    .IgnoreQueryFilters()
-                    .AnyAsync(
-                        a => a.Action == "StripeCheckoutConfirmed" && a.EntityId == webhookEvent.SessionId,
-                        cancellationToken);
-
-                if (!sessionLogged)
+                if (!hasDifferentActiveSub)
                 {
-                    await _auditService.LogAsync(
-                        targetWorkspace.Id,
-                        null,
-                        "StripeCheckoutConfirmed",
-                        "StripeSession",
-                        webhookEvent.SessionId,
-                        $"Assinatura ativada via Webhook Stripe ({targetPlan}).",
-                        cancellationToken);
+                    PlanTier targetPlan = webhookEvent.ResolvedPlan ?? PlanTier.Professional;
+                    if (!string.IsNullOrWhiteSpace(webhookEvent.CustomerId))
+                    {
+                        targetWorkspace.StripeCustomerId = webhookEvent.CustomerId;
+                    }
+                    if (!string.IsNullOrWhiteSpace(webhookEvent.SubscriptionId))
+                    {
+                        targetWorkspace.StripeSubscriptionId = webhookEvent.SubscriptionId;
+                    }
+
+                    await _quotaService.UpdatePlanAsync(targetWorkspace.Id, targetPlan, cancellationToken);
+                }
+
+                if (!string.IsNullOrWhiteSpace(webhookEvent.SessionId))
+                {
+                    bool sessionLogged = await _dbContext.AuditLogs
+                        .IgnoreQueryFilters()
+                        .AnyAsync(
+                            a => a.Action == "StripeCheckoutConfirmed" && a.EntityId == webhookEvent.SessionId,
+                            cancellationToken);
+
+                    if (!sessionLogged)
+                    {
+                        await _auditService.LogAsync(
+                            targetWorkspace.Id,
+                            null,
+                            "StripeCheckoutConfirmed",
+                            "StripeSession",
+                            webhookEvent.SessionId,
+                            $"Assinatura ativada via Webhook Stripe ({webhookEvent.ResolvedPlan ?? PlanTier.Professional}).",
+                            cancellationToken);
+                    }
                 }
             }
-        }
-        else if (string.Equals(eventType, "customer.subscription.deleted", StringComparison.OrdinalIgnoreCase))
-        {
-            targetWorkspace.StripeSubscriptionId = null;
-            targetWorkspace.PlanExpiresAtUtc = null;
-            await _quotaService.UpdatePlanAsync(targetWorkspace.Id, PlanTier.Starter, cancellationToken);
-        }
-        else if (string.Equals(eventType, "invoice.payment_failed", StringComparison.OrdinalIgnoreCase))
-        {
-            // Cobrança falhou: mantemos o plano ativo durante o período de tolerância (Grace Period / Smart Retries da Stripe).
-            // O downgrade definitivo só ocorre quando a Stripe efetivamente cancelar a assinatura (customer.subscription.deleted).
-            await _auditService.LogAsync(
-                targetWorkspace.Id,
-                null,
-                "StripePaymentFailed",
-                "StripeInvoice",
-                webhookEvent.EventId ?? "invoice_failed",
-                "Cobrança recorrente falhou na Stripe. Assinatura em período de tolerância (Smart Retries ativo).",
-                cancellationToken);
-        }
+            else if (string.Equals(eventType, "customer.subscription.deleted", StringComparison.OrdinalIgnoreCase))
+            {
+                // Proteção contra eventos fora de ordem: apenas desfaz a assinatura se corresponder à assinatura ativa do workspace
+                if (string.IsNullOrWhiteSpace(targetWorkspace.StripeSubscriptionId) ||
+                    string.IsNullOrWhiteSpace(webhookEvent.SubscriptionId) ||
+                    string.Equals(targetWorkspace.StripeSubscriptionId, webhookEvent.SubscriptionId, StringComparison.OrdinalIgnoreCase))
+                {
+                    targetWorkspace.StripeSubscriptionId = null;
+                    targetWorkspace.PlanExpiresAtUtc = null;
+                    await _quotaService.UpdatePlanAsync(targetWorkspace.Id, PlanTier.Starter, cancellationToken);
+                }
+            }
+            else if (string.Equals(eventType, "invoice.payment_failed", StringComparison.OrdinalIgnoreCase))
+            {
+                // Cobrança falhou: mantemos o plano ativo durante o período de tolerância (Grace Period / Smart Retries da Stripe).
+                // O downgrade definitivo só ocorre quando a Stripe efetivamente cancelar a assinatura (customer.subscription.deleted).
+                await _auditService.LogAsync(
+                    targetWorkspace.Id,
+                    null,
+                    "StripePaymentFailed",
+                    "StripeInvoice",
+                    webhookEvent.EventId ?? "invoice_failed",
+                    "Cobrança recorrente falhou na Stripe. Assinatura em período de tolerância (Smart Retries ativo).",
+                    cancellationToken);
+            }
 
-        if (!string.IsNullOrWhiteSpace(webhookEvent.EventId))
-        {
-            await _auditService.LogAsync(
-                targetWorkspace.Id,
-                null,
-                "StripeWebhookProcessed",
-                "StripeWebhook",
-                webhookEvent.EventId,
-                $"Evento Stripe '{eventType}' processado com sucesso.",
-                cancellationToken);
-        }
+            if (!string.IsNullOrWhiteSpace(webhookEvent.EventId))
+            {
+                await _auditService.LogAsync(
+                    targetWorkspace.Id,
+                    null,
+                    "StripeWebhookProcessed",
+                    "StripeWebhook",
+                    webhookEvent.EventId,
+                    $"Evento Stripe '{eventType}' processado com sucesso.",
+                    cancellationToken);
+            }
 
-        return ServiceResult.Success();
+            return ServiceResult.Success();
+        }
+        finally
+        {
+            if (eventLock != null && !string.IsNullOrWhiteSpace(webhookEvent.EventId))
+            {
+                eventLock.Release();
+                WebhookEventLocks.TryRemove(webhookEvent.EventId, out _);
+            }
+        }
     }
 
     private static WorkspaceDto MapToWorkspaceDto(Workspace workspace, int projectsCount)

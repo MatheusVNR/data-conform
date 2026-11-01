@@ -210,4 +210,73 @@ public class StripeBillingServiceTests
         ServiceResult tamperedResult = await workspaceService.HandleStripeWebhookAsync(completedPayload, "t=12345,v1=deadbeef");
         Assert.False(tamperedResult.IsSuccess);
     }
+
+    [Fact]
+    public async Task HandleStripeWebhookAsync_ConcurrentDuplicateDeliveries_ShouldBeIdempotent()
+    {
+        const string webhookSecret = "whsec_unit_test_secret_concurrency";
+        Dictionary<string, string?> configMap = new Dictionary<string, string?>
+        {
+            { "Stripe:SecretKey", "sk_test_mock_secret" },
+            { "Stripe:WebhookSecret", webhookSecret }
+        };
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configMap)
+            .Build();
+
+        using HttpClient httpClient = new HttpClient(new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)));
+        StripeBillingService stripeBilling = new StripeBillingService(httpClient, configuration);
+
+        using DataConformDbContext dbContext = CreateInMemoryContext();
+        TenantAccessService tenantAccess = new TenantAccessService(dbContext);
+        SubscriptionQuotaService quotaService = new SubscriptionQuotaService(dbContext);
+        AuditService auditService = new AuditService(dbContext, tenantAccess);
+        WorkspaceService workspaceService = new WorkspaceService(
+            dbContext,
+            quotaService,
+            auditService,
+            tenantAccess,
+            stripeBilling);
+
+        Guid ownerId = Guid.NewGuid();
+        ServiceResult<WorkspaceDto> createdWs = await workspaceService.CreateWorkspaceAsync(
+            new CreateWorkspaceRequest { Name = "Concurrent Corp", Slug = "concurrent-corp" },
+            ownerId);
+        Guid workspaceId = createdWs.Data!.Id;
+
+        long nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        string completedPayload = $$"""
+        {
+          "id": "evt_concurrent_999",
+          "type": "checkout.session.completed",
+          "data": {
+            "object": {
+              "id": "cs_concurrent_123",
+              "object": "checkout.session",
+              "client_reference_id": "{{workspaceId}}",
+              "customer": "cus_concurrent_1",
+              "subscription": "sub_concurrent_1",
+              "amount_total": 7990
+            }
+          }
+        }
+        """;
+
+        string validSignature = CreateStripeSignatureHeader(completedPayload, webhookSecret, nowUnix);
+
+        // Disparar duas entregas concorrentes simultâneas do mesmo evento
+        Task<ServiceResult> task1 = Task.Run(() => workspaceService.HandleStripeWebhookAsync(completedPayload, validSignature));
+        Task<ServiceResult> task2 = Task.Run(() => workspaceService.HandleStripeWebhookAsync(completedPayload, validSignature));
+
+        ServiceResult[] results = await Task.WhenAll(task1, task2);
+        Assert.All(results, r => Assert.True(r.IsSuccess));
+
+        Workspace? ws = await dbContext.Workspaces.FirstAsync(w => w.Id == workspaceId);
+        Assert.Equal(PlanTier.Professional, ws.Plan);
+        Assert.Equal("sub_concurrent_1", ws.StripeSubscriptionId);
+
+        int processedAuditCount = await dbContext.AuditLogs
+            .CountAsync(a => a.Action == "StripeWebhookProcessed" && a.EntityId == "evt_concurrent_999");
+        Assert.Equal(1, processedAuditCount);
+    }
 }
