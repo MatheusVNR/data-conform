@@ -1672,6 +1672,17 @@ input::-ms-clear {
   line-height: 1.4;
 }
 
+.inline-alert-success {
+  background-color: var(--success-bg, rgba(16, 185, 129, 0.1));
+  border: 1px solid var(--success-border, rgba(16, 185, 129, 0.3));
+  color: var(--success-text, #059669);
+  padding: 0.75rem 0.95rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 .auth-security-note {
   display: flex;
   align-items: center;

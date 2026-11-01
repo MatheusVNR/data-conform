@@ -113,12 +113,14 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
   const [showManualSession, setShowManualSession] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const actionSectionRef = useRef<HTMLDivElement>(null);
 
   const handleSelectPlan = (planKey: 'Starter' | 'Professional' | 'Enterprise'): void => {
     setSelectedPlan(planKey);
     setConfirmCancel(false);
     setError(null);
+    setSuccessMessage(null);
     setTimeout(() => {
       actionSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 60);
@@ -149,14 +151,20 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
     selectedPlan === 'Starter' &&
     currentPlanLabel !== 'Starter';
 
-  const handleProceedToStripe = (): void => {
+  const handleProceedToStripe = async (): Promise<void> => {
     if (!workspace) {
       onClose();
       onRequireAuth();
       return;
     }
 
+    if (loading) {
+      return;
+    }
+
     setError(null);
+    setSuccessMessage(null);
+
     const targetUrl: string =
       selectedPlan === 'Professional'
         ? STRIPE_PRO_URL
@@ -168,33 +176,48 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
       const planConfig = PLANS.find((p) => p.key === selectedPlan);
       const configuredPrice = planConfig?.price ?? (selectedPlan === 'Professional' ? 'R$ 79,90 / mês' : 'R$ 249,90 / mês');
 
+      // O evento 'checkout_started' representa estritamente o início da intenção comercial
       trackEvent('checkout_started', {
         targetPlan: selectedPlan,
         price: configuredPrice,
         workspaceId: workspace.id,
+        stage: 'intent_initiated',
       });
 
-      // Registra o interesse comercial de forma estruturada e recuperável no banco Neon
-      void createCustomerFeedback({
-        workspaceId: workspace.id,
-        category: 'commercial_upgrade_interest',
-        rating: 5,
-        subject: `Interesse no Plano ${selectedPlan}`,
-        message: JSON.stringify({
-          plan: selectedPlan,
-          price: configuredPrice,
-          firstTouch: attribution.firstTouch,
-          lastTouch: attribution.lastTouch,
-          registeredAt: new Date().toISOString(),
-        }),
-        contactEmail: userEmail || undefined,
-      }).catch(() => {
-        // Fallback resiliente: falha de rede na auditoria não afeta a experiência
-      });
+      setLoading(true);
 
-      setError(
-        `Os planos comerciais pagos estão em fase final de homologação. Registramos seu interesse prioritário no plano ${selectedPlan} (${configuredPrice})! Você receberá condições exclusivas de lançamento assim que as contratações forem abertas. Enquanto isso, seu plano gratuito Starter continua 100% ativo com todos os dicionários de ERP inclusos.`
-      );
+      try {
+        await createCustomerFeedback({
+          workspaceId: workspace.id,
+          category: 'commercial_upgrade_interest',
+          rating: 5,
+          subject: `Interesse no Plano ${selectedPlan}`,
+          message: JSON.stringify({
+            plan: selectedPlan,
+            price: configuredPrice,
+            firstTouch: attribution.firstTouch,
+            lastTouch: attribution.lastTouch,
+            registeredAt: new Date().toISOString(),
+          }),
+          contactEmail: userEmail || undefined,
+        });
+
+        // Confirmação exibida estritamente após a resposta de sucesso da API
+        setSuccessMessage(
+          `Os planos comerciais pagos estão em fase final de homologação. Registramos seu interesse prioritário no plano ${selectedPlan} (${configuredPrice})! Você receberá condições exclusivas de lançamento assim que as contratações forem abertas. Enquanto isso, seu plano gratuito Starter continua 100% ativo com todos os dicionários de ERP inclusos.`
+        );
+      } catch (err: unknown) {
+        // Falha de rede ou de backend: informa o usuário honestamente e oferece canal direto
+        const technicalDetail = err instanceof Error ? err.message : 'Falha na comunicação com o servidor';
+        console.error('[DataConform Commercial Audit] Erro ao registrar interesse de plano:', technicalDetail);
+
+        setError(
+          `Não foi possível registrar seu interesse automaticamente neste momento. Para garantir sua condição prioritária de lançamento no plano ${selectedPlan} (${configuredPrice}), entre em contato pelo e-mail contato@dataconform.com.br.`
+        );
+      } finally {
+        setLoading(false);
+      }
+
       return;
     }
 
@@ -367,6 +390,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
           )}
 
           {error && <div className="inline-alert-error">{error}</div>}
+          {successMessage && <div className="inline-alert-success">{successMessage}</div>}
 
           <div className="plans-grid">
             {PLANS.map((plan: PlanOption) => {
