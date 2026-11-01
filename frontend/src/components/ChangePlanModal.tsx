@@ -165,8 +165,12 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
     // Em produção com Stripe Live congelado, registra o interesse e orienta o usuário com transparência
     if (!import.meta.env.DEV || !targetUrl || targetUrl.includes('/test_')) {
       const attribution = getAttributionPayload();
+      const planConfig = PLANS.find((p) => p.key === selectedPlan);
+      const configuredPrice = planConfig?.price ?? (selectedPlan === 'Professional' ? 'R$ 79,90 / mês' : 'R$ 249,90 / mês');
+
       trackEvent('checkout_started', {
         targetPlan: selectedPlan,
+        price: configuredPrice,
         workspaceId: workspace.id,
       });
 
@@ -178,7 +182,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
         subject: `Interesse no Plano ${selectedPlan}`,
         message: JSON.stringify({
           plan: selectedPlan,
-          price: selectedPlan === 'Professional' ? 'R$ 79,90/mês' : 'R$ 249,90/mês',
+          price: configuredPrice,
           firstTouch: attribution.firstTouch,
           lastTouch: attribution.lastTouch,
           registeredAt: new Date().toISOString(),
@@ -189,7 +193,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
       });
 
       setError(
-        `Os planos comerciais pagos estão em fase final de homologação. Registramos seu interesse prioritário no plano ${selectedPlan} (${selectedPlan === 'Professional' ? 'R$ 79,90/mês' : 'R$ 249,90/mês'})! Você receberá condições exclusivas de lançamento assim que as contratações forem abertas. Enquanto isso, seu plano gratuito Starter continua 100% ativo com todos os dicionários de ERP inclusos.`
+        `Os planos comerciais pagos estão em fase final de homologação. Registramos seu interesse prioritário no plano ${selectedPlan} (${configuredPrice})! Você receberá condições exclusivas de lançamento assim que as contratações forem abertas. Enquanto isso, seu plano gratuito Starter continua 100% ativo com todos os dicionários de ERP inclusos.`
       );
       return;
     }
