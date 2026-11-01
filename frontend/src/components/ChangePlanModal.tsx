@@ -3,7 +3,7 @@ import type { FC } from 'react';
 import type { WorkspaceDto, WorkspaceQuotaDto } from '../types';
 import { PlanTierLabels } from '../types';
 import { changeWorkspacePlan, confirmStripeCheckout, createCustomerFeedback } from '../services/api';
-import { trackEvent } from '../utils/analytics';
+import { trackEvent, getAttributionPayload } from '../utils/analytics';
 
 interface ChangePlanModalProps {
   isOpen: boolean;
@@ -164,10 +164,30 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
 
     // Em produção com Stripe Live congelado, registra o interesse e orienta o usuário com transparência
     if (!import.meta.env.DEV || !targetUrl || targetUrl.includes('/test_')) {
+      const attribution = getAttributionPayload();
       trackEvent('checkout_started', {
         targetPlan: selectedPlan,
         workspaceId: workspace.id,
       });
+
+      // Registra o interesse comercial de forma estruturada e recuperável no banco Neon
+      void createCustomerFeedback({
+        workspaceId: workspace.id,
+        category: 'commercial_upgrade_interest',
+        rating: 5,
+        subject: `Interesse no Plano ${selectedPlan}`,
+        message: JSON.stringify({
+          plan: selectedPlan,
+          price: selectedPlan === 'Professional' ? 'R$ 79,90/mês' : 'R$ 249,90/mês',
+          firstTouch: attribution.firstTouch,
+          lastTouch: attribution.lastTouch,
+          registeredAt: new Date().toISOString(),
+        }),
+        contactEmail: userEmail || undefined,
+      }).catch(() => {
+        // Fallback resiliente: falha de rede na auditoria não afeta a experiência
+      });
+
       setError(
         `Os planos comerciais pagos estão em fase final de homologação. Registramos seu interesse prioritário no plano ${selectedPlan} (${selectedPlan === 'Professional' ? 'R$ 79,90/mês' : 'R$ 249,90/mês'})! Você receberá condições exclusivas de lançamento assim que as contratações forem abertas. Enquanto isso, seu plano gratuito Starter continua 100% ativo com todos os dicionários de ERP inclusos.`
       );
