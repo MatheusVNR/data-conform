@@ -162,13 +162,15 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
         ? STRIPE_PRO_URL
         : STRIPE_ENTERPRISE_URL;
 
-    if (!targetUrl) {
-      setError('O checkout online deste plano está em manutenção momentânea. Contate contato@dataconform.com.br para liberação prioritária.');
-      return;
-    }
-
-    if (!import.meta.env.DEV && targetUrl.includes('/test_')) {
-      setError('Links de teste do Stripe não são permitidos em ambiente de produção.');
+    // Em produção com Stripe Live congelado, registra o interesse e orienta o usuário com transparência
+    if (!import.meta.env.DEV || !targetUrl || targetUrl.includes('/test_')) {
+      trackEvent('checkout_started', {
+        targetPlan: selectedPlan,
+        workspaceId: workspace.id,
+      });
+      setError(
+        `Os planos comerciais pagos estão em fase final de homologação. Registramos seu interesse prioritário no plano ${selectedPlan} (${selectedPlan === 'Professional' ? 'R$ 79,90/mês' : 'R$ 249,90/mês'})! Você receberá condições exclusivas de lançamento assim que as contratações forem abertas. Enquanto isso, seu plano gratuito Starter continua 100% ativo com todos os dicionários de ERP inclusos.`
+      );
       return;
     }
 
