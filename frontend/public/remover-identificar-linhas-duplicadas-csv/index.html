@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Identificar Linhas Duplicadas no CSV","item":"https://dataconform.com.br/remover-identificar-linhas-duplicadas-csv/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"O DataConform detecta linhas duplicadas mesmo se uma estiver em maiúsculas e outra em minúsculas?","acceptedAnswer":{"@type":"Answer","text":"Sim. Antes de calcular o hash XxHash64 de 64 bits, o motor normaliza a linha para maiúsculas (ToUpperInvariant) e remove espaços nas extremidades, capturando duplicidades independentemente de caixa alta ou baixa."}},{"@type":"Question","name":"E se houver duas colunas com o mesmo nome no cabeçalho da planilha?","acceptedAnswer":{"@type":"Answer","text":"Para colunas repetidas na linha #1, o DataConform emite um erro específico chamado DUPLICATE_HEADER, impedindo ambiguidade no mapeamento de campos do ERP."}},{"@type":"Question","name":"Qual o limite de linhas para verificar duplicidades no DataConform?","acceptedAnswer":{"@type":"Answer","text":"Graças ao uso de hashes de 64 bits (XxHash64) em memória durante a leitura em stream, o DataConform processa até 500 linhas no plano Starter, 15.000 linhas no Professional e 1.000.000 de linhas no Enterprise."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

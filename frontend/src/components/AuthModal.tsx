@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FC, FormEvent } from 'react';
 import type { AuthResponseDto, LoginRequestDto, RegisterRequestDto } from '../types';
 import { login, register } from '../services/api';
+import { getAttributionPayload, trackEvent } from '../utils/analytics';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export const AuthModal: FC<AuthModalProps> = ({
   const [workspaceName, setWorkspaceName] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const signupStartedFiredRef = useRef<boolean>(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -41,6 +43,18 @@ export const AuthModal: FC<AuthModalProps> = ({
     };
   }, [isOpen, onClose]);
 
+  useEffect(() => {
+    if (isOpen && isRegister && !signupStartedFiredRef.current) {
+      signupStartedFiredRef.current = true;
+      trackEvent('signup_started', {
+        erpPreset: getAttributionPayload().activeErp,
+      });
+    }
+    if (!isOpen) {
+      signupStartedFiredRef.current = false;
+    }
+  }, [isOpen, isRegister]);
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
@@ -50,13 +64,20 @@ export const AuthModal: FC<AuthModalProps> = ({
 
     try {
       if (isRegister) {
+        const attribution = getAttributionPayload();
         const req: RegisterRequestDto = {
           email: email.trim(),
           password,
           fullName: fullName.trim(),
           workspaceName: workspaceName.trim() || undefined,
+          erpPreset: attribution.activeErp,
+          attributionJson: JSON.stringify(attribution),
         };
         const authData: AuthResponseDto = await register(req);
+        trackEvent('signup_completed', {
+          workspaceSlug: authData.workspaceSlug,
+          erpPreset: attribution.activeErp,
+        });
         await onSuccess(authData);
       } else {
         const req: LoginRequestDto = {

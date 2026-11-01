@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"Senior ERP — E085CLI (Clientes Sapiens)","item":"https://dataconform.com.br/layout-importacao-senior-erp-e085cli-clientes/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"O DataConform reconhece automaticamente os campos EmaCli, CgcCpf, VlrLim e CodEst?","acceptedAnswer":{"@type":"Answer","text":"Sim. O motor possui suporte nativo aos nomes de colunas da tabela E085CLI do Senior ERP sem necessidade de renomear cabeçalhos."}},{"@type":"Question","name":"O que ocorre se a coluna SitCli estiver vazia em algumas linhas?","acceptedAnswer":{"@type":"Answer","text":"Qualquer linha com SitCli em branco recebe o apontamento REQUIRED_FIELD_MISSING indicando a linha afetada."}},{"@type":"Question","name":"Posso usar ponto e vírgula (;) como separador no CSV para o Senior ERP?","acceptedAnswer":{"@type":"Answer","text":"Sim. O DataConform detecta automaticamente vírgula, ponto e vírgula ou tabulação como delimitador."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

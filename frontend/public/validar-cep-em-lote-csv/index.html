@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Validar CEP em Lote na Planilha CSV","item":"https://dataconform.com.br/validar-cep-em-lote-csv/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"O CEP precisa ter o traço (01001-000) ou pode conter apenas números (01001000)?","acceptedAnswer":{"@type":"Answer","text":"Ambos são válidos. O DataConform avalia os dígitos numéricos da célula, aprovando tanto 01001-000 quanto 01001000."}},{"@type":"Question","name":"Por que o DataConform bloqueia o CEP 00000-000 mesmo tendo 8 dígitos?","acceptedAnswer":{"@type":"Answer","text":"Porque 00000000 é um preenchimento artificial utilizado para burlar campos obrigatórios e causa rejeição na validação de endereço da NF-e e nos ERPs."}},{"@type":"Question","name":"Quais presets do DataConform exigem a coluna de CEP obrigatoriamente?","acceptedAnswer":{"@type":"Answer","text":"Os presets TOTVS Protheus SA1 (A1_CEP), SAP Business One OCRD (ZipCode), Sankhya TGFPAR (CEP), Omie (cep) e Genérico / CSV exigem a presença da coluna de CEP no cabeçalho."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

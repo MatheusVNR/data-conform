@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Validar E-mails em Lote no CSV","item":"https://dataconform.com.br/validar-email-em-lote-planilha-csv/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quais nomes de coluna acionam a validação de e-mail automaticamente?","acceptedAnswer":{"@type":"Answer","text":"Qualquer coluna que contenha os termos email, e-mail ou e_mail (como A1_EMAIL, A2_EMAIL, E_Mail, email_nfe), além do campo EmaCli da tabela E085CLI do Senior ERP."}},{"@type":"Question","name":"Se a coluna de e-mail for obrigatória no preset do ERP e estiver vazia, qual erro aparece?","acceptedAnswer":{"@type":"Answer","text":"Quando o campo faz parte das colunas obrigatórias do preset e está em branco, o DataConform aponta REQUIRED_FIELD_MISSING. Quando está preenchido com um texto inválido, aponta INVALID_EMAIL_FORMAT."}},{"@type":"Question","name":"Posso testar essa validação agora mesmo sem cadastro?","acceptedAnswer":{"@type":"Answer","text":"Sim. No simulador interativo da página inicial do DataConform você pode ver o código INVALID_EMAIL_FORMAT em ação nos cenários TOTVS Protheus, SAP Business One e Sankhya."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

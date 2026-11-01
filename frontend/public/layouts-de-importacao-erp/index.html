@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quais ERPs possuem presets nativos no DataConform?","acceptedAnswer":{"@type":"Answer","text":"São 10 presets nativos (TOTVS Protheus SA1, SA2 e SB1, SAP Business One OCRD e OITM, SAP S/4HANA BP, Senior E085CLI, Sankhya TGFPAR, Omie e ContaAzul) mais o layout Genérico / CSV."}},{"@type":"Question","name":"Posso baixar uma planilha modelo CSV para cada ERP?","acceptedAnswer":{"@type":"Answer","text":"Sim. Cada preset disponibiliza para download imediato um arquivo CSV de exemplo em UTF-8 contendo o cabeçalho oficial e linhas demonstrativas."}},{"@type":"Question","name":"É possível customizar as colunas obrigatórias ao validar um arquivo?","acceptedAnswer":{"@type":"Answer","text":"Sim. O DataConform pré-carrega as colunas obrigatórias do ERP escolhido, permitindo adicionar ou ajustar nomes de colunas conforme sua implantação."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

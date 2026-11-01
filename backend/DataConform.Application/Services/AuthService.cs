@@ -99,13 +99,15 @@ public class AuthService : IAuthService
         workspace.OwnerUserId = user.Id;
         _dbContext.Users.Add(user);
 
+        (string targetSystem, string projectName) = ResolveInitialProjectPreset(request.ErpPreset);
+
         ImportProject defaultProject = new ImportProject
         {
             Id = Guid.NewGuid(),
             WorkspaceId = workspace.Id,
-            Name = "Homologação Inicial ERP",
-            TargetSystem = "TOTVS Protheus",
-            Description = "Projeto inicial criado automaticamente para validação imediata de layouts CSV.",
+            Name = projectName,
+            TargetSystem = targetSystem,
+            Description = $"Projeto inicial criado automaticamente para homologação com {targetSystem}.",
             CreatedAt = DateTimeOffset.UtcNow
         };
 
@@ -114,13 +116,22 @@ public class AuthService : IAuthService
 
         string token = _tokenGenerator.GenerateToken(user, workspace);
 
+        string auditDetails = $"Novo usuário '{user.Email}' registrado com sucesso.";
+        if (!string.IsNullOrWhiteSpace(request.AttributionJson))
+        {
+            string sanitizedAttribution = request.AttributionJson.Length > 1000
+                ? request.AttributionJson[..1000]
+                : request.AttributionJson;
+            auditDetails += $" Atribuição: {sanitizedAttribution}";
+        }
+
         await _auditService.LogAsync(
             workspace.Id,
             user.Id,
             "UserRegistered",
             "User",
             user.Id.ToString(),
-            $"Novo usuÃ¡rio '{user.Email}' registrado com sucesso.",
+            auditDetails,
             cancellationToken);
 
         AuthResponseDto response = MapToAuthResponse(user, workspace, token);
@@ -192,6 +203,31 @@ public class AuthService : IAuthService
         string token = _tokenGenerator.GenerateToken(user, user.Workspace);
         AuthResponseDto response = MapToAuthResponse(user, user.Workspace, token);
         return ServiceResult<AuthResponseDto>.Success(response);
+    }
+
+    private static (string TargetSystem, string ProjectName) ResolveInitialProjectPreset(string? erpPreset)
+    {
+        if (string.IsNullOrWhiteSpace(erpPreset))
+        {
+            return ("TOTVS Protheus", "Homologação Inicial ERP");
+        }
+
+        string normalized = erpPreset.Trim().ToLowerInvariant();
+
+        return normalized switch
+        {
+            "omie" or "omie-clientes" => ("Omie", "Omie — Clientes e Fornecedores"),
+            "contaazul" or "contaazul-clientes" => ("ContaAzul", "ContaAzul — Clientes"),
+            "sap-b1-ocrd" or "sap-business-one" or "sap-b1" => ("SAP Business One", "SAP Business One — Parceiros (OCRD)"),
+            "sap-b1-oitm" => ("SAP Business One", "SAP Business One — Itens (OITM)"),
+            "sap-s4hana" => ("SAP S/4HANA", "SAP S/4HANA — Business Partner"),
+            "sankhya" or "sankhya-tgfpar" => ("Sankhya", "Sankhya — Parceiros (TGFPAR)"),
+            "senior" or "senior-e085cli" => ("Senior ERP", "Senior ERP — Clientes (E085CLI)"),
+            "protheus-sa2" => ("TOTVS Protheus", "TOTVS Protheus — Fornecedores (SA2)"),
+            "protheus-sb1" => ("TOTVS Protheus", "TOTVS Protheus — Produtos (SB1)"),
+            "protheus-sa1" or "protheus" => ("TOTVS Protheus", "TOTVS Protheus — Clientes (SA1)"),
+            _ => ("TOTVS Protheus", "Homologação Inicial ERP")
+        };
     }
 
     private static AuthResponseDto MapToAuthResponse(User user, Workspace workspace, string token)

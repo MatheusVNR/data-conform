@@ -104,6 +104,7 @@ public class StripeBillingService : IStripeBillingService
 
     public async Task<bool> CancelSubscriptionAsync(
         string subscriptionId,
+        bool cancelImmediately = false,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(subscriptionId))
@@ -126,7 +127,16 @@ public class StripeBillingService : IStripeBillingService
         }
 
         string requestUrl = $"{StripeApiBaseUrl}/subscriptions/{Uri.EscapeDataString(trimmedSubId)}";
-        using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Delete, requestUrl);
+        using HttpRequestMessage request = cancelImmediately
+            ? new HttpRequestMessage(HttpMethod.Delete, requestUrl)
+            : new HttpRequestMessage(HttpMethod.Post, requestUrl)
+            {
+                Content = new FormUrlEncodedContent(new Dictionary<string, string>
+                {
+                    { "cancel_at_period_end", "true" }
+                })
+            };
+
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", secretKey);
 
         using HttpResponseMessage response = await _httpClient.SendAsync(request, cancellationToken);

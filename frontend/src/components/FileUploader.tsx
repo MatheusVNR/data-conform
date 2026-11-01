@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import type { DragEvent, FC } from 'react';
 import { getErpPreset, PLAN_LIMITS, PlanTierLabels } from '../types';
 import type { ErpPresetConfig, PlanLimitsConfig, PlanTier } from '../types';
+import { trackEvent } from '../utils/analytics';
 
 interface FileUploaderProps {
   onUpload: (file: File) => Promise<void>;
@@ -128,6 +129,12 @@ export const FileUploader: FC<FileUploaderProps> = ({
     } catch (err: unknown) {
       const msg: string = err instanceof Error ? err.message : 'Falha ao enviar lote de arquivos';
       setError(msg);
+      if (/limite|plano|upgrade|excede|cota|linhas/i.test(msg)) {
+        trackEvent('quota_exceeded', {
+          currentPlan: plan,
+          reason: msg,
+        });
+      }
     } finally {
       setUploading(false);
       setUploadProgressText('');
@@ -169,6 +176,12 @@ export const FileUploader: FC<FileUploaderProps> = ({
     } catch (err: unknown) {
       const msg: string = err instanceof Error ? err.message : 'Falha ao carregar lote de teste';
       setError(msg);
+      if (/limite|plano|upgrade|excede|cota|linhas/i.test(msg)) {
+        trackEvent('quota_exceeded', {
+          currentPlan: plan,
+          reason: msg,
+        });
+      }
     } finally {
       setUploading(false);
       setUploadProgressText('');

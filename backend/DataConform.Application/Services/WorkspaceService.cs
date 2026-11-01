@@ -296,7 +296,8 @@ public class WorkspaceService : IWorkspaceService
             {
                 bool canceledOnStripe = await _stripeBillingService.CancelSubscriptionAsync(
                     workspace.StripeSubscriptionId,
-                    cancellationToken);
+                    cancelImmediately: false,
+                    cancellationToken: cancellationToken);
 
                 if (!canceledOnStripe)
                 {
@@ -561,16 +562,24 @@ public class WorkspaceService : IWorkspaceService
                 }
             }
         }
-        else if (string.Equals(eventType, "customer.subscription.deleted", StringComparison.OrdinalIgnoreCase) ||
-                 string.Equals(eventType, "invoice.payment_failed", StringComparison.OrdinalIgnoreCase))
+        else if (string.Equals(eventType, "customer.subscription.deleted", StringComparison.OrdinalIgnoreCase))
         {
-            if (string.Equals(eventType, "customer.subscription.deleted", StringComparison.OrdinalIgnoreCase))
-            {
-                targetWorkspace.StripeSubscriptionId = null;
-                targetWorkspace.PlanExpiresAtUtc = null;
-            }
-
+            targetWorkspace.StripeSubscriptionId = null;
+            targetWorkspace.PlanExpiresAtUtc = null;
             await _quotaService.UpdatePlanAsync(targetWorkspace.Id, PlanTier.Starter, cancellationToken);
+        }
+        else if (string.Equals(eventType, "invoice.payment_failed", StringComparison.OrdinalIgnoreCase))
+        {
+            // Cobrança falhou: mantemos o plano ativo durante o período de tolerância (Grace Period / Smart Retries da Stripe).
+            // O downgrade definitivo só ocorre quando a Stripe efetivamente cancelar a assinatura (customer.subscription.deleted).
+            await _auditService.LogAsync(
+                targetWorkspace.Id,
+                null,
+                "StripePaymentFailed",
+                "StripeInvoice",
+                webhookEvent.EventId ?? "invoice_failed",
+                "Cobrança recorrente falhou na Stripe. Assinatura em período de tolerância (Smart Retries ativo).",
+                cancellationToken);
         }
 
         if (!string.IsNullOrWhiteSpace(webhookEvent.EventId))

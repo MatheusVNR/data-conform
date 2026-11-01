@@ -88,7 +88,7 @@
                 "name": "Starter",
                 "price": "0.00",
                 "priceCurrency": "BRL",
-                "description": "Plano gratuito: até 20 arquivos/mês, até 1.000 linhas por arquivo, até 5 MB por arquivo.",
+                "description": "Plano gratuito: até 5 arquivos/mês, até 500 linhas por arquivo, até 5 MB por arquivo.",
                 "url": "https://dataconform.com.br/precos/"
               },
               {
@@ -96,7 +96,7 @@
                 "name": "Professional",
                 "price": "79.90",
                 "priceCurrency": "BRL",
-                "description": "Até 500 arquivos/mês, até 50.000 linhas por arquivo, até 25 MB por arquivo.",
+                "description": "Até 500 arquivos/mês, até 15.000 linhas por arquivo, até 25 MB por arquivo.",
                 "url": "https://dataconform.com.br/precos/"
               },
               {
@@ -112,6 +112,34 @@
         ]
       }
     </script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
     <div id="root">
@@ -133,7 +161,7 @@
             O <strong>DataConform</strong> audita, valida e homologa planilhas CSV cadastrais, fiscais, financeiras e de estoque antes da importação definitiva no seu ERP, apontando linha a linha qualquer desvio estrutural (RFC 4180) ou fiscal com exportação CSV das inconsistências e laudo técnico em PDF.
           </p>
           <p>
-            Experimente o simulador interativo sem cadastro na página inicial ou crie sua conta gratuita no <strong>Plano Starter (R$ 0/mês — até 20 arquivos de 1.000 linhas)</strong>.
+            Experimente o simulador interativo sem cadastro na página inicial ou crie sua conta gratuita no <strong>Plano Starter (R$ 0/mês — até 5 arquivos de 500 linhas)</strong>.
           </p>
         </section>
 

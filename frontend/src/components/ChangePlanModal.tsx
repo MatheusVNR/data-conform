@@ -3,6 +3,7 @@ import type { FC } from 'react';
 import type { WorkspaceDto, WorkspaceQuotaDto } from '../types';
 import { PlanTierLabels } from '../types';
 import { changeWorkspacePlan, confirmStripeCheckout, createCustomerFeedback } from '../services/api';
+import { trackEvent } from '../utils/analytics';
 
 interface ChangePlanModalProps {
   isOpen: boolean;
@@ -166,6 +167,11 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
       return;
     }
 
+    if (!import.meta.env.DEV && targetUrl.includes('/test_')) {
+      setError('Links de teste do Stripe não são permitidos em ambiente de produção.');
+      return;
+    }
+
     let checkoutRedirectUrl: string = targetUrl;
     try {
       const parsedUrl: URL = new URL(targetUrl);
@@ -186,6 +192,11 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
         timestamp: new Date().getTime(),
       })
     );
+
+    trackEvent('checkout_started', {
+      targetPlan: selectedPlan,
+      workspaceId: workspace.id,
+    });
 
     window.location.assign(checkoutRedirectUrl);
   };

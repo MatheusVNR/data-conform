@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"SAP Business One — OCRD (Business Partners)","item":"https://dataconform.com.br/layout-importacao-sap-business-one-ocrd-parceiros/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Posso manter colunas extras do DTW como CardType ou Phone1 no CSV?","acceptedAnswer":{"@type":"Answer","text":"Sim. O DataConform exige as 6 colunas obrigatórias do preset e também aplica validações semânticas caso encontre colunas como Phone1 ou State."}},{"@type":"Question","name":"O DataConform reconhece a coluna LicTradNum automaticamente como CPF/CNPJ?","acceptedAnswer":{"@type":"Answer","text":"Sim. O motor possui mapeamento nativo do dicionário SAP Business One e aplica o cálculo de Módulo 11 diretamente sobre LicTradNum."}},{"@type":"Question","name":"É possível testar uma amostra do arquivo OCRD sem criar conta?","acceptedAnswer":{"@type":"Answer","text":"Sim. Na página inicial você pode usar o simulador interativo com o cenário SAP Business One (DTW / OCRD) ou criar conta grátis no plano Starter."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

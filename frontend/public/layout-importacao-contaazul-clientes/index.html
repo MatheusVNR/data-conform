@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"ContaAzul — Importação Cadastral e Financeira","item":"https://dataconform.com.br/layout-importacao-contaazul-clientes/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"As colunas data_vencimento e uf também são validadas no preset ContaAzul?","acceptedAnswer":{"@type":"Answer","text":"Sim. Embora as 5 colunas mínimas obrigatórias sejam codigo_cliente, razao_social, cnpj_cpf, email e valor_limite_credito, o arquivo modelo oficial inclui data_vencimento e uf, que são auditadas automaticamente pelo motor semântico."}},{"@type":"Question","name":"Como exportar o relatório de erros para enviar ao cliente ou contador?","acceptedAnswer":{"@type":"Answer","text":"Dentro do laudo de validação do DataConform, basta clicar em exportar CSV de inconsistências ou clicar no botão de impressão para gerar o laudo executivo em PDF com campos de assinatura."}},{"@type":"Question","name":"Preciso cadastrar cartão de crédito para usar o plano gratuito?","acceptedAnswer":{"@type":"Answer","text":"Não. O plano Starter Gratuito é ativado imediatamente ao criar sua conta corporativa, sem necessidade de informar cartão de crédito, oferecendo até 5 validações de arquivos por mês."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

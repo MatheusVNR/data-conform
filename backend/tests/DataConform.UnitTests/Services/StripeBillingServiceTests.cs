@@ -134,12 +134,12 @@ public class StripeBillingServiceTests
             .AddInMemoryCollection(configMap)
             .Build();
 
-        bool deleteCalled = false;
+        bool cancelRequestSent = false;
         using HttpClient httpClient = new HttpClient(new StubHttpMessageHandler(req =>
         {
-            if (req.Method == HttpMethod.Delete)
+            if (req.Method == HttpMethod.Delete || req.Method == HttpMethod.Post)
             {
-                deleteCalled = true;
+                cancelRequestSent = true;
             }
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -203,7 +203,7 @@ public class StripeBillingServiceTests
             workspaceId);
 
         Assert.True(cancelResult.IsSuccess);
-        Assert.True(deleteCalled);
+        Assert.True(cancelRequestSent);
         Assert.Equal(PlanTier.Starter, cancelResult.Data?.Plan);
 
         // Testar rejeição de assinatura inválida no Webhook

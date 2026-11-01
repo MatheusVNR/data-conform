@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Validar Sigla de UF e Estado no CSV","item":"https://dataconform.com.br/validar-uf-estado-planilha-csv/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quais são todas as 28 siglas aceitas pela regra de UF do DataConform?","acceptedAnswer":{"@type":"Answer","text":"São as 27 siglas estaduais e distrital do Brasil (AC, AL, AP, AM, BA, CE, DF, ES, GO, MA, MT, MS, MG, PA, PB, PR, PE, PI, RJ, RN, RS, RO, RR, SC, SP, SE, TO) mais a sigla EX para Exterior."}},{"@type":"Question","name":"A validação diferencia letras maiúsculas de minúsculas (ex.: sp vs SP)?","acceptedAnswer":{"@type":"Answer","text":"O comparador do DataConform é case-insensitive (aceita sp ou SP), mas recomendamos padronizar em letras maiúsculas para total compatibilidade com o dicionário do seu ERP."}},{"@type":"Question","name":"O DataConform confunde a coluna \"status\" com coluna de estado?","acceptedAnswer":{"@type":"Answer","text":"Não. O motor possui uma trava explícita para nunca aplicar a regra de UF sobre colunas chamadas \"status\", evitando falsos positivos."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

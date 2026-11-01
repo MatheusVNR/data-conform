@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using DataConform.Application.Common.Models;
 using DataConform.Application.Services;
+using DataConform.Domain.Entities;
 using DataConform.Infrastructure.Persistence;
 using DataConform.Infrastructure.Security;
 using DataConform.Infrastructure.Services;
@@ -186,5 +187,86 @@ public class AuthServiceTests
         ServiceResult<AuthResponseDto> missingResult = await authService.GetCurrentUserAsync(Guid.NewGuid());
         Assert.False(missingResult.IsSuccess);
         Assert.Equal(ServiceErrorType.NotFound, missingResult.ErrorType);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_WithOmiePreset_ShouldCreateOmieProject()
+    {
+        using DataConformDbContext context = CreateInMemoryContext();
+        AuthService authService = CreateAuthService(context);
+
+        RegisterRequestDto request = new RegisterRequestDto
+        {
+            Email = "bpo@contabilidade.com.br",
+            Password = "SenhaForte123!",
+            FullName = "Operador BPO",
+            ErpPreset = "omie-clientes",
+            AttributionJson = "{\"utm_source\":\"google_seo\"}"
+        };
+
+        ServiceResult<AuthResponseDto> result = await authService.RegisterAsync(request);
+
+        Assert.True(result.IsSuccess);
+        ImportProject? project = await context.ImportProjects
+            .FirstOrDefaultAsync(p => p.WorkspaceId == result.Data!.WorkspaceId);
+
+        Assert.NotNull(project);
+        Assert.Equal("Omie", project.TargetSystem);
+        Assert.Equal("Omie — Clientes e Fornecedores", project.Name);
+
+        AuditLog? auditLog = await context.AuditLogs
+            .FirstOrDefaultAsync(a => a.WorkspaceId == result.Data!.WorkspaceId && a.Action == "UserRegistered");
+        Assert.NotNull(auditLog);
+        Assert.Contains("Atribuição: {\"utm_source\":\"google_seo\"}", auditLog.Details);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_WithSapB1Preset_ShouldCreateSapProject()
+    {
+        using DataConformDbContext context = CreateInMemoryContext();
+        AuthService authService = CreateAuthService(context);
+
+        RegisterRequestDto request = new RegisterRequestDto
+        {
+            Email = "consultor@sapb1.com.br",
+            Password = "SenhaForte123!",
+            FullName = "Consultor SAP",
+            ErpPreset = "sap-b1-ocrd"
+        };
+
+        ServiceResult<AuthResponseDto> result = await authService.RegisterAsync(request);
+
+        Assert.True(result.IsSuccess);
+        ImportProject? project = await context.ImportProjects
+            .FirstOrDefaultAsync(p => p.WorkspaceId == result.Data!.WorkspaceId);
+
+        Assert.NotNull(project);
+        Assert.Equal("SAP Business One", project.TargetSystem);
+        Assert.Equal("SAP Business One — Parceiros (OCRD)", project.Name);
+    }
+
+    [Fact]
+    public async Task RegisterAsync_WithMaliciousOrUnknownPreset_ShouldFallbackToProtheus()
+    {
+        using DataConformDbContext context = CreateInMemoryContext();
+        AuthService authService = CreateAuthService(context);
+
+        RegisterRequestDto request = new RegisterRequestDto
+        {
+            Email = "teste@fallback.com.br",
+            Password = "SenhaForte123!",
+            FullName = "Usuario Fallback",
+            ErpPreset = "<script>alert('xss')</script>"
+        };
+
+        ServiceResult<AuthResponseDto> result = await authService.RegisterAsync(request);
+
+        Assert.True(result.IsSuccess);
+        ImportProject? project = await context.ImportProjects
+            .FirstOrDefaultAsync(p => p.WorkspaceId == result.Data!.WorkspaceId);
+
+        Assert.NotNull(project);
+        Assert.Equal("TOTVS Protheus", project.TargetSystem);
+        Assert.Equal("Homologação Inicial ERP", project.Name);
     }
 }

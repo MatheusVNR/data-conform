@@ -56,6 +56,7 @@ import type {
   WorkspaceQuotaDto,
 } from './types';
 import { ERP_PRESETS, getErpPreset, PENDING_CHECKOUT_STORAGE_KEY, PLAN_LIMITS, PlanTierLabels } from './types';
+import { initAttributionTracker, trackEvent } from './utils/analytics';
 import './App.css';
 
 interface PendingCheckoutData {
@@ -173,6 +174,14 @@ export const App: FC = () => {
 
     async function init(): Promise<void> {
       try {
+        const attribution = initAttributionTracker();
+        trackEvent('landing_view', {
+          path: window.location.pathname,
+          referrer: document.referrer || undefined,
+          utmSource: attribution.firstTouch?.utmSource,
+          erp: attribution.activeErp,
+        });
+
         let authenticatedUser: AuthResponseDto | null = null;
         if (getAuthToken()) {
           try {
@@ -260,6 +269,10 @@ export const App: FC = () => {
               if (isMounted) {
                 setWorkspaces(wsList);
                 setQuota(confirmedQuota);
+                trackEvent('subscription_paid', {
+                  plan: targetPlan,
+                  workspaceId: targetWsId,
+                });
                 showAlert(
                   `Pagamento confirmado via Stripe! O plano ${targetPlan} já está ativo na sua organização.`,
                   'success'
@@ -417,6 +430,11 @@ export const App: FC = () => {
       setValidatingFileId(fileId);
       const report: ValidationReportDto = await validateFile(fileId, requiredColumns);
       setActiveReport(report);
+      trackEvent('first_validation_completed', {
+        fileId: report.fileId,
+        rowCount: report.totalRows,
+        issueCount: report.issues.length,
+      });
 
       if (activeProject) {
         await loadFilesForProject(activeProject.id);

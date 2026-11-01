@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Corrigir Erro de Encoding UTF-8 no CSV","item":"https://dataconform.com.br/erro-encoding-utf8-caracteres-estranhos-csv/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Qual a diferença entre \"CSV ( separado por vírgulas )\" e \"CSV UTF-8\" no Excel?","acceptedAnswer":{"@type":"Answer","text":"No Windows em português, a opção antiga \"CSV (separado por vírgulas)\" costuma salvar em codificação Windows-1252 (ANSI), enquanto \"CSV UTF-8 (Delimitado por vírgulas)\" salva no padrão universal UTF-8 exigido pela maioria das APIs e ERPs modernos."}},{"@type":"Question","name":"O DataConform aceita arquivos CSV UTF-8 com BOM (Byte Order Mark)?","acceptedAnswer":{"@type":"Answer","text":"Sim. O leitor do DataConform possui detectEncodingFromByteOrderMarks ativado, tratando arquivos UTF-8 com ou sem BOM sem corromper o nome da primeira coluna do cabeçalho."}},{"@type":"Question","name":"E se alguém tentar enviar um arquivo Excel (.xlsx) renomeado para .csv?","acceptedAnswer":{"@type":"Answer","text":"O DataConform possui proteção contra arquivos binários disfarçados (assinatura ZIP/PK de arquivos XLSX ou PDF), bloqueando o arquivo antes mesmo do processamento."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

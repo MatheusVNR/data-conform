@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"Sankhya — TGFPAR (Parceiros)","item":"https://dataconform.com.br/layout-importacao-sankhya-tgfpar-parceiros/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Posso testar o cenário da tabela TGFPAR do Sankhya gratuitamente?","acceptedAnswer":{"@type":"Answer","text":"Sim. O simulador na página inicial já conta com aba dedicada ao Sankhya Om (TGFPAR), e o plano Starter Gratuito valida até 5 arquivos reais por mês (até 500 linhas/arquivo)."}},{"@type":"Question","name":"A coluna CGC_CPF aceita documentos com máscara?","acceptedAnswer":{"@type":"Answer","text":"Sim. O validador higieniza pontos, barra e hífen para validar os 11 dígitos do CPF ou 14 dígitos do CNPJ pelo Módulo 11."}},{"@type":"Question","name":"O DataConform verifica se alguma coluna obrigatória da TGFPAR foi esquecida?","acceptedAnswer":{"@type":"Answer","text":"Sim. Se qualquer uma das 7 colunas obrigatórias não constar no cabeçalho, o relatório aponta REQUIRED_HEADER_MISSING."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

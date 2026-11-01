@@ -3,6 +3,7 @@ import type { ChangeEvent, FC } from 'react';
 import type { ValidationIssueDto, ValidationReportDto } from '../types';
 import { getErpPreset } from '../types';
 import { isValidBrazilianDocument } from '../utils/documentValidator';
+import { trackEvent } from '../utils/analytics';
 
 interface VisitorInteractiveSandboxProps {
   initialErpKey?: string | null;
@@ -517,6 +518,11 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
     setSelectedIndex(idx);
     setCustomLines(null);
     setCustomReport(null);
+    const target: SandboxErpScenario = SANDBOX_SCENARIOS[idx] ?? SANDBOX_SCENARIOS[0];
+    trackEvent('sandbox_started', {
+      scenarioId: target.erpKey,
+      scenarioName: target.erpLabel,
+    });
   };
 
   const handleLocalFileChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -539,6 +545,12 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
       const delimiter: string = headerLine.includes(';') ? ';' : ',';
       const headers: string[] = headerLine.split(delimiter).map((h: string) => h.trim().replace(/^"|"$/g, ''));
       const dataLines: string[] = rawLines.slice(1, 101);
+
+      trackEvent('sandbox_file_uploaded', {
+        fileName: file.name,
+        rowCount: dataLines.length,
+        erpKey: scenario.erpKey,
+      });
       const preset = getErpPreset(scenario.erpKey);
       const issues: ValidationIssueDto[] = [];
 
@@ -644,6 +656,12 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
         validRows: validRowCount,
         errorRows: errorRowCount,
         issues: issues.slice(0, 25),
+      });
+
+      trackEvent('sandbox_completed', {
+        scenarioId: scenario.erpKey,
+        rowCount: dataLines.length,
+        issueCount: issues.length,
       });
     };
     reader.readAsText(file, 'utf-8');
@@ -787,14 +805,26 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
           <button
             type="button"
             className="btn btn-secondary btn-sm"
-            onClick={() => onOpenReportModal(report, scenario.erpKey)}
+            onClick={() => {
+              trackEvent('signup_started', {
+                triggerSource: 'sandbox_report_preview',
+                erpPreset: scenario.aliases[0] || scenario.erpKey,
+              });
+              onOpenReportModal(report, scenario.erpKey);
+            }}
           >
             📄 Abrir Laudo Completo & Testar PDF
           </button>
           <button
             type="button"
             className="btn btn-primary btn-sm"
-            onClick={onOpenRegister}
+            onClick={() => {
+              trackEvent('signup_started', {
+                triggerSource: 'sandbox_footer_cta',
+                erpPreset: scenario.aliases[0] || scenario.erpKey,
+              });
+              onOpenRegister();
+            }}
           >
             🚀 Auditar Minhas Planilhas Reais
           </button>

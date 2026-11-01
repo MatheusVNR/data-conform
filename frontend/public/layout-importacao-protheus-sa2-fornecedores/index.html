@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"TOTVS Protheus - Fornecedores — SA2 (Fornecedores)","item":"https://dataconform.com.br/layout-importacao-protheus-sa2-fornecedores/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Se eu incluir a coluna A2_CEP no arquivo, o DataConform também a valida?","acceptedAnswer":{"@type":"Answer","text":"Sim. O motor semântico reconhece automaticamente a coluna A2_CEP e verifica se todos os CEPs possuem 8 dígitos válidos."}},{"@type":"Question","name":"Qual delimitador devo usar na planilha SA2?","acceptedAnswer":{"@type":"Answer","text":"O DataConform detecta automaticamente vírgula (,), ponto e vírgula (;) ou tabulação (Tab) no cabeçalho do arquivo."}},{"@type":"Question","name":"Posso validar fornecedores pessoa física (autônomos) na mesma carga SA2?","acceptedAnswer":{"@type":"Answer","text":"Sim. A coluna A2_CGC aceita tanto CNPJ (14 dígitos) quanto CPF (11 dígitos), aplicando o cálculo de Módulo 11 correspondente."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

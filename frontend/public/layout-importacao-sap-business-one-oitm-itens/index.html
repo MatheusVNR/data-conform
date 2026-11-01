@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"SAP Business One - Itens — OITM (Item Master Data)","item":"https://dataconform.com.br/layout-importacao-sap-business-one-oitm-itens/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"O DataConform valida o campo NcmCode com pontos (8528.52.20) ou sem pontos (85285220)?","acceptedAnswer":{"@type":"Answer","text":"Ambos os formatos são aceitos, pois o motor extrai os dígitos numéricos de NcmCode e verifica se totalizam exatamente 8 dígitos."}},{"@type":"Question","name":"O que acontece se um item estiver com ItemCode ou SalUnitMsr em branco?","acceptedAnswer":{"@type":"Answer","text":"O DataConform registra o erro REQUIRED_FIELD_MISSING indicando o número da linha e a coluna obrigatória vazia."}},{"@type":"Question","name":"Posso baixar um arquivo CSV de exemplo para o objeto OITM?","acceptedAnswer":{"@type":"Answer","text":"Sim. Ao selecionar o preset \"SAP Business One - Itens\" na plataforma, você pode baixar o arquivo modelo layout_sap_b1_oitm.csv."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

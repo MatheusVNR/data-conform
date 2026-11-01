@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"TOTVS Protheus — SA1 (Clientes)","item":"https://dataconform.com.br/layout-importacao-protheus-sa1-clientes/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Posso enviar o campo A1_CGC com ou sem pontuação?","acceptedAnswer":{"@type":"Answer","text":"Sim. O motor extrai os dígitos numéricos de A1_CGC antes de validar a quantidade (11 ou 14 dígitos) e calcular o Módulo 11."}},{"@type":"Question","name":"O DataConform aceita clientes estrangeiros na tabela SA1?","acceptedAnswer":{"@type":"Answer","text":"Sim. Na coluna A1_EST, além das 27 Unidades Federativas do Brasil, o validador aceita oficialmente a sigla EX."}},{"@type":"Question","name":"Como evitar que acentos em A1_NOME fiquem corrompidos?","acceptedAnswer":{"@type":"Answer","text":"Salve a planilha como CSV UTF-8. Caso existam caracteres ANSI corrompidos, o DataConform aponta o erro ENCODING_CORRUPTION na linha exata."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

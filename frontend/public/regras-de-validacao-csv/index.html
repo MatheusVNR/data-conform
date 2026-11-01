@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Como o DataConform sabe qual regra aplicar em cada coluna da planilha CSV?","acceptedAnswer":{"@type":"Answer","text":"O motor combina duas camadas: primeiro valida as colunas obrigatórias definidas para o projeto/ERP (`REQUIRED_HEADER_MISSING` e `REQUIRED_FIELD_MISSING`). Em seguida, analisa o nome de cada coluna do cabeçalho — reconhecendo tanto nomes genéricos (`cpf`, `cnpj`, `email`, `cep`, `uf`, `ncm`, `valor`, `data`, `telefone`) quanto nomes técnicos de dicionários de ERP (`A1_CGC`, `B1_POSIPI`, `LicTradNum`, `NcmCode`, `TaxId0`, `CgcCpf`, `EmaCli`, `VlrLim`, `LIMCRED`)."}},{"@type":"Question","name":"O DataConform protege contra arquivos binários renomeados e injeção de fórmulas em CSV?","acceptedAnswer":{"@type":"Answer","text":"Sim. A plataforma bloqueia o envio de arquivos binários disfarçados de CSV (como planilhas .xlsx ou .pdf apenas renomeadas para .csv) e sanitiza a exportação de relatórios para evitar ataques de CSV Formula Injection."}},{"@type":"Question","name":"Qual a diferença entre apontamentos com severidade \"Erro\" e severidade \"Aviso\"?","acceptedAnswer":{"@type":"Answer","text":"Apontamentos de Erro indicam desvios que impedem a importação ou corrompem regras fiscais (como CNPJ inválido, coluna obrigatória ausente ou quebra de delimitador). Avisos (como `EMPTY_HEADER_NAME` e `DUPLICATE_ROW`) alertam sobre anomalias estruturais ou duplicidades de linhas no lote."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

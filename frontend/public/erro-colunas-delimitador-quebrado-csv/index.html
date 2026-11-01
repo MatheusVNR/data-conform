@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Erro de Colunas e Delimitador Quebrado no CSV","item":"https://dataconform.com.br/erro-colunas-delimitador-quebrado-csv/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Preciso configurar se meu CSV usa vírgula (,) ou ponto e vírgula (;)?","acceptedAnswer":{"@type":"Answer","text":"Não. O algoritmo DetectDelimiter do DataConform analisa o cabeçalho do arquivo ignorando textos entre aspas e seleciona automaticamente vírgula, ponto e vírgula ou tabulação."}},{"@type":"Question","name":"O DataConform suporta células que contêm vírgulas ou ponto e vírgula dentro de aspas duplas?","acceptedAnswer":{"@type":"Answer","text":"Sim. O parser RFC 4180 do DataConform respeita campos delimitados por aspas duplas (\"...\") e aspas escapadas (\"\"), contando corretamente as colunas."}},{"@type":"Question","name":"O que significa o aviso EMPTY_HEADER_NAME na Linha #1?","acceptedAnswer":{"@type":"Answer","text":"Significa que sua planilha possui um delimitador sobrando no final do cabeçalho ou uma coluna sem título no Excel, gerando uma coluna em branco na posição indicada."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

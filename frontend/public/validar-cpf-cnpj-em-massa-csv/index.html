@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Validar CPF e CNPJ em Massa no CSV","item":"https://dataconform.com.br/validar-cpf-cnpj-em-massa-csv/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Posso misturar CPFs (11 dígitos) e CNPJs (14 dígitos) na mesma coluna da planilha?","acceptedAnswer":{"@type":"Answer","text":"Sim. O DataConform avalia cada célula individualmente: se após remover a pontuação restarem 11 dígitos, aplica a regra de Módulo 11 de CPF; se restarem 14 dígitos, aplica a regra de Módulo 11 de CNPJ."}},{"@type":"Question","name":"Preciso remover pontos, traços e barras antes de validar o CSV?","acceptedAnswer":{"@type":"Answer","text":"Não. O validador aceita documentos formatados (12.345.678/0001-95) ou apenas números (12345678000195) de forma transparente."}},{"@type":"Question","name":"Como corrigir zeros à esquerda perdidos no CPF ou CNPJ no Excel?","acceptedAnswer":{"@type":"Answer","text":"Formate a coluna como Texto antes de exportar ou utilize a função =TEXTO(A2;\"00000000000000\") para CNPJ (14 posições) e =TEXTO(A2;\"00000000000\") para CPF (11 posições), salvando em seguida como CSV UTF-8."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

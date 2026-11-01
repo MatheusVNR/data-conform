@@ -274,6 +274,8 @@ export interface RegisterRequestDto {
   password: string;
   fullName: string;
   workspaceName?: string;
+  erpPreset?: string;
+  attributionJson?: string;
 }
 
 export interface AuditLogDto {

@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Regras de Validação CSV","item":"https://dataconform.com.br/regras-de-validacao-csv/"},{"@type":"ListItem","position":3,"name":"Validar NCM em Planilha CSV","item":"https://dataconform.com.br/validar-ncm-planilha-csv/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"O DataConform exige pontos no NCM (ex.: 8471.49.00) ou aceita somente números (84714900)?","acceptedAnswer":{"@type":"Answer","text":"Ambos os formatos são aceitos. O algoritmo extrai os caracteres numéricos da célula e valida se existem exatamente 8 dígitos."}},{"@type":"Question","name":"Como recuperar o zero à esquerda de NCMs dos capítulos 01 a 09 no Excel?","acceptedAnswer":{"@type":"Answer","text":"Utilize a fórmula =TEXTO(A2;\"00000000\") em uma coluna auxiliar do Excel e cole como valores em uma coluna formatada como Texto antes de exportar o CSV."}},{"@type":"Question","name":"Quais presets nativos do DataConform já exigem a coluna de NCM como obrigatória?","acceptedAnswer":{"@type":"Answer","text":"Os presets \"TOTVS Protheus - Produtos\" (coluna B1_POSIPI da tabela SB1) e \"SAP Business One - Itens\" (coluna NcmCode do objeto OITM) exigem a coluna de NCM obrigatoriamente."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

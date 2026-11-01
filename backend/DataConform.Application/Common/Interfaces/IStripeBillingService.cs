@@ -35,6 +35,7 @@ public interface IStripeBillingService
 
     Task<bool> CancelSubscriptionAsync(
         string subscriptionId,
+        bool cancelImmediately = false,
         CancellationToken cancellationToken = default);
 
     StripeWebhookEventResult ParseAndVerifyWebhookEvent(

@@ -26,6 +26,34 @@
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"SAP S/4HANA — Business Partner (BP)","item":"https://dataconform.com.br/layout-importacao-sap-s4hana-business-partner/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quais formatos de data são aceitos na coluna ValidFrom?","acceptedAnswer":{"@type":"Answer","text":"Os formatos ISO 8601 (AAAA-MM-DD) recomendados pelo SAP S/4HANA e o padrão brasileiro DD/MM/AAAA, verificando se a data existe no calendário."}},{"@type":"Question","name":"A coluna State (UF) também é inspecionada se estiver presente na planilha?","acceptedAnswer":{"@type":"Answer","text":"Sim. O motor valida automaticamente se todas as siglas da coluna State correspondem às 27 UFs brasileiras ou EX."}},{"@type":"Question","name":"Qual a capacidade máxima de linhas para migrações SAP S/4HANA?","acceptedAnswer":{"@type":"Answer","text":"O plano Professional suporta até 15.000 linhas por arquivo (25 MB) e o plano Enterprise suporta até 1.000.000 de linhas por arquivo (50 MB)."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">

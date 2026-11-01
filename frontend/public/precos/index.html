@@ -27,6 +27,34 @@
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Preços e Planos","item":"https://dataconform.com.br/precos/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"DataConform","applicationCategory":"BusinessApplication","operatingSystem":"Web","url":"https://dataconform.com.br/","description":"Plataforma SaaS de pré-validação de arquivos CSV antes da importação em sistemas ERP (TOTVS Protheus, SAP Business One, SAP S/4HANA, Senior, Sankhya, Omie, ContaAzul).","offers":[{"@type":"Offer","name":"Plano Starter","price":"0.00","priceCurrency":"BRL","description":"5 arquivos / mês, Até 500 linhas por arquivo, Até 5 MB por arquivo.","url":"https://dataconform.com.br/precos/"},{"@type":"Offer","name":"Plano Professional","price":"79.90","priceCurrency":"BRL","description":"500 arquivos / mês, Até 15.000 linhas por arquivo, Até 25 MB por arquivo.","url":"https://dataconform.com.br/precos/"},{"@type":"Offer","name":"Plano Enterprise","price":"249.90","priceCurrency":"BRL","description":"10.000 arquivos / mês, Até 1.000.000 de linhas por arquivo, Até 50 MB por arquivo.","url":"https://dataconform.com.br/precos/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"O plano Starter é gratuito e sem cartão de crédito?","acceptedAnswer":{"@type":"Answer","text":"Sim. O plano Starter é 100% gratuito (R$ 0/mês), não exige cartão no cadastro e inclui até 5 arquivos validados por mês (até 500 linhas e 5 MB por arquivo), com acesso a todos os presets de ERP, às regras fiscais e ao laudo preliminar em PDF."}},{"@type":"Question","name":"Como funciona o pagamento dos planos Professional e Enterprise?","acceptedAnswer":{"@type":"Answer","text":"O upgrade é self-service dentro da plataforma com pagamento via cartão de crédito processado pelo Stripe, sem taxa de setup nem fidelidade."}},{"@type":"Question","name":"Há diferença nas regras ou nos ERPs suportados entre os planos?","acceptedAnswer":{"@type":"Answer","text":"Não. Todos os planos incluem os 10 presets de ERP, todas as regras de validação, exportação CSV de erros e laudo PDF (com versão executiva White-Label e Termo de Aceite nos planos pagos)."}},{"@type":"Question","name":"Qual plano escolher para migrações de médio ou grande porte?","acceptedAnswer":{"@type":"Answer","text":"Para planilhas de até 15.000 linhas (25 MB) e 500 arquivos/mês, escolha o Professional (R$ 79,90/mês). Para bases de até 1.000.000 de linhas por arquivo (50 MB) e 10.000 arquivos/mês, escolha o Enterprise (R$ 249,90/mês)."}}]}</script>
+    <script>
+      (function() {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var s = p.get('utm_source');
+          var m = p.get('utm_medium');
+          var c = p.get('utm_campaign');
+          var ct = p.get('utm_content');
+          var e = p.get('erp');
+          var r = document.referrer || '';
+          var item = {
+            path: window.location.pathname,
+            referrer: r,
+            utmSource: s || undefined,
+            utmMedium: m || undefined,
+            utmCampaign: c || undefined,
+            utmContent: ct || undefined,
+            erp: e || undefined,
+            timestamp: new Date().toISOString()
+          };
+          if (!localStorage.getItem('dc_first_touch')) {
+            localStorage.setItem('dc_first_touch', JSON.stringify(item));
+          }
+          sessionStorage.setItem('dc_last_touch', JSON.stringify(item));
+        } catch (err) {}
+      })();
+    </script>
+    <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "dataconform_analytics"}'></script>
   </head>
   <body>
   <header class="seo-navbar">
