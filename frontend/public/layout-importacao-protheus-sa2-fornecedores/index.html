@@ -101,8 +101,8 @@
           </section>
 
           <section class="seo-section">
-            <h2>Tabela de Colunas Obrigatórias Reais do Preset (SA2 (Fornecedores))</h2>
-            <p>O preset oficial do DataConform para <strong>TOTVS Protheus - Fornecedores</strong> exige as seguintes colunas no cabeçalho da planilha CSV (arquivo de referência: <code>layout_totvs_protheus_sa2.csv</code>):</p>
+            <h2>Tabela de Colunas Sugeridas no Perfil (SA2 (Fornecedores))</h2>
+            <p>O perfil de referência do DataConform para <strong>TOTVS Protheus - Fornecedores</strong> inspeciona as seguintes colunas no cabeçalho da planilha CSV (arquivo de exemplo: <code>layout_totvs_protheus_sa2.csv</code>), lembrando que a obrigatoriedade final no ERP pode variar conforme versão e parametrização local:</p>
             <div class="seo-table-wrap">
               <table class="seo-table">
                 <thead>
@@ -145,12 +145,6 @@
                 <td><span class="seo-code-pill">INVALID_EMAIL_FORMAT</span></td>
               </tr>
               <tr>
-                <td><code>A2_LC</code></td>
-                <td>Limite operacional/crédito parametrizado para o fornecedor.</td>
-                <td><code>200000.00</code></td>
-                <td><span class="seo-code-pill">INVALID_NUMERIC_VALUE / NEGATIVE_AMOUNT_NOT_ALLOWED</span></td>
-              </tr>
-              <tr>
                 <td><code>A2_EST</code></td>
                 <td>Sigla da UF do fornecedor (27 estados brasileiros ou EX).</td>
                 <td><code>MG</code></td>
@@ -162,7 +156,7 @@
           </section>
 
           <section class="seo-section">
-            <h2>Exemplo de Estrutura CSV Homologada (layout_totvs_protheus_sa2.csv)</h2>
+            <h2>Exemplo de Estrutura CSV de Referência (layout_totvs_protheus_sa2.csv)</h2>
             <p>Abaixo está a estrutura real do arquivo CSV utilizado pelo DataConform para homologar cargas deste módulo, incluindo linhas íntegras e linhas de teste para captura de inconsistências:</p>
             <pre class="seo-code-block"><code>A2_COD,A2_LOJA,A2_NOME,A2_CGC,A2_EMAIL,A2_LC,A2_EST,A2_CEP
 F00101,01,Industria Metalurgica Vale SA,12.345.678/0001-95,suprimentos@valeind.com.br,200000.00,MG,30140-071
@@ -277,7 +271,7 @@ F00102,01,Distribuidora Fornecedora LTDA,11.222.333/0001-81,vendas@distribuidora
             <div class="seo-related-col">
               <h3>Outros Layouts de Importação ERP</h3>
               <ul>
-                <li><a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus</strong> — Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotina MATA030</a></li>
+                <li><a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus</strong> — Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotinas CRMA980 / MATA030</a></li>
               <li><a href="/layout-importacao-protheus-sb1-produtos/"><strong>TOTVS Protheus - Produtos</strong> — Tabela SB1 (Catálogo de Itens / Estoque — SIGAEST) • Rotina MATA010</a></li>
               <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/"><strong>Sankhya</strong> — Tabela TGFPAR (Parceiros de Negócio — Sankhya Om / Sankhya-W)</a></li>
                 <li><a href="/layouts-de-importacao-erp/"><strong>Ver todos os 10 presets de ERP →</strong></a></li>
@@ -297,7 +291,9 @@ F00102,01,Distribuidora Fornecedora LTDA,11.222.333/0001-81,vendas@distribuidora
             <a href="/">Início &amp; Simulador</a> •
             <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
             <a href="/regras-de-validacao-csv/">Regras CSV</a> •
-            <a href="/precos/">Preços</a>
+            <a href="/precos/">Preços</a> •
+            <a href="/termos/">Termos de Uso</a> •
+            <a href="/privacidade/">Privacidade (LGPD)</a>
           </p>
         </div>
         <div class="seo-footer-col">
@@ -316,7 +312,7 @@ F00102,01,Distribuidora Fornecedora LTDA,11.222.333/0001-81,vendas@distribuidora
             <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
             <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
             <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
-            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Modelo de Clientes e Fornecedores)</a></li>
             <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
           </ul>
         </div>
@@ -335,7 +331,7 @@ F00102,01,Distribuidora Fornecedora LTDA,11.222.333/0001-81,vendas@distribuidora
         </div>
       </div>
       <div class="seo-footer-bottom">
-        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>© 2026 DataConform. Software independente sem vínculo ou endosso oficial de TOTVS®, SAP®, Senior®, Sankhya®, Omie® ou ContaAzul®.</span>
         <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
       </div>
     </div>

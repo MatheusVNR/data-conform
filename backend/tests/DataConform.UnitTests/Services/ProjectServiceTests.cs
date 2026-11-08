@@ -86,11 +86,10 @@ public class ProjectServiceTests
         using DataConformDbContext context = CreateInMemoryContext();
         ProjectService service = CreateProjectService(context);
 
-        Workspace ws = new Workspace { Id = Guid.NewGuid(), Name = "Org Projetos", Slug = "org-proj" };
+        Guid userId = Guid.NewGuid();
+        Workspace ws = new Workspace { Id = Guid.NewGuid(), Name = "Org Projetos", Slug = "org-proj", OwnerUserId = userId };
         context.Workspaces.Add(ws);
         await context.SaveChangesAsync();
-
-        Guid userId = Guid.NewGuid();
 
         ServiceResult<ImportProjectDto> created = await service.CreateProjectAsync(
             ws.Id,
@@ -115,5 +114,34 @@ public class ProjectServiceTests
         ServiceResult<ImportProjectDto> afterDelete = await service.GetProjectByIdAsync(created.Data.Id, userId, ws.Id);
         Assert.False(afterDelete.IsSuccess);
         Assert.Equal(ServiceErrorType.NotFound, afterDelete.ErrorType);
+    }
+
+    [Fact]
+    public async Task DeleteProjectAsync_WhenUnauthorizedTenant_ShouldReturnForbiddenAndPreserveProject()
+    {
+        using DataConformDbContext context = CreateInMemoryContext();
+        ProjectService service = CreateProjectService(context);
+
+        Guid ownerA = Guid.NewGuid();
+        Guid userB = Guid.NewGuid();
+        Workspace wsA = new Workspace { Id = Guid.NewGuid(), Name = "Org A", Slug = "org-del-a", OwnerUserId = ownerA };
+        Workspace wsB = new Workspace { Id = Guid.NewGuid(), Name = "Org B", Slug = "org-del-b", OwnerUserId = userB };
+        context.Workspaces.AddRange(wsA, wsB);
+        await context.SaveChangesAsync();
+
+        ServiceResult<ImportProjectDto> created = await service.CreateProjectAsync(
+            wsA.Id,
+            new CreateImportProjectRequest { Name = "Projeto Protegido", TargetSystem = "SAP Business One" },
+            ownerA,
+            wsA.Id);
+
+        Assert.NotNull(created.Data);
+
+        ServiceResult forbiddenDelete = await service.DeleteProjectAsync(created.Data.Id, userB, wsB.Id);
+        Assert.False(forbiddenDelete.IsSuccess);
+        Assert.Equal(ServiceErrorType.Forbidden, forbiddenDelete.ErrorType);
+
+        bool stillExists = await context.ImportProjects.AnyAsync(p => p.Id == created.Data.Id);
+        Assert.True(stillExists);
     }
 }

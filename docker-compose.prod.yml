@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_DB: dataconform
       POSTGRES_USER: dataconform_user
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-DataConformProdPass2026!}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Defina DB_PASSWORD no arquivo .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -26,11 +26,17 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=dataconform;Username=dataconform_user;Password=${DB_PASSWORD:-DataConformProdPass2026!}
-      Jwt__Secret: ${JWT_SECRET:-DataConformSuperSecretJwtKey2026WithSufficientLengthForHmacSha256SecurityStandards!}
+      ConnectionStrings__DefaultConnection: Host=db;Port=5432;Database=dataconform;Username=dataconform_user;Password=${DB_PASSWORD:?Defina DB_PASSWORD no arquivo .env}
+      Jwt__Secret: ${JWT_SECRET:?Defina JWT_SECRET (min 32 chars) no arquivo .env}
       Jwt__Issuer: DataConform
       Jwt__Audience: DataConform
-      Cors__AllowedOrigins: ${ALLOWED_ORIGINS:-*}
+      Admin__ApiKey: ${ADMIN_API_KEY:-}
+      Cors__AllowedOrigins: ${ALLOWED_ORIGINS:-https://dataconform.com.br,https://www.dataconform.com.br}
+      Stripe__SecretKey: ${STRIPE_SECRET_KEY:-}
+      Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:-}
+      Stripe__ProPriceId: ${STRIPE_PRO_PRICE_ID:-}
+      Stripe__EnterprisePriceId: ${STRIPE_ENTERPRISE_PRICE_ID:-}
+      Support__Email: ${SUPPORT_EMAIL:-}
       Database__AutoMigrate: "true"
     volumes:
       - backend_storage:/app/storage/uploads
@@ -43,6 +49,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ""
+        VITE_SUPPORT_EMAIL: ${VITE_SUPPORT_EMAIL:-}
         VITE_STRIPE_PRO_URL: ${VITE_STRIPE_PRO_URL:-}
         VITE_STRIPE_ENTERPRISE_URL: ${VITE_STRIPE_ENTERPRISE_URL:-}
     container_name: dataconform_web

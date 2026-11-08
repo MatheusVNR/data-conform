@@ -1,5 +1,7 @@
 services:
   # Backend API (.NET 10 Web Service via Docker)
+  # Operação controlada sem novos custos: plano 'free' ($0/mês, até 750h/mês).
+  # Nota: hiberna após 15 min sem tráfego (cold start ~35-50s, mitigado por warmup silencioso no frontend).
   - type: web
     name: dataconform-api
     runtime: docker
@@ -11,25 +13,31 @@ services:
       - key: ASPNETCORE_ENVIRONMENT
         value: Production
       - key: DATABASE_URL
-        fromDatabase:
-          name: dataconform-db
-          property: connectionString
-      - key: ConnectionStrings__DefaultConnection
-        fromDatabase:
-          name: dataconform-db
-          property: connectionString
+        sync: false
       - key: Jwt__Secret
         generateValue: true
+      - key: Admin__ApiKey
+        generateValue: true
       - key: Cors__AllowedOrigins
-        value: "*"
+        value: "https://dataconform.com.br,https://www.dataconform.com.br"
+      - key: Stripe__SecretKey
+        sync: false
+      - key: Stripe__WebhookSecret
+        sync: false
+      - key: Stripe__ProPriceId
+        sync: false
+      - key: Stripe__EnterprisePriceId
+        sync: false
+      - key: Support__Email
+        sync: false
 
-  # Frontend (React 19 Static Site)
-  # Observação: Static sites no Render rodam direto no CDN global e não usam a propriedade 'plan'
+  # Frontend (React 19 Static Site + Programmatic SEO SSG)
+  # Static sites no Render rodam direto no CDN global sem custo fixo ($0/mês)
   - type: web
     name: dataconform-web
     runtime: static
     rootDir: frontend
-    buildCommand: npm install && npm run build
+    buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
     headers:
       - path: /*
@@ -45,13 +53,9 @@ services:
     envVars:
       - key: VITE_API_URL
         sync: false
+      - key: VITE_SUPPORT_EMAIL
+        sync: false
       - key: VITE_STRIPE_PRO_URL
         sync: false
       - key: VITE_STRIPE_ENTERPRISE_URL
         sync: false
-
-databases:
-  - name: dataconform-db
-    databaseName: dataconform
-    user: dataconform
-    plan: free

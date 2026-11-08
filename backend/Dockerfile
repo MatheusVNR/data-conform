@@ -18,9 +18,6 @@ RUN dotnet restore DataConform.sln
 # Copy the remaining source files
 COPY . .
 
-# Run automated tests during build (gerenciado pela esteira de CI do GitHub Actions para acelerar o deploy)
-# RUN dotnet test tests/DataConform.UnitTests/DataConform.UnitTests.csproj --configuration Release --no-restore
-
 # Publish the API in Release mode
 RUN dotnet publish DataConform.Api/DataConform.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
 
@@ -32,12 +29,16 @@ WORKDIR /app
 
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
+ENV FileStorage__BasePath=/app/storage/uploads
+
+RUN mkdir -p /app/storage/uploads && chmod 775 /app/storage/uploads
+
 EXPOSE 8080
 
 COPY --from=build /app/publish .
 
-# Healthcheck
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
+# Healthcheck nativo sem dependência de curl externo (Render utiliza healthCheckPath HTTP /health)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf "GET /health HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n" >&3 && head -n 1 <&3 | grep -q "200"' || exit 1
 
 ENTRYPOINT ["dotnet", "DataConform.Api.dll"]

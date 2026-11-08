@@ -121,7 +121,7 @@ export const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClos
                 <option value="SAP S/4HANA">SAP S/4HANA (Migration Cockpit — BP)</option>
                 <option value="Senior ERP">Senior ERP (Sapiens — E085CLI)</option>
                 <option value="Sankhya">Sankhya Om (Parceiros — TGFPAR)</option>
-                <option value="Omie">Omie ERP (Planilha Oficial Clientes)</option>
+                <option value="Omie">Omie ERP (Modelo de Referência Clientes)</option>
                 <option value="ContaAzul">ContaAzul (Importação Cadastral)</option>
                 <option value="Genérico / CSV">Genérico / Layout Customizado</option>
               </select>
@@ -130,7 +130,7 @@ export const CreateProjectModal: FC<CreateProjectModalProps> = ({ isOpen, onClos
             {/* ERP Preset Preview Box */}
             <div className="erp-preset-preview-box">
               <div className="erp-preset-header">
-                <span className="erp-preset-badge">Template Homologado</span>
+                <span className="erp-preset-badge">Perfil de Referência</span>
                 <strong>{activePreset.moduleReference}</strong>
               </div>
               <p className="erp-preset-desc">{activePreset.summary}</p>

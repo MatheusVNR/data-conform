@@ -102,6 +102,16 @@ const SANDBOX_SCENARIOS: SandboxErpScenario[] = [
           createdAt: '2026-10-22T12:00:00Z',
         },
         {
+          id: 'iss-protheus-sa2-email',
+          rowNumber: 2,
+          columnName: 'A2_EMAIL',
+          severity: 'Error',
+          issueCode: 'INVALID_EMAIL_FORMAT',
+          message: 'Formato de e-mail inválido na coluna A2_EMAIL (ausência de @ e domínio).',
+          rawValue: 'compras-sem-dominio',
+          createdAt: '2026-10-22T12:00:00Z',
+        },
+        {
           id: 'iss-protheus-sa2-2',
           rowNumber: 2,
           columnName: 'A2_EST',
@@ -318,6 +328,26 @@ const SANDBOX_SCENARIOS: SandboxErpScenario[] = [
           createdAt: '2026-10-22T12:00:00Z',
         },
         {
+          id: 'iss-sr-email',
+          rowNumber: 2,
+          columnName: 'EmaCli',
+          severity: 'Error',
+          issueCode: 'INVALID_EMAIL_FORMAT',
+          message: 'E-mail malformado na coluna EmaCli (ausência de símbolo @).',
+          rawValue: 'email-quebrado.com',
+          createdAt: '2026-10-22T12:00:00Z',
+        },
+        {
+          id: 'iss-sr-limit',
+          rowNumber: 2,
+          columnName: 'VlrLim',
+          severity: 'Error',
+          issueCode: 'NEGATIVE_AMOUNT_NOT_ALLOWED',
+          message: 'Limite financeiro negativo não permitido na coluna VlrLim.',
+          rawValue: '-1200.00',
+          createdAt: '2026-10-22T12:00:00Z',
+        },
+        {
           id: 'iss-sr-2',
           rowNumber: 2,
           columnName: 'CodEst',
@@ -384,7 +414,7 @@ const SANDBOX_SCENARIOS: SandboxErpScenario[] = [
   {
     erpKey: 'Omie',
     erpLabel: 'Omie ERP',
-    moduleTag: 'Planilha Clientes',
+    moduleTag: 'Modelo Clientes',
     aliases: ['omie-clientes', 'omie'],
     sampleCsvLines: [
       'codigo_cliente,razao_social,cnpj_cpf,email,valor_limite_credito,estado,cep',
@@ -407,6 +437,36 @@ const SANDBOX_SCENARIOS: SandboxErpScenario[] = [
           issueCode: 'INVALID_DOCUMENT_FORMAT',
           message: 'CNPJ inválido na coluna cnpj_cpf (dígito verificador Módulo 11 incorreto).',
           rawValue: '12.345.678/0001-00',
+          createdAt: '2026-10-22T12:00:00Z',
+        },
+        {
+          id: 'iss-omie-email',
+          rowNumber: 2,
+          columnName: 'email',
+          severity: 'Error',
+          issueCode: 'INVALID_EMAIL_FORMAT',
+          message: 'Formato de e-mail inválido na coluna email (ausência de @).',
+          rawValue: 'email-sem-arroba.com',
+          createdAt: '2026-10-22T12:00:00Z',
+        },
+        {
+          id: 'iss-omie-limit',
+          rowNumber: 2,
+          columnName: 'valor_limite_credito',
+          severity: 'Error',
+          issueCode: 'NEGATIVE_AMOUNT_NOT_ALLOWED',
+          message: 'Valor negativo não permitido na coluna valor_limite_credito.',
+          rawValue: '-4500.00',
+          createdAt: '2026-10-22T12:00:00Z',
+        },
+        {
+          id: 'iss-omie-uf',
+          rowNumber: 2,
+          columnName: 'estado',
+          severity: 'Error',
+          issueCode: 'INVALID_UF_CODE',
+          message: 'Sigla de UF inválida na coluna estado (esperado 27 UFs brasileiras ou EX).',
+          rawValue: 'XX',
           createdAt: '2026-10-22T12:00:00Z',
         },
         {
@@ -451,6 +511,26 @@ const SANDBOX_SCENARIOS: SandboxErpScenario[] = [
           createdAt: '2026-10-22T12:00:00Z',
         },
         {
+          id: 'iss-ca-email',
+          rowNumber: 2,
+          columnName: 'email',
+          severity: 'Error',
+          issueCode: 'INVALID_EMAIL_FORMAT',
+          message: 'E-mail inválido na coluna email.',
+          rawValue: 'email-invalido',
+          createdAt: '2026-10-22T12:00:00Z',
+        },
+        {
+          id: 'iss-ca-limit',
+          rowNumber: 2,
+          columnName: 'valor_limite_credito',
+          severity: 'Error',
+          issueCode: 'NEGATIVE_AMOUNT_NOT_ALLOWED',
+          message: 'Limite financeiro negativo não permitido na coluna valor_limite_credito.',
+          rawValue: '-1500.00',
+          createdAt: '2026-10-22T12:00:00Z',
+        },
+        {
           id: 'iss-ca-2',
           rowNumber: 2,
           columnName: 'data_vencimento',
@@ -458,6 +538,16 @@ const SANDBOX_SCENARIOS: SandboxErpScenario[] = [
           issueCode: 'INVALID_DATE_FORMAT',
           message: 'Data inválida na coluna data_vencimento (use AAAA-MM-DD ou DD/MM/AAAA).',
           rawValue: 'data-errada',
+          createdAt: '2026-10-22T12:00:00Z',
+        },
+        {
+          id: 'iss-ca-uf',
+          rowNumber: 2,
+          columnName: 'uf',
+          severity: 'Error',
+          issueCode: 'INVALID_UF_CODE',
+          message: 'Sigla de UF inválida na coluna uf.',
+          rawValue: 'XX',
           createdAt: '2026-10-22T12:00:00Z',
         },
       ],
@@ -529,9 +619,38 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
     const file: File | undefined = e.target.files?.[0];
     if (!file) return;
 
+    const parseCsvLine = (line: string, delimiter: string): string[] => {
+      const cells: string[] = [];
+      let current: string = '';
+      let inQuotes: boolean = false;
+      for (let i: number = 0; i < line.length; i++) {
+        const ch: string = line[i];
+        if (ch === '"') {
+          if (inQuotes && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else {
+            inQuotes = !inQuotes;
+          }
+        } else if (ch === delimiter && !inQuotes) {
+          cells.push(current.trim());
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      cells.push(current.trim());
+      return cells;
+    };
+
+    const validUfs: Set<string> = new Set([
+      'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
+      'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO', 'EX',
+    ]);
+
     const reader: FileReader = new FileReader();
     reader.onload = () => {
-      const text: string = typeof reader.result === 'string' ? reader.result : '';
+      const text: string = typeof reader.result === 'string' ? reader.result.replace(/^\uFEFF/, '') : '';
       const rawLines: string[] = text
         .replace(/\r\n/g, '\n')
         .replace(/\r/g, '\n')
@@ -542,9 +661,25 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
       if (rawLines.length === 0) return;
 
       const headerLine: string = rawLines[0];
-      const delimiter: string = headerLine.includes(';') ? ';' : ',';
-      const headers: string[] = headerLine.split(delimiter).map((h: string) => h.trim().replace(/^"|"$/g, ''));
-      const dataLines: string[] = rawLines.slice(1, 101);
+      const delimiter: string = headerLine.includes('\t') ? '\t' : headerLine.includes(';') ? ';' : ',';
+      const headers: string[] = parseCsvLine(headerLine, delimiter);
+
+      let startOffset: number = 1;
+      if (rawLines.length > 1) {
+        const secondCells: string[] = parseCsvLine(rawLines[1], delimiter);
+        const firstMarker: string = (secondCells[0] ?? '').toLowerCase();
+        if (
+          firstMarker === 'código do parceiro' ||
+          firstMarker === 'codigo do parceiro' ||
+          firstMarker === 'cardcode' ||
+          firstMarker === 'itemcode' ||
+          firstMarker === 'código do item'
+        ) {
+          startOffset = 2;
+        }
+      }
+
+      const dataLines: string[] = rawLines.slice(startOffset, startOffset + 100);
 
       trackEvent('sandbox_file_uploaded', {
         fileName: file.name,
@@ -563,19 +698,34 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
             columnName: reqCol,
             severity: 'Error',
             issueCode: 'REQUIRED_HEADER_MISSING',
-            message: `Coluna obrigatória '${reqCol}' do dicionário ${scenario.erpLabel} ausente no cabeçalho.`,
+            message: `Coluna obrigatória '${reqCol}' do perfil ${scenario.erpLabel} ausente no cabeçalho.`,
             rawValue: headerLine.slice(0, 60),
             createdAt: new Date().toISOString(),
           });
         }
       }
 
+      const ufColIdx: number = headers.findIndex((h: string) => {
+        const l: string = h.toLowerCase();
+        return l === 'uf' || l === 'estado' || l === 'a1_est' || l === 'a2_est' || l === 'codest' || l === 'sigufs' || l === 'state';
+      });
+      const pkColIdx: number = headers.findIndex((h: string) => {
+        const l: string = h.toLowerCase();
+        return (
+          l === 'a1_cod' || l === 'a2_cod' || l === 'b1_cod' || l === 'cardcode' ||
+          l === 'itemcode' || l === 'bp_number' || l === 'codcli' || l === 'codparc' ||
+          l === 'codigo_cliente' || l === 'codigo_integracao'
+        );
+      });
+      const seenPrimaryKeys: Set<string> = new Set<string>();
+
       let validRowCount: number = 0;
       let errorRowCount: number = 0;
 
       dataLines.forEach((line: string, idx: number) => {
-        const rowNum: number = idx + 1;
-        const cells: string[] = line.split(delimiter).map((c: string) => c.trim().replace(/^"|"$/g, ''));
+        const rowNum: number = idx + startOffset + 1;
+        const cells: string[] = parseCsvLine(line, delimiter);
+        const isForeignEntity: boolean = ufColIdx >= 0 && (cells[ufColIdx] ?? '').trim().toUpperCase() === 'EX';
         let rowHasError: boolean = false;
 
         if (cells.length !== headers.length) {
@@ -592,11 +742,39 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
           });
         }
 
+        if (pkColIdx >= 0) {
+          const pkVal: string = (cells[pkColIdx] ?? '').trim().toUpperCase();
+          if (pkVal !== '') {
+            if (seenPrimaryKeys.has(pkVal)) {
+              rowHasError = true;
+              issues.push({
+                id: `local-pk-${rowNum}`,
+                rowNumber: rowNum,
+                columnName: headers[pkColIdx],
+                severity: 'Error',
+                issueCode: 'DUPLICATE_PRIMARY_KEY',
+                message: `Chave primária '${pkVal}' duplicada na coluna '${headers[pkColIdx]}'.`,
+                rawValue: pkVal,
+                createdAt: new Date().toISOString(),
+              });
+            } else {
+              seenPrimaryKeys.add(pkVal);
+            }
+          }
+        }
+
         headers.forEach((colName: string, colIdx: number) => {
           const val: string = cells[colIdx] ?? '';
           const lowerCol: string = colName.toLowerCase();
+          const isDocCol: boolean =
+            lowerCol.includes('cgc') || lowerCol.includes('cnpj') || lowerCol.includes('cpf') ||
+            lowerCol.includes('lictradnum') || lowerCol.includes('taxid') || lowerCol === 'federaltaxid';
 
-          if (preset.requiredColumns.some((r: string) => r.toLowerCase() === lowerCol) && val === '') {
+          if (
+            preset.requiredColumns.some((r: string) => r.toLowerCase() === lowerCol) &&
+            val === '' &&
+            !(isForeignEntity && isDocCol)
+          ) {
             rowHasError = true;
             issues.push({
               id: `local-req-${rowNum}-${colIdx}`,
@@ -608,10 +786,7 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
               rawValue: '(vazio)',
               createdAt: new Date().toISOString(),
             });
-          } else if (
-            (lowerCol.includes('cgc') || lowerCol.includes('cnpj') || lowerCol.includes('cpf') || lowerCol.includes('lictradnum') || lowerCol.includes('taxid')) &&
-            val !== ''
-          ) {
+          } else if (isDocCol && val !== '' && !isForeignEntity) {
             if (!isValidBrazilianDocument(val)) {
               rowHasError = true;
               issues.push({
@@ -625,7 +800,7 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
                 createdAt: new Date().toISOString(),
               });
             }
-          } else if (lowerCol.includes('mail') && val !== '' && (!val.includes('@') || !val.includes('.'))) {
+          } else if (lowerCol.includes('mail') && val !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
             rowHasError = true;
             issues.push({
               id: `local-mail-${rowNum}-${colIdx}`,
@@ -637,6 +812,123 @@ export const VisitorInteractiveSandbox: FC<VisitorInteractiveSandboxProps> = ({
               rawValue: val,
               createdAt: new Date().toISOString(),
             });
+          } else if (
+            (lowerCol === 'uf' || lowerCol === 'estado' || lowerCol === 'a1_est' || lowerCol === 'a2_est' ||
+              lowerCol === 'codest' || lowerCol === 'sigufs' || lowerCol === 'state') &&
+            val !== '' &&
+            !validUfs.has(val.toUpperCase())
+          ) {
+            rowHasError = true;
+            issues.push({
+              id: `local-uf-${rowNum}-${colIdx}`,
+              rowNumber: rowNum,
+              columnName: colName,
+              severity: 'Error',
+              issueCode: 'INVALID_UF_CODE',
+              message: `Sigla de UF inválida na coluna '${colName}' (use uma das 27 UFs ou EX).`,
+              rawValue: val,
+              createdAt: new Date().toISOString(),
+            });
+          } else if (
+            (lowerCol.includes('cep') || lowerCol === 'zipcode') &&
+            val !== '' &&
+            !isForeignEntity
+          ) {
+            const digits: string = val.replace(/\D/g, '');
+            if (digits.length !== 8 || digits === '00000000') {
+              rowHasError = true;
+              issues.push({
+                id: `local-cep-${rowNum}-${colIdx}`,
+                rowNumber: rowNum,
+                columnName: colName,
+                severity: 'Error',
+                issueCode: 'INVALID_CEP_FORMAT',
+                message: `CEP inválido na coluna '${colName}' (esperado 8 dígitos numéricos válidos).`,
+                rawValue: val,
+                createdAt: new Date().toISOString(),
+              });
+            }
+          } else if ((lowerCol.includes('ncm') || lowerCol === 'b1_posipi') && val !== '') {
+            const digits: string = val.replace(/\D/g, '');
+            const isSapAbsEntry: boolean = lowerCol === 'ncmcode' && /^[1-9]\d{0,6}$/.test(val);
+            if (digits.length !== 8 && !isSapAbsEntry) {
+              rowHasError = true;
+              issues.push({
+                id: `local-ncm-${rowNum}-${colIdx}`,
+                rowNumber: rowNum,
+                columnName: colName,
+                severity: 'Error',
+                issueCode: 'INVALID_NCM_FORMAT',
+                message: `Código NCM inválido na coluna '${colName}' (esperado 8 dígitos numéricos).`,
+                rawValue: val,
+                createdAt: new Date().toISOString(),
+              });
+            }
+          } else if (
+            (lowerCol === 'a1_lc' || lowerCol === 'a2_lc' || lowerCol === 'b1_prv1' ||
+              lowerCol === 'creditline' || lowerCol === 'creditlimit' || lowerCol === 'price' ||
+              lowerCol === 'vlrlim' || lowerCol === 'limcred' || lowerCol.includes('valor') || lowerCol.includes('preco')) &&
+            val !== ''
+          ) {
+            const normalizedNum: string = val.includes(',') && val.includes('.')
+              ? val.replace(/\./g, '').replace(',', '.')
+              : val.replace(',', '.');
+            const parsedNum: number = Number(normalizedNum);
+            if (!Number.isFinite(parsedNum)) {
+              rowHasError = true;
+              issues.push({
+                id: `local-num-${rowNum}-${colIdx}`,
+                rowNumber: rowNum,
+                columnName: colName,
+                severity: 'Error',
+                issueCode: 'INVALID_NUMERIC_VALUE',
+                message: `Valor numérico inválido na coluna '${colName}'.`,
+                rawValue: val,
+                createdAt: new Date().toISOString(),
+              });
+            } else if (parsedNum < 0) {
+              rowHasError = true;
+              issues.push({
+                id: `local-neg-${rowNum}-${colIdx}`,
+                rowNumber: rowNum,
+                columnName: colName,
+                severity: 'Error',
+                issueCode: 'NEGATIVE_AMOUNT_NOT_ALLOWED',
+                message: `Valor negativo não permitido na coluna '${colName}'.`,
+                rawValue: val,
+                createdAt: new Date().toISOString(),
+              });
+            }
+          } else if ((lowerCol.includes('data') || lowerCol === 'validfrom') && val !== '') {
+            const isoMatch: RegExpMatchArray | null = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            const brMatch: RegExpMatchArray | null = val.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            let validDate: boolean = false;
+            if (isoMatch) {
+              const y: number = Number(isoMatch[1]);
+              const m: number = Number(isoMatch[2]);
+              const d: number = Number(isoMatch[3]);
+              const dt: Date = new Date(Date.UTC(y, m - 1, d));
+              validDate = dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+            } else if (brMatch) {
+              const d: number = Number(brMatch[1]);
+              const m: number = Number(brMatch[2]);
+              const y: number = Number(brMatch[3]);
+              const dt: Date = new Date(Date.UTC(y, m - 1, d));
+              validDate = dt.getUTCFullYear() === y && dt.getUTCMonth() === m - 1 && dt.getUTCDate() === d;
+            }
+            if (!validDate) {
+              rowHasError = true;
+              issues.push({
+                id: `local-dt-${rowNum}-${colIdx}`,
+                rowNumber: rowNum,
+                columnName: colName,
+                severity: 'Error',
+                issueCode: 'INVALID_DATE_FORMAT',
+                message: `Data inválida na coluna '${colName}' (use AAAA-MM-DD ou DD/MM/AAAA).`,
+                rawValue: val,
+                createdAt: new Date().toISOString(),
+              });
+            }
           }
         });
 

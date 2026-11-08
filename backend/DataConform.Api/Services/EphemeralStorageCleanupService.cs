@@ -1,4 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using DataConform.Application.Common.Interfaces;
+using DataConform.Domain.Entities;
+using DataConform.Domain.Enums;
+using DataConform.Infrastructure.Persistence;
 
 namespace DataConform.Api.Services;
 
@@ -58,6 +62,30 @@ public class EphemeralStorageCleanupService : BackgroundService
                     "Expurgo efêmero LGPD concluído: {PurgedCount} arquivo(s) CSV temporário(s) com mais de {Hours}h removido(s) do armazenamento físico.",
                     purgedCount,
                     maxFileAge.TotalHours);
+            }
+
+            DataConformDbContext? dbContext = scope.ServiceProvider.GetService<DataConformDbContext>();
+            if (dbContext != null)
+            {
+                DateTimeOffset staleCutoff = DateTimeOffset.UtcNow.AddMinutes(-30);
+                List<ImportFile> staleProcessingFiles = await dbContext.ImportFiles
+                    .IgnoreQueryFilters()
+                    .Where(f => f.Status == FileStatus.Processing &&
+                                (f.ProcessedAt ?? f.CreatedAt) < staleCutoff)
+                    .ToListAsync(stoppingToken);
+
+                if (staleProcessingFiles.Count > 0)
+                {
+                    foreach (ImportFile staleFile in staleProcessingFiles)
+                    {
+                        staleFile.Status = FileStatus.Failed;
+                    }
+
+                    await dbContext.SaveChangesAsync(stoppingToken);
+                    _logger.LogWarning(
+                        "Recuperação automática: {Count} arquivo(s) travado(s) em Processing há mais de 30 minutos foram marcados como Failed.",
+                        staleProcessingFiles.Count);
+                }
             }
         }
         catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)

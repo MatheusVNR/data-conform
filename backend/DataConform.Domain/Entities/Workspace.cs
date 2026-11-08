@@ -18,6 +18,8 @@ public class Workspace
     public string? StripeCustomerId { get; set; }
     public string? StripeSubscriptionId { get; set; }
     public DateTimeOffset? PlanExpiresAtUtc { get; set; }
+    public bool CancelAtPeriodEnd { get; set; } = false;
+    public DateTimeOffset? QuotaPeriodStartedAtUtc { get; set; }
 
     public ICollection<ImportProject> Projects { get; set; } = new List<ImportProject>();
     public ICollection<User> Users { get; set; } = new List<User>();

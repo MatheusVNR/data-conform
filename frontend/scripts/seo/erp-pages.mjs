@@ -5,16 +5,16 @@ export const ERP_SEO_PAGES = [
     shortKey: 'protheus-sa1',
     systemName: 'TOTVS Protheus',
     tableCode: 'SA1 (Clientes)',
-    moduleReference: 'Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotina MATA030',
+    moduleReference: 'Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotinas CRMA980 / MATA030',
     title: 'Layout de Importação TOTVS Protheus SA1 (Clientes) em CSV | DataConform',
     metaDescription:
-      'Baixe e valide o layout CSV da tabela SA1 (Clientes) do TOTVS Protheus (MATA030). Verifique A1_COD, A1_LOJA, A1_CGC, A1_EMAIL, A1_EST e A1_CEP antes da carga.',
-    h1: 'Layout de Importação TOTVS Protheus SA1 (Clientes): Validação de CSV para MATA030',
+      'Baixe e valide o modelo CSV de referência da tabela SA1 (Clientes) do TOTVS Protheus (CRMA980 / MATA030). Verifique A1_COD, A1_LOJA, A1_CGC, A1_EMAIL, A1_EST e A1_CEP antes da carga.',
+    h1: 'Layout de Importação TOTVS Protheus SA1 (Clientes) em CSV',
     lead:
-      'Homologue sua planilha de clientes segundo o dicionário SX3 da tabela SA1 antes de executar a rotina automática MATA030 ou o MILE no TOTVS Protheus. Intercepte erros de CNPJ/CPF, CEP, UF, limite de crédito e codificação UTF-8 linha a linha.',
+      'Homologue sua planilha segundo a referência SX3 da tabela SA1 antes das rotinas CRMA980, MATA030 ou MILE no TOTVS Protheus. Intercepte erros de CNPJ/CPF, CEP, UF, limite de crédito e UTF-8.',
     purposeParagraphs: [
-      'A tabela SA1 (Cadastro de Clientes) alimenta os módulos SIGAFAT, SIGAFIN e SIGACOM no TOTVS Protheus. Em cargas via ExecAuto (MATA030) ou MILE, a importação exige aderência estrita ao dicionário SX3 para evitar bloqueios de NF-e na SEFAZ.',
-      'O preset do DataConform para TOTVS Protheus SA1 audita o arquivo CSV antes da carga: confere o cabeçalho, valida CPF e CNPJ em A1_CGC por Módulo 11, checa siglas estaduais em A1_EST, exige 8 dígitos em A1_CEP e bloqueia valores negativos em A1_LC.',
+      'A tabela SA1 (Clientes) abastece SIGAFAT, SIGAFIN e SIGACOM no TOTVS Protheus. Cargas via CRMA980, MATA030 ou MILE exigem aderência ao dicionário SX3 para evitar rejeições de NF-e na SEFAZ.',
+      'O perfil DataConform para Protheus SA1 valida cabeçalho, CPF/CNPJ em A1_CGC (Módulo 11), siglas estaduais em A1_EST, 8 dígitos em A1_CEP e valores não negativos em A1_LC.',
     ],
     sampleFileName: 'layout_totvs_protheus_sa1.csv',
     sampleCsvContent: [
@@ -191,12 +191,6 @@ export const ERP_SEO_PAGES = [
         description: 'E-mail corporativo para pedidos de compra, cotações e avisos financeiros.',
         example: 'suprimentos@valeind.com.br',
         ruleCode: 'INVALID_EMAIL_FORMAT',
-      },
-      {
-        name: 'A2_LC',
-        description: 'Limite operacional/crédito parametrizado para o fornecedor.',
-        example: '200000.00',
-        ruleCode: 'INVALID_NUMERIC_VALUE / NEGATIVE_AMOUNT_NOT_ALLOWED',
       },
       {
         name: 'A2_EST',
@@ -564,14 +558,8 @@ export const ERP_SEO_PAGES = [
         ruleCode: 'REQUIRED_FIELD_MISSING',
       },
       {
-        name: 'Price',
-        description: 'Preço unitário base do item para validação financeira (decimal não negativo).',
-        example: '1650.00',
-        ruleCode: 'INVALID_NUMERIC_VALUE / NEGATIVE_AMOUNT_NOT_ALLOWED',
-      },
-      {
         name: 'NcmCode',
-        description: 'Código NCM fiscal vinculado à tabela ONCM do SAP B1 (8 dígitos numéricos).',
+        description: 'Código NCM fiscal vinculado à tabela ONCM do SAP B1 (8 dígitos numéricos ou AbsEntry).',
         example: '8528.52.20',
         ruleCode: 'INVALID_NCM_FORMAT',
       },
@@ -1026,8 +1014,8 @@ export const ERP_SEO_PAGES = [
     erpKey: 'Omie',
     shortKey: 'omie-clientes',
     systemName: 'Omie',
-    tableCode: 'Planilha de Clientes e Fornecedores',
-    moduleReference: 'Planilha Oficial de Clientes e Fornecedores — ERP Omie',
+    tableCode: 'Modelo de Clientes e Fornecedores',
+    moduleReference: 'Modelo de Referência de Clientes e Fornecedores — ERP Omie',
     title: 'Layout de Importação Omie (Planilha de Clientes CSV) | DataConform',
     metaDescription:
       'Valide sua planilha CSV de clientes e fornecedores antes de importar no ERP Omie. Confira codigo_cliente, razao_social, cnpj_cpf, email, estado e cep grátis.',

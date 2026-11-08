@@ -166,18 +166,18 @@
         </section>
 
         <section style="margin-top: 2rem;">
-          <h2>Dicionários de Dados e Layouts de Importação Homologados por ERP</h2>
+          <h2>Perfis de Referência e Layouts de Importação por ERP</h2>
           <p>
-            Cada projeto no DataConform conta com mapeamento das tabelas, colunas obrigatórias e planilhas modelo CSV para download dos principais sistemas ERP em operação no Brasil:
+            Cada projeto no DataConform conta com mapeamento de referência das tabelas, colunas sugeridas e planilhas modelo CSV para download dos principais sistemas ERP em operação no Brasil:
           </p>
           <ul>
             <li>
-              <a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus — Tabela SA1 (Clientes / MATA030):</strong></a>
+              <a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus — Tabela SA1 (Clientes / CRMA980 e MATA030):</strong></a>
               valida <code>A1_COD</code>, <code>A1_LOJA</code>, <code>A1_NOME</code>, <code>A1_CGC</code>, <code>A1_EMAIL</code>, <code>A1_LC</code>, <code>A1_EST</code> e <code>A1_CEP</code>.
             </li>
             <li>
               <a href="/layout-importacao-protheus-sa2-fornecedores/"><strong>TOTVS Protheus — Tabela SA2 (Fornecedores / MATA020):</strong></a>
-              valida <code>A2_COD</code>, <code>A2_LOJA</code>, <code>A2_NOME</code>, <code>A2_CGC</code>, <code>A2_EMAIL</code>, <code>A2_LC</code> e <code>A2_EST</code>.
+              valida <code>A2_COD</code>, <code>A2_LOJA</code>, <code>A2_NOME</code>, <code>A2_CGC</code>, <code>A2_EMAIL</code> e <code>A2_EST</code> (além de <code>A2_LC</code> e <code>A2_CEP</code> quando presentes).
             </li>
             <li>
               <a href="/layout-importacao-protheus-sb1-produtos/"><strong>TOTVS Protheus — Tabela SB1 (Produtos / MATA010):</strong></a>
@@ -189,7 +189,7 @@
             </li>
             <li>
               <a href="/layout-importacao-sap-business-one-oitm-itens/"><strong>SAP Business One — Objeto OITM (Cadastro de Itens / DTW):</strong></a>
-              valida <code>ItemCode</code>, <code>ItemName</code>, <code>SalUnitMsr</code>, <code>Price</code> e <code>NcmCode</code>.
+              valida <code>ItemCode</code>, <code>ItemName</code>, <code>SalUnitMsr</code> e <code>NcmCode</code> (além de <code>Price</code> quando informado).
             </li>
             <li>
               <a href="/layout-importacao-sap-s4hana-business-partner/"><strong>SAP S/4HANA — Migration Cockpit (Business Partner BP):</strong></a>
@@ -204,7 +204,7 @@
               valida <code>CODPARC</code>, <code>NOMEPARC</code>, <code>CGC_CPF</code>, <code>EMAIL</code>, <code>LIMCRED</code>, <code>ATIVO</code> e <code>CEP</code>.
             </li>
             <li>
-              <a href="/layout-importacao-omie-clientes/"><strong>Omie — Planilha Oficial de Clientes e Fornecedores:</strong></a>
+              <a href="/layout-importacao-omie-clientes/"><strong>Omie — Modelo de Referência de Clientes e Fornecedores:</strong></a>
               valida <code>codigo_cliente</code>, <code>razao_social</code>, <code>cnpj_cpf</code>, <code>email</code>, <code>valor_limite_credito</code>, <code>estado</code> e <code>cep</code>.
             </li>
             <li>
@@ -216,7 +216,7 @@
         </section>
 
         <section style="margin-top: 2rem;">
-          <h2>Motor de Conformidade com 17 Regras Estruturais e Fiscais</h2>
+          <h2>Motor de Conformidade com 18 Regras Estruturais e Fiscais</h2>
           <p>
             O DataConform combina inspeção estrutural RFC 4180 (detecção automática de delimitador vírgula, ponto e vírgula ou tabulação) com validação semântica para o cenário fiscal brasileiro:
           </p>
@@ -226,21 +226,28 @@
             <li><a href="/validar-cep-em-lote-csv/">Validar CEP em lote e zeros à esquerda cortados pelo Excel (<code>INVALID_CEP_FORMAT</code>)</a></li>
             <li><a href="/erro-encoding-utf8-caracteres-estranhos-csv/">Detectar caracteres estranhos e corrupção de encoding UTF-8 (<code>ENCODING_CORRUPTION</code>)</a></li>
             <li><a href="/erro-colunas-delimitador-quebrado-csv/">Localizar linhas com colunas a mais ou delimitador quebrado (<code>COLUMN_COUNT_MISMATCH</code>)</a></li>
-            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar linhas duplicadas com hash de 64 bits XxHash64 (<code>DUPLICATE_ROW</code>)</a></li>
+            <li><a href="/remover-identificar-linhas-duplicadas-csv/">Identificar linhas e chaves primárias duplicadas com hash XxHash64 (<code>DUPLICATE_ROW</code> / <code>DUPLICATE_PRIMARY_KEY</code>)</a></li>
             <li><a href="/validar-email-em-lote-planilha-csv/">Validar lista de e-mails corporativos e de NF-e em lote (<code>INVALID_EMAIL_FORMAT</code>)</a></li>
             <li><a href="/validar-uf-estado-planilha-csv/">Validar siglas de UF e Estado segundo tabela IBGE/SEFAZ + EX (<code>INVALID_UF_CODE</code>)</a></li>
           </ul>
-          <p><a href="/regras-de-validacao-csv/">Ver todas as 17 regras de validação CSV do DataConform →</a></p>
+          <p><a href="/regras-de-validacao-csv/">Ver todas as 18 regras de validação CSV do DataConform →</a></p>
         </section>
 
         <section style="margin-top: 2rem;">
           <h2>Planos e Capacidade Operacional Transparentes</h2>
           <ul>
-            <li><strong>Starter (Gratuito — R$ 0/mês):</strong> até 20 arquivos/mês, até 1.000 linhas por arquivo, até 5 MB por arquivo.</li>
-            <li><strong>Professional (R$ 79,90/mês):</strong> até 500 arquivos/mês, até 50.000 linhas por arquivo, até 25 MB por arquivo.</li>
+            <li><strong>Starter (Gratuito — R$ 0/mês):</strong> até 5 arquivos/mês, até 500 linhas por arquivo, até 5 MB por arquivo.</li>
+            <li><strong>Professional (R$ 79,90/mês):</strong> até 500 arquivos/mês, até 15.000 linhas por arquivo, até 25 MB por arquivo.</li>
             <li><strong>Enterprise (R$ 249,90/mês):</strong> até 10.000 arquivos/mês, até 1.000.000 de linhas por arquivo, até 50 MB por arquivo.</li>
           </ul>
-          <p><a href="/precos/">Consultar comparativo completo de planos e preços →</a></p>
+          <p>
+            <a href="/precos/">Consultar comparativo completo de planos e preços →</a> •
+            <a href="/termos/">Termos de Uso</a> •
+            <a href="/privacidade/">Política de Privacidade (LGPD)</a>
+          </p>
+          <p style="font-size: 0.82rem; color: #475569; margin-top: 1rem;">
+            TOTVS®, Protheus®, SAP®, SAP Business One®, SAP S/4HANA®, Senior®, Sankhya®, Omie® e ContaAzul® são marcas registradas de seus respectivos proprietários. O DataConform é uma plataforma independente sem vínculo societário ou endosso oficial.
+          </p>
         </section>
       </main>
     </div>

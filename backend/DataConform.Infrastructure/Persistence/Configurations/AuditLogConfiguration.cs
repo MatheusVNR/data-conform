@@ -32,5 +32,9 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 
         builder.HasIndex(a => new { a.WorkspaceId, a.CreatedAt });
         builder.HasIndex(a => new { a.UserId, a.Action });
+        builder.HasIndex(a => new { a.Action, a.EntityId })
+            .IsUnique()
+            .HasDatabaseName("IX_audit_logs_stripe_idempotency")
+            .HasFilter("\"Action\" IN ('StripeWebhookProcessed', 'StripeCheckoutConfirmed')");
     }
 }

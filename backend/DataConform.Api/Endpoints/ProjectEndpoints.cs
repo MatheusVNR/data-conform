@@ -108,7 +108,8 @@ public static class ProjectEndpoints
         CancellationToken cancellationToken)
     {
         Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
-        ServiceResult result = await projectService.DeleteProjectAsync(projectId, userId, cancellationToken);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
+        ServiceResult result = await projectService.DeleteProjectAsync(projectId, userId, primaryWorkspaceId, cancellationToken);
         return result.ToHttpResult();
     }
 }

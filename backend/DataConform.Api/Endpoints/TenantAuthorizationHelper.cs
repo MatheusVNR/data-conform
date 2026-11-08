@@ -24,6 +24,12 @@ public static class TenantAuthorizationHelper
         return null;
     }
 
+    public static string? GetAuthenticatedUserEmail(ClaimsPrincipal principal)
+    {
+        string? email = principal.FindFirst(ClaimTypes.Email)?.Value;
+        return string.IsNullOrWhiteSpace(email) ? null : email.Trim();
+    }
+
     public static IResult ForbiddenTenantResult()
     {
         return Results.Problem(

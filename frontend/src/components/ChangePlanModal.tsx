@@ -1,9 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FC } from 'react';
-import type { WorkspaceDto, WorkspaceQuotaDto } from '../types';
-import { PlanTierLabels } from '../types';
-import { changeWorkspacePlan, confirmStripeCheckout, createCustomerFeedback } from '../services/api';
+import type { BillingConfigDto, WorkspaceDto, WorkspaceQuotaDto } from '../types';
+import { PENDING_CHECKOUT_STORAGE_KEY, PlanTierLabels } from '../types';
+import {
+  changeWorkspacePlan,
+  confirmStripeCheckout,
+  createBillingPortalSession,
+  createCheckoutSession,
+  createCustomerFeedback,
+  getBillingConfig,
+} from '../services/api';
 import { trackEvent, getAttributionPayload } from '../utils/analytics';
+
+export { PENDING_CHECKOUT_STORAGE_KEY };
 
 interface ChangePlanModalProps {
   isOpen: boolean;
@@ -13,6 +22,7 @@ interface ChangePlanModalProps {
   onClose: () => void;
   onPlanChanged: (updatedQuota: WorkspaceQuotaDto) => void;
   onRequireAuth: () => void;
+  onOpenSupport?: () => void;
 }
 
 interface PlanOption {
@@ -33,9 +43,7 @@ const CONFIGURED_STRIPE_PRO_URL: string = ((import.meta.env.VITE_STRIPE_PRO_URL 
 const STRIPE_PRO_URL: string =
   CONFIGURED_STRIPE_PRO_URL || (import.meta.env.DEV ? DEFAULT_STRIPE_PRO_TEST_URL : '');
 const STRIPE_ENTERPRISE_URL: string = ((import.meta.env.VITE_STRIPE_ENTERPRISE_URL as string | undefined) ?? '').trim();
-
-import { PENDING_CHECKOUT_STORAGE_KEY } from '../types';
-export { PENDING_CHECKOUT_STORAGE_KEY };
+const CONFIGURED_SUPPORT_EMAIL: string = ((import.meta.env.VITE_SUPPORT_EMAIL as string | undefined) ?? '').trim();
 
 const PLANS: PlanOption[] = [
   {
@@ -50,7 +58,7 @@ const PLANS: PlanOption[] = [
     features: [
       '5 validações de arquivos por mês',
       'Até 500 linhas e 5 MB por planilha',
-      'Dicionários nativos de ERPs inclusos',
+      'Perfis de referência de ERPs inclusos',
       'Laudo técnico preliminar em PDF e CSV',
     ],
   },
@@ -66,7 +74,7 @@ const PLANS: PlanOption[] = [
     features: [
       '500 validações de arquivos por mês (100x mais)',
       'Até 15.000 linhas e 25 MB por planilha',
-      'Laudo Executivo White-Label c/ Termo de Aceite',
+      "Laudo Executivo Oficial (sem marca d'água) c/ Termo de Aceite",
       'Upload em lote de até 5 arquivos e trilha de auditoria',
     ],
     highlight: true,
@@ -84,7 +92,7 @@ const PLANS: PlanOption[] = [
       '10.000 validações de arquivos por mês',
       'Até 1.000.000 de linhas e 50 MB por planilha',
       'Upload em lote de até 10 arquivos simultâneos',
-      'Laudo White-Label, multi-organização e governança',
+      'Laudo Executivo Oficial, até 10 workspaces e governança',
     ],
   },
 ];
@@ -97,6 +105,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
   onClose,
   onPlanChanged,
   onRequireAuth,
+  onOpenSupport,
 }) => {
   const currentPlanLabel: string = workspace
     ? (PlanTierLabels[String(workspace.plan)] ?? 'Starter')
@@ -111,6 +120,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
   const [cancelFeedbackText, setCancelFeedbackText] = useState<string>('');
   const [manualSessionId, setManualSessionId] = useState<string>('');
   const [showManualSession, setShowManualSession] = useState<boolean>(false);
+  const [billingConfig, setBillingConfig] = useState<BillingConfigDto | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -125,6 +135,27 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
       actionSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 60);
   };
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    let cancelled: boolean = false;
+    Promise.resolve(typeof getBillingConfig === 'function' ? getBillingConfig() : null)
+      .then((cfg: BillingConfigDto | null) => {
+        if (!cancelled && cfg) {
+          setBillingConfig(cfg);
+        }
+      })
+      .catch(() => {
+        // Mantém fallback seguro sem expor erro ao usuário
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -142,6 +173,11 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
 
   if (!isOpen) return null;
 
+  const activeSupportEmail: string = (billingConfig?.supportEmail ?? CONFIGURED_SUPPORT_EMAIL).trim();
+  const formattedExpiryDate: string | null = workspace?.planExpiresAtUtc
+    ? new Date(workspace.planExpiresAtUtc).toLocaleDateString('pt-BR')
+    : null;
+
   const isSelectedCurrent: boolean =
     Boolean(isAuthenticated && workspace) &&
     selectedPlan.toLowerCase() === currentPlanLabel.toLowerCase();
@@ -150,6 +186,22 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
     Boolean(isAuthenticated && workspace) &&
     selectedPlan === 'Starter' &&
     currentPlanLabel !== 'Starter';
+
+  const handleOpenBillingPortal = async (): Promise<void> => {
+    if (!workspace || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const originUrl: string = typeof window !== 'undefined' ? `${window.location.origin}/` : 'https://dataconform.com.br/';
+      const portal = await createBillingPortalSession(workspace.id, { returnUrl: originUrl });
+      window.location.assign(portal.portalUrl);
+    } catch (err: unknown) {
+      const msg: string = err instanceof Error ? err.message : 'Não foi possível abrir o portal de faturas da Stripe.';
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleProceedToStripe = async (): Promise<void> => {
     if (!workspace) {
@@ -165,18 +217,57 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
     setError(null);
     setSuccessMessage(null);
 
+    const planConfig: PlanOption | undefined = PLANS.find((p: PlanOption) => p.key === selectedPlan);
+    const configuredPrice: string =
+      planConfig?.price ?? (selectedPlan === 'Professional' ? 'R$ 79,90 / mês' : 'R$ 249,90 / mês');
+
+    // 1. Fluxo oficial server-side (Stripe Checkout Sessions c/ coleta de CPF/CNPJ, endereço e cupom)
+    if (billingConfig?.checkoutEnabled) {
+      setLoading(true);
+      trackEvent('checkout_started', {
+        targetPlan: selectedPlan,
+        price: configuredPrice,
+        workspaceId: workspace.id,
+        stage: 'stripe_checkout_session',
+      });
+
+      try {
+        const originUrl: string = typeof window !== 'undefined' ? `${window.location.origin}/` : 'https://dataconform.com.br/';
+        const session = await createCheckoutSession(workspace.id, {
+          plan: selectedPlan,
+          successUrl: originUrl,
+          cancelUrl: originUrl,
+        });
+
+        localStorage.setItem(
+          PENDING_CHECKOUT_STORAGE_KEY,
+          JSON.stringify({
+            workspaceId: workspace.id,
+            plan: selectedPlan,
+            sessionId: session.sessionId ?? undefined,
+            timestamp: new Date().getTime(),
+          })
+        );
+
+        window.location.assign(session.checkoutUrl);
+      } catch (err: unknown) {
+        const msg: string = err instanceof Error ? err.message : 'Erro ao iniciar sessão de pagamento segura via Stripe.';
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     const targetUrl: string =
       selectedPlan === 'Professional'
         ? STRIPE_PRO_URL
         : STRIPE_ENTERPRISE_URL;
 
-    // Em produção com Stripe Live congelado, registra o interesse e orienta o usuário com transparência
-    if (!import.meta.env.DEV || !targetUrl || targetUrl.includes('/test_')) {
+    // 2. Enquanto o checkout Stripe não estiver ativo no ambiente, registra interesse comercial auditável
+    if (!targetUrl || targetUrl.includes('/test_')) {
       const attribution = getAttributionPayload();
-      const planConfig = PLANS.find((p) => p.key === selectedPlan);
-      const configuredPrice = planConfig?.price ?? (selectedPlan === 'Professional' ? 'R$ 79,90 / mês' : 'R$ 249,90 / mês');
 
-      // O evento 'checkout_started' representa estritamente o início da intenção comercial
       trackEvent('checkout_started', {
         targetPlan: selectedPlan,
         price: configuredPrice,
@@ -202,18 +293,22 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
           contactEmail: userEmail || undefined,
         });
 
-        // Confirmação exibida estritamente após a resposta de sucesso da API
         setSuccessMessage(
-          `Os planos comerciais pagos estão em fase final de homologação. Registramos seu interesse prioritário no plano ${selectedPlan} (${configuredPrice})! Você receberá condições exclusivas de lançamento assim que as contratações forem abertas. Enquanto isso, seu plano gratuito Starter continua 100% ativo com todos os dicionários de ERP inclusos.`
+          `Os planos comerciais pagos estão em fase final de ativação. Registramos seu interesse prioritário no plano ${selectedPlan} (${configuredPrice})! Você receberá condições exclusivas de lançamento assim que as contratações forem abertas. Enquanto isso, seu plano gratuito Starter continua 100% ativo com todos os perfis de ERP inclusos.`
         );
       } catch (err: unknown) {
-        // Falha de rede ou de backend: informa o usuário honestamente e oferece canal direto
-        const technicalDetail = err instanceof Error ? err.message : 'Falha na comunicação com o servidor';
+        const technicalDetail: string = err instanceof Error ? err.message : 'Falha na comunicação com o servidor';
         console.error('[DataConform Commercial Audit] Erro ao registrar interesse de plano:', technicalDetail);
 
-        setError(
-          `Não foi possível registrar seu interesse automaticamente neste momento. Para garantir sua condição prioritária de lançamento no plano ${selectedPlan} (${configuredPrice}), entre em contato pelo e-mail contato@dataconform.com.br.`
-        );
+        if (activeSupportEmail.length > 0) {
+          setError(
+            `Não foi possível registrar seu interesse automaticamente neste momento. Para garantir sua condição prioritária de lançamento no plano ${selectedPlan} (${configuredPrice}), entre em contato pelo e-mail ${activeSupportEmail}.`
+          );
+        } else {
+          setError(
+            `Não foi possível registrar seu interesse automaticamente neste momento. Tente novamente em instantes ou utilize o Canal de Suporte e Atendimento na plataforma para falar com nossa equipe sobre o plano ${selectedPlan} (${configuredPrice}).`
+          );
+        }
       } finally {
         setLoading(false);
       }
@@ -221,6 +316,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
       return;
     }
 
+    // 3. Fallback via Payment Link direto (somente quando URL Live explícita estiver configurada)
     let checkoutRedirectUrl: string = targetUrl;
     try {
       const parsedUrl: URL = new URL(targetUrl);
@@ -244,7 +340,9 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
 
     trackEvent('checkout_started', {
       targetPlan: selectedPlan,
+      price: configuredPrice,
       workspaceId: workspace.id,
+      stage: 'payment_link_redirect',
     });
 
     window.location.assign(checkoutRedirectUrl);
@@ -283,8 +381,8 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
         'erp-ausente': 'Faltou suporte a determinado ERP ou formato',
         'volume-baixo': 'Volume de arquivos foi baixo este mês',
         'duvida-tecnica': 'Dúvidas ou dificuldades na homologação',
-        'orcamento': 'Restrição orçamentária temporária',
-        'outro': 'Outro motivo',
+        orcamento: 'Restrição orçamentária temporária',
+        outro: 'Outro motivo',
       };
 
       const readableReason: string = reasonLabel[cancelReason] ?? cancelReason;
@@ -292,7 +390,6 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
         cancelFeedbackText.trim() ? ` Feedback: "${cancelFeedbackText.trim()}".` : ''
       }`;
 
-      // Persiste histórico de churn no banco de dados e localmente para auditoria e inteligência de produto
       try {
         await createCustomerFeedback({
           workspaceId: workspace.id,
@@ -300,6 +397,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
           rating: 0,
           subject: `Cancelamento de Assinatura (${currentPlanLabel} -> Starter)`,
           message: `Motivo: ${readableReason}.${cancelFeedbackText.trim() ? ` Detalhes: "${cancelFeedbackText.trim()}".` : ''}`,
+          contactEmail: userEmail || undefined,
         });
       } catch {
         // Ignora erro de rede para não travar o cancelamento
@@ -308,7 +406,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
       try {
         const storedFeedbacks: unknown[] = JSON.parse(
           localStorage.getItem('dataconform_churn_surveys') ?? '[]'
-        );
+        ) as unknown[];
         storedFeedbacks.push({
           workspaceId: workspace.id,
           previousPlan: currentPlanLabel,
@@ -389,7 +487,66 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
             </div>
           )}
 
-          {error && <div className="inline-alert-error">{error}</div>}
+          {isAuthenticated && workspace?.cancelAtPeriodEnd && (
+            <div className="visitor-auth-callout" role="status">
+              <div>
+                <strong>⏳ Renovação automática cancelada</strong>
+                <p>
+                  Os recursos do plano <strong>{currentPlanLabel}</strong> permanecem liberados
+                  {formattedExpiryDate ? ` até ${formattedExpiryDate}` : ' até o encerramento do período vigente'}, retornando automaticamente ao plano gratuito Starter após essa data sem novas cobranças.
+                </p>
+              </div>
+              {workspace.hasActiveSubscription && (
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  disabled={loading}
+                  onClick={handleOpenBillingPortal}
+                >
+                  🧾 Gerenciar Faturas / Cartão
+                </button>
+              )}
+            </div>
+          )}
+
+          {isAuthenticated && workspace?.hasActiveSubscription && !workspace.cancelAtPeriodEnd && (
+            <div className="visitor-auth-callout">
+              <div>
+                <strong>💳 Assinatura corporativa gerenciada via Stripe</strong>
+                <p>
+                  Consulte recibos fiscais, altere o cartão de crédito cadastrado ou gerencie sua assinatura diretamente no portal seguro da Stripe.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                disabled={loading}
+                onClick={handleOpenBillingPortal}
+              >
+                🧾 Gerenciar Faturas / Cartão
+              </button>
+            </div>
+          )}
+
+          {error && (
+            <div className="inline-alert-error">
+              <div>{error}</div>
+              {onOpenSupport && (
+                <div style={{ marginTop: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-xs"
+                    onClick={() => {
+                      onClose();
+                      onOpenSupport();
+                    }}
+                  >
+                    💬 Abrir Canal de Suporte e Atendimento
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           {successMessage && <div className="inline-alert-success">{successMessage}</div>}
 
           <div className="plans-grid">
@@ -500,9 +657,9 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
           {isAuthenticated && isDowngradeToStarter && (
             <div className="cancel-subscription-box">
               <div>
-                <h4>Retornar ao Plano Starter (Gratuito)?</h4>
+                <h4>Cancelar renovação e retornar ao Plano Starter (Gratuito)?</h4>
                 <p>
-                  Ao retornar para o plano <strong>Starter</strong>, sua organização passará ao limite de 5 arquivos/mês (máx. 500 linhas e 5 MB por arquivo). Seus projetos e laudos históricos permanecem 100% seguros.
+                  Ao confirmar, a renovação automática será desativada: você mantém acesso integral aos recursos pagos até o fim do período já faturado (ou pode solicitar reembolso integral em até 7 dias da contratação, conforme Art. 49 do CDC). Seus projetos e laudos históricos permanecem preservados.
                 </p>
               </div>
 
@@ -512,7 +669,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
                   className="btn btn-outline btn-sm text-danger"
                   onClick={() => setConfirmCancel(true)}
                 >
-                  Solicitar Retorno ao Gratuito
+                  Solicitar Cancelamento / Retorno ao Gratuito
                 </button>
               ) : (
                 <div className="churn-survey-box">
@@ -603,7 +760,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
                       disabled={loading}
                       onClick={handleCancelSubscription}
                     >
-                      {loading ? 'Processando...' : 'Confirmar Retorno ao Starter'}
+                      {loading ? 'Processando...' : 'Confirmar Cancelamento'}
                     </button>
                   </div>
                 </div>
@@ -616,7 +773,7 @@ export const ChangePlanModal: FC<ChangePlanModalProps> = ({
             <div className="stripe-checkout-notice">
               <div className="stripe-security-info">
                 <span>
-                  🔒 <strong>Checkout 100% Seguro via Stripe:</strong> A liberação do plano ocorre automaticamente após a conclusão do pagamento e retorno à plataforma.
+                  🔒 <strong>Checkout 100% Seguro via Stripe:</strong> Pagamento criptografado PCI-DSS Nível 1, sem fidelidade e com garantia integral de reembolso em 7 dias (CDC Art. 49).
                 </span>
                 {import.meta.env.DEV && (
                   <button

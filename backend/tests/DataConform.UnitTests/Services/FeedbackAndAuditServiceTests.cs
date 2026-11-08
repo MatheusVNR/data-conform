@@ -92,4 +92,45 @@ public class FeedbackAndAuditServiceTests
         Assert.False(forbiddenLogs.IsSuccess);
         Assert.Equal(ServiceErrorType.Forbidden, forbiddenLogs.ErrorType);
     }
+
+    [Fact]
+    public async Task CreateFeedbackAsync_WhenSpoofedForeignWorkspaceId_ShouldStripWorkspaceId()
+    {
+        using DataConformDbContext context = CreateInMemoryContext();
+        TenantAccessService tenantAccess = new TenantAccessService(context);
+        FeedbackService feedbackService = new FeedbackService(context, tenantAccess);
+
+        Guid ownerA = Guid.NewGuid();
+        Guid attackerB = Guid.NewGuid();
+        Workspace wsA = new Workspace { Id = Guid.NewGuid(), Name = "Org Vitima", Slug = "org-vitima", OwnerUserId = ownerA };
+        context.Workspaces.Add(wsA);
+        await context.SaveChangesAsync();
+
+        ServiceResult<CustomerFeedbackDto> spoofedByAttacker = await feedbackService.CreateFeedbackAsync(
+            new CreateCustomerFeedbackRequest
+            {
+                WorkspaceId = wsA.Id,
+                Category = "commercial",
+                Message = "Tentativa de forjar vínculo com Workspace alheio",
+                ContactEmail = "atacante@externo.com"
+            },
+            attackerB);
+
+        Assert.True(spoofedByAttacker.IsSuccess);
+        Assert.NotNull(spoofedByAttacker.Data);
+        Assert.Null(spoofedByAttacker.Data.WorkspaceId);
+
+        ServiceResult<CustomerFeedbackDto> legitimateByOwner = await feedbackService.CreateFeedbackAsync(
+            new CreateCustomerFeedbackRequest
+            {
+                WorkspaceId = wsA.Id,
+                Category = "commercial",
+                Message = "Interesse legítimo do titular",
+                ContactEmail = "owner@vitima.com"
+            },
+            ownerA);
+
+        Assert.True(legitimateByOwner.IsSuccess);
+        Assert.Equal(wsA.Id, legitimateByOwner.Data?.WorkspaceId);
+    }
 }

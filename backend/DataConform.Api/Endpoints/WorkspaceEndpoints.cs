@@ -76,6 +76,29 @@ public static class WorkspaceEndpoints
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        group.MapGet("/billing-config", GetBillingConfig)
+            .WithName("GetBillingConfig")
+            .AllowAnonymous()
+            .Produces<BillingConfigDto>(StatusCodes.Status200OK);
+
+        group.MapPost("/{id:guid}/billing/checkout-session", CreateCheckoutSession)
+            .WithName("CreateCheckoutSession")
+            .RequireAuthorization()
+            .Produces<CheckoutSessionResponseDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        group.MapPost("/{id:guid}/billing/portal-session", CreateBillingPortalSession)
+            .WithName("CreateBillingPortalSession")
+            .RequireAuthorization()
+            .Produces<BillingPortalResponseDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status401Unauthorized)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         return group;
     }
 
@@ -112,10 +135,18 @@ public static class WorkspaceEndpoints
 
     private static async Task<IResult> GetWorkspaceById(
         Guid id,
+        ClaimsPrincipal claimsPrincipal,
         IWorkspaceService workspaceService,
         CancellationToken cancellationToken)
     {
-        ServiceResult<WorkspaceDto> result = await workspaceService.GetWorkspaceByIdAsync(id, cancellationToken);
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
+
+        ServiceResult<WorkspaceDto> result = await workspaceService.GetWorkspaceByIdAsync(
+            id,
+            userId,
+            primaryWorkspaceId,
+            cancellationToken);
         return result.ToHttpResult();
     }
 
@@ -127,10 +158,13 @@ public static class WorkspaceEndpoints
         CancellationToken cancellationToken)
     {
         Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
+
         ServiceResult<WorkspaceDto> result = await workspaceService.UpdateWorkspaceAsync(
             id,
             request,
             currentUserId,
+            primaryWorkspaceId,
             cancellationToken);
 
         return result.ToHttpResult();
@@ -138,11 +172,85 @@ public static class WorkspaceEndpoints
 
     private static async Task<IResult> DeleteWorkspace(
         Guid id,
+        ClaimsPrincipal claimsPrincipal,
         IWorkspaceService workspaceService,
         CancellationToken cancellationToken)
     {
-        ServiceResult result = await workspaceService.DeleteWorkspaceAsync(id, cancellationToken);
+        Guid? currentUserId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
+
+        ServiceResult result = await workspaceService.DeleteWorkspaceAsync(
+            id,
+            currentUserId,
+            primaryWorkspaceId,
+            cancellationToken);
         return result.ToHttpResult();
+    }
+
+    private static IResult GetBillingConfig(IWorkspaceService workspaceService)
+    {
+        BillingConfigDto config = workspaceService.GetBillingConfig();
+        return Results.Ok(config);
+    }
+
+    private static async Task<IResult> CreateCheckoutSession(
+        Guid id,
+        CreateCheckoutSessionRequest request,
+        HttpContext httpContext,
+        ClaimsPrincipal claimsPrincipal,
+        IWorkspaceService workspaceService,
+        CancellationToken cancellationToken)
+    {
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
+        string? customerEmail = TenantAuthorizationHelper.GetAuthenticatedUserEmail(claimsPrincipal);
+        string defaultOriginUrl = ResolveOriginUrl(httpContext);
+
+        ServiceResult<CheckoutSessionResponseDto> result = await workspaceService.CreateCheckoutSessionAsync(
+            id,
+            request,
+            userId,
+            primaryWorkspaceId,
+            customerEmail,
+            defaultOriginUrl,
+            cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static async Task<IResult> CreateBillingPortalSession(
+        Guid id,
+        CreateBillingPortalRequest request,
+        HttpContext httpContext,
+        ClaimsPrincipal claimsPrincipal,
+        IWorkspaceService workspaceService,
+        CancellationToken cancellationToken)
+    {
+        Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
+        string defaultOriginUrl = ResolveOriginUrl(httpContext);
+
+        ServiceResult<BillingPortalResponseDto> result = await workspaceService.CreateBillingPortalSessionAsync(
+            id,
+            request,
+            userId,
+            primaryWorkspaceId,
+            defaultOriginUrl,
+            cancellationToken);
+
+        return result.ToHttpResult();
+    }
+
+    private static string ResolveOriginUrl(HttpContext httpContext)
+    {
+        string? originHeader = httpContext.Request.Headers.Origin.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(originHeader) &&
+            Uri.TryCreate(originHeader, UriKind.Absolute, out Uri? parsedOrigin))
+        {
+            return $"{parsedOrigin.Scheme}://{parsedOrigin.Authority}";
+        }
+
+        return $"{httpContext.Request.Scheme}://{httpContext.Request.Host}";
     }
 
     private static async Task<IResult> GetWorkspaceQuota(

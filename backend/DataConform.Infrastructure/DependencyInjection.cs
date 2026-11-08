@@ -27,13 +27,14 @@ public static class DependencyInjection
              connectionString.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase)))
         {
             Uri uri = new Uri(connectionString);
-            string[] userInfo = uri.UserInfo.Split(':');
+            string[] userInfo = uri.UserInfo.Split(':', 2);
             string username = Uri.UnescapeDataString(userInfo[0]);
             string password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
             int port = uri.Port > 0 ? uri.Port : 5432;
             string database = uri.AbsolutePath.TrimStart('/');
+            string sslMode = ResolveSslMode(uri.Query);
 
-            connectionString = $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode=Prefer;Trust Server Certificate=true";
+            connectionString = $"Host={uri.Host};Port={port};Database={database};Username={username};Password={password};SSL Mode={sslMode};Trust Server Certificate=true";
         }
 
         services.AddDbContext<DataConformDbContext>(options =>
@@ -41,6 +42,10 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
                 npgsqlOptions.MigrationsAssembly(typeof(DataConformDbContext).Assembly.FullName);
+                npgsqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(5),
+                    errorCodesToAdd: null);
             });
             options.ConfigureWarnings(warnings =>
             {
@@ -56,5 +61,36 @@ public static class DependencyInjection
         services.AddScoped<IAuditService, AuditService>();
 
         return services;
+    }
+
+    private static string ResolveSslMode(string? queryString)
+    {
+        if (string.IsNullOrWhiteSpace(queryString))
+        {
+            return "Prefer";
+        }
+
+        string trimmed = queryString.TrimStart('?');
+        string[] pairs = trimmed.Split('&', StringSplitOptions.RemoveEmptyEntries);
+        foreach (string pair in pairs)
+        {
+            string[] kv = pair.Split('=', 2);
+            if (kv.Length == 2 && string.Equals(kv[0], "sslmode", StringComparison.OrdinalIgnoreCase))
+            {
+                string mode = Uri.UnescapeDataString(kv[1]).Trim().ToLowerInvariant();
+                return mode switch
+                {
+                    "disable" => "Disable",
+                    "allow" => "Allow",
+                    "prefer" => "Prefer",
+                    "require" => "Require",
+                    "verify-ca" => "VerifyCA",
+                    "verify-full" => "VerifyFull",
+                    _ => "Require"
+                };
+            }
+        }
+
+        return "Prefer";
     }
 }

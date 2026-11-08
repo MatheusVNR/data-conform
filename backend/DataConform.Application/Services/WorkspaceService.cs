@@ -11,6 +11,7 @@ namespace DataConform.Application.Services;
 public class WorkspaceService : IWorkspaceService
 {
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> WebhookEventLocks = new();
+    private const int MaxEnterpriseWorkspacesPerOwner = 10;
 
     private const string ForbiddenTitle = "Acesso negado à organização";
     private const string ForbiddenMessage = "Você não possui permissão para visualizar ou modificar recursos desta organização.";
@@ -33,6 +34,21 @@ public class WorkspaceService : IWorkspaceService
         _auditService = auditService;
         _tenantAccessService = tenantAccessService;
         _stripeBillingService = stripeBillingService;
+    }
+
+    public BillingConfigDto GetBillingConfig()
+    {
+        if (_stripeBillingService == null)
+        {
+            return new BillingConfigDto
+            {
+                CheckoutEnabled = false,
+                CustomerPortalEnabled = false,
+                IsLiveMode = false
+            };
+        }
+
+        return _stripeBillingService.GetBillingConfig();
     }
 
     public async Task<ServiceResult<WorkspaceDto>> CreateWorkspaceAsync(
@@ -67,14 +83,52 @@ public class WorkspaceService : IWorkspaceService
                 $"Já existe uma organização registrada com o identificador '{normalizedSlug}'.");
         }
 
+        PlanTier initialPlan = PlanTier.Starter;
+        int initialQuota = 5;
+        int initialMaxRows = 500;
+
+        if (currentUserId.HasValue)
+        {
+            Guid uid = currentUserId.Value;
+            List<Workspace> userWorkspaces = await _dbContext.Workspaces
+                .IgnoreQueryFilters()
+                .Where(w => w.OwnerUserId == uid || w.Users.Any(u => u.Id == uid))
+                .ToListAsync(cancellationToken);
+
+            if (userWorkspaces.Count >= 1)
+            {
+                bool hasEnterprise = userWorkspaces.Any(w => w.Plan == PlanTier.Enterprise);
+                if (!hasEnterprise)
+                {
+                    return ServiceResult<WorkspaceDto>.Failure(
+                        ServiceErrorType.QuotaExceeded,
+                        "O seu plano atual inclui 1 organização (Workspace). Faça upgrade para o plano Enterprise para criar múltiplos ambientes isolados por cliente ou filial.",
+                        "Limite de organizações do plano atingido");
+                }
+
+                if (userWorkspaces.Count >= MaxEnterpriseWorkspacesPerOwner)
+                {
+                    return ServiceResult<WorkspaceDto>.Failure(
+                        ServiceErrorType.QuotaExceeded,
+                        $"Limite máximo de {MaxEnterpriseWorkspacesPerOwner} organizações atingido para a conta Enterprise.",
+                        "Limite de organizações atingido");
+                }
+
+                initialPlan = PlanTier.Enterprise;
+                initialQuota = 10_000;
+                initialMaxRows = 1_000_000;
+            }
+        }
+
         Workspace workspace = new Workspace
         {
             Name = request.Name.Trim(),
             Slug = normalizedSlug,
             OwnerUserId = currentUserId,
-            Plan = PlanTier.Starter,
-            MonthlyFilesQuota = 5,
-            MaxRowsPerFile = 500
+            Plan = initialPlan,
+            MonthlyFilesQuota = initialQuota,
+            MaxRowsPerFile = initialMaxRows,
+            QuotaPeriodStartedAtUtc = DateTimeOffset.UtcNow
         };
 
         _dbContext.Workspaces.Add(workspace);
@@ -91,7 +145,7 @@ public class WorkspaceService : IWorkspaceService
             "CreateWorkspace",
             "Workspace",
             workspace.Id.ToString(),
-            $"Organização '{workspace.Name}' ({workspace.Slug}) criada no plano Starter.",
+            $"Organização '{workspace.Name}' ({workspace.Slug}) criada no plano {initialPlan}.",
             cancellationToken);
 
         WorkspaceDto dto = MapToWorkspaceDto(workspace, 0);
@@ -127,7 +181,10 @@ public class WorkspaceService : IWorkspaceService
                 Plan = w.Plan,
                 MonthlyFilesUploaded = w.MonthlyFilesUploaded,
                 MonthlyFilesQuota = w.MonthlyFilesQuota,
-                MaxRowsPerFile = w.MaxRowsPerFile
+                MaxRowsPerFile = w.MaxRowsPerFile,
+                CancelAtPeriodEnd = w.CancelAtPeriodEnd,
+                PlanExpiresAtUtc = w.PlanExpiresAtUtc,
+                HasActiveSubscription = w.StripeSubscriptionId != null && w.StripeSubscriptionId != ""
             })
             .ToListAsync(cancellationToken);
 
@@ -136,6 +193,8 @@ public class WorkspaceService : IWorkspaceService
 
     public async Task<ServiceResult<WorkspaceDto>> GetWorkspaceByIdAsync(
         Guid id,
+        Guid? userId = null,
+        Guid? primaryWorkspaceId = null,
         CancellationToken cancellationToken = default)
     {
         Workspace? workspace = await _dbContext.Workspaces
@@ -149,6 +208,18 @@ public class WorkspaceService : IWorkspaceService
                 "Organização / Workspace não encontrado.");
         }
 
+        if (userId.HasValue || primaryWorkspaceId.HasValue)
+        {
+            bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(userId, primaryWorkspaceId, id, cancellationToken);
+            if (!canAccess)
+            {
+                return ServiceResult<WorkspaceDto>.Failure(
+                    ServiceErrorType.Forbidden,
+                    ForbiddenMessage,
+                    ForbiddenTitle);
+            }
+        }
+
         WorkspaceDto dto = MapToWorkspaceDto(workspace, workspace.Projects.Count);
         return ServiceResult<WorkspaceDto>.Success(dto);
     }
@@ -157,6 +228,7 @@ public class WorkspaceService : IWorkspaceService
         Guid id,
         UpdateWorkspaceRequest request,
         Guid? currentUserId,
+        Guid? primaryWorkspaceId = null,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -175,6 +247,18 @@ public class WorkspaceService : IWorkspaceService
             return ServiceResult<WorkspaceDto>.Failure(
                 ServiceErrorType.NotFound,
                 "Organização / Workspace não encontrado.");
+        }
+
+        if (currentUserId.HasValue || primaryWorkspaceId.HasValue)
+        {
+            bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(currentUserId, primaryWorkspaceId, id, cancellationToken);
+            if (!canAccess)
+            {
+                return ServiceResult<WorkspaceDto>.Failure(
+                    ServiceErrorType.Forbidden,
+                    ForbiddenMessage,
+                    ForbiddenTitle);
+            }
         }
 
         string oldName = workspace.Name;
@@ -198,6 +282,8 @@ public class WorkspaceService : IWorkspaceService
 
     public async Task<ServiceResult> DeleteWorkspaceAsync(
         Guid id,
+        Guid? currentUserId = null,
+        Guid? primaryWorkspaceId = null,
         CancellationToken cancellationToken = default)
     {
         Workspace? workspace = await _dbContext.Workspaces
@@ -210,6 +296,18 @@ public class WorkspaceService : IWorkspaceService
                 "Organização / Workspace não encontrado.");
         }
 
+        if (currentUserId.HasValue || primaryWorkspaceId.HasValue)
+        {
+            bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(currentUserId, primaryWorkspaceId, id, cancellationToken);
+            if (!canAccess)
+            {
+                return ServiceResult.Failure(
+                    ServiceErrorType.Forbidden,
+                    ForbiddenMessage,
+                    ForbiddenTitle);
+            }
+        }
+
         bool hasBoundUsers = await _dbContext.Users
             .AnyAsync(u => u.WorkspaceId == id, cancellationToken);
 
@@ -218,6 +316,14 @@ public class WorkspaceService : IWorkspaceService
             return ServiceResult.Failure(
                 ServiceErrorType.Validation,
                 "Esta é a organização matriz vinculada à sua conta e não pode ser removida. Você pode renomeá-la livremente acima.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(workspace.StripeSubscriptionId) && _stripeBillingService != null)
+        {
+            await _stripeBillingService.CancelSubscriptionAsync(
+                workspace.StripeSubscriptionId,
+                cancelImmediately: true,
+                cancellationToken: cancellationToken);
         }
 
         Guid? ownerUserId = workspace.OwnerUserId;
@@ -260,6 +366,160 @@ public class WorkspaceService : IWorkspaceService
         }
     }
 
+    public async Task<ServiceResult<CheckoutSessionResponseDto>> CreateCheckoutSessionAsync(
+        Guid id,
+        CreateCheckoutSessionRequest request,
+        Guid? userId,
+        Guid? primaryWorkspaceId,
+        string? customerEmail,
+        string defaultOriginUrl,
+        CancellationToken cancellationToken = default)
+    {
+        bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(userId, primaryWorkspaceId, id, cancellationToken);
+        if (!canAccess)
+        {
+            return ServiceResult<CheckoutSessionResponseDto>.Failure(
+                ServiceErrorType.Forbidden,
+                ForbiddenMessage,
+                ForbiddenTitle);
+        }
+
+        if (request.Plan == PlanTier.Starter)
+        {
+            return ServiceResult<CheckoutSessionResponseDto>.Failure(
+                ServiceErrorType.Validation,
+                "O checkout de pagamento destina-se apenas aos planos Professional ou Enterprise.");
+        }
+
+        if (_stripeBillingService == null)
+        {
+            return ServiceResult<CheckoutSessionResponseDto>.Failure(
+                ServiceErrorType.Validation,
+                "O serviço de faturamento Stripe não está disponível neste ambiente.");
+        }
+
+        Workspace? workspace = await _dbContext.Workspaces
+            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
+
+        if (workspace == null)
+        {
+            return ServiceResult<CheckoutSessionResponseDto>.Failure(
+                ServiceErrorType.NotFound,
+                "Workspace não encontrado.");
+        }
+
+        string safeOrigin = string.IsNullOrWhiteSpace(defaultOriginUrl)
+            ? "https://dataconform.com.br"
+            : defaultOriginUrl.TrimEnd('/');
+
+        string successUrl = IsAllowedRedirectUrl(request.SuccessUrl, safeOrigin)
+            ? request.SuccessUrl!.Trim()
+            : $"{safeOrigin}/?session_id={{CHECKOUT_SESSION_ID}}";
+
+        string cancelUrl = IsAllowedRedirectUrl(request.CancelUrl, safeOrigin)
+            ? request.CancelUrl!.Trim()
+            : $"{safeOrigin}/";
+
+        StripeCheckoutSessionCreateResult creation = await _stripeBillingService.CreateCheckoutSessionAsync(
+            workspace.Id,
+            customerEmail,
+            workspace.StripeCustomerId,
+            request.Plan,
+            successUrl,
+            cancelUrl,
+            cancellationToken);
+
+        if (!creation.IsSuccess || string.IsNullOrWhiteSpace(creation.CheckoutUrl))
+        {
+            return ServiceResult<CheckoutSessionResponseDto>.Failure(
+                ServiceErrorType.Validation,
+                creation.ErrorMessage ?? "Não foi possível iniciar o checkout de pagamento.");
+        }
+
+        await _auditService.LogAsync(
+            workspace.Id,
+            userId,
+            "StripeCheckoutInitiated",
+            "Workspace",
+            workspace.Id.ToString(),
+            $"Checkout iniciado para o plano {request.Plan} ({creation.Mode}).",
+            cancellationToken);
+
+        return ServiceResult<CheckoutSessionResponseDto>.Success(new CheckoutSessionResponseDto
+        {
+            CheckoutUrl = creation.CheckoutUrl,
+            SessionId = creation.SessionId,
+            Mode = creation.Mode
+        });
+    }
+
+    public async Task<ServiceResult<BillingPortalResponseDto>> CreateBillingPortalSessionAsync(
+        Guid id,
+        CreateBillingPortalRequest request,
+        Guid? userId,
+        Guid? primaryWorkspaceId,
+        string defaultOriginUrl,
+        CancellationToken cancellationToken = default)
+    {
+        bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(userId, primaryWorkspaceId, id, cancellationToken);
+        if (!canAccess)
+        {
+            return ServiceResult<BillingPortalResponseDto>.Failure(
+                ServiceErrorType.Forbidden,
+                ForbiddenMessage,
+                ForbiddenTitle);
+        }
+
+        if (_stripeBillingService == null)
+        {
+            return ServiceResult<BillingPortalResponseDto>.Failure(
+                ServiceErrorType.Validation,
+                "O Portal do Cliente Stripe não está configurado neste ambiente.");
+        }
+
+        Workspace? workspace = await _dbContext.Workspaces
+            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
+
+        if (workspace == null)
+        {
+            return ServiceResult<BillingPortalResponseDto>.Failure(
+                ServiceErrorType.NotFound,
+                "Workspace não encontrado.");
+        }
+
+        if (string.IsNullOrWhiteSpace(workspace.StripeCustomerId))
+        {
+            return ServiceResult<BillingPortalResponseDto>.Failure(
+                ServiceErrorType.Validation,
+                "Esta organização não possui um cadastro ativo de cobrança na Stripe.");
+        }
+
+        string safeOrigin = string.IsNullOrWhiteSpace(defaultOriginUrl)
+            ? "https://dataconform.com.br"
+            : defaultOriginUrl.TrimEnd('/');
+
+        string returnUrl = IsAllowedRedirectUrl(request.ReturnUrl, safeOrigin)
+            ? request.ReturnUrl!.Trim()
+            : $"{safeOrigin}/";
+
+        StripeBillingPortalCreateResult portal = await _stripeBillingService.CreateBillingPortalSessionAsync(
+            workspace.StripeCustomerId,
+            returnUrl,
+            cancellationToken);
+
+        if (!portal.IsSuccess || string.IsNullOrWhiteSpace(portal.PortalUrl))
+        {
+            return ServiceResult<BillingPortalResponseDto>.Failure(
+                ServiceErrorType.Validation,
+                portal.ErrorMessage ?? "Não foi possível abrir o Portal do Cliente Stripe.");
+        }
+
+        return ServiceResult<BillingPortalResponseDto>.Success(new BillingPortalResponseDto
+        {
+            PortalUrl = portal.PortalUrl
+        });
+    }
+
     public async Task<ServiceResult<WorkspaceQuotaDto>> ChangeWorkspacePlanAsync(
         Guid id,
         UpdatePlanRequest request,
@@ -297,23 +557,47 @@ public class WorkspaceService : IWorkspaceService
 
             if (!string.IsNullOrWhiteSpace(workspace.StripeSubscriptionId) && _stripeBillingService != null)
             {
-                bool canceledOnStripe = await _stripeBillingService.CancelSubscriptionAsync(
+                StripeSubscriptionCancelResult cancelDetail = await _stripeBillingService.CancelSubscriptionDetailedAsync(
                     workspace.StripeSubscriptionId,
                     cancelImmediately: false,
                     cancellationToken: cancellationToken);
 
-                if (!canceledOnStripe)
+                if (!cancelDetail.IsSuccess)
                 {
                     return ServiceResult<WorkspaceQuotaDto>.Failure(
                         ServiceErrorType.Validation,
-                        "Não foi possível cancelar a cobrança recorrente na Stripe neste instante. Tente novamente em alguns segundos ou contate o suporte.");
+                        cancelDetail.ErrorMessage ?? "Não foi possível cancelar a cobrança recorrente na Stripe neste instante. Tente novamente em alguns segundos.");
+                }
+
+                if (cancelDetail.CancelAtPeriodEnd && !cancelDetail.CanceledImmediately)
+                {
+                    workspace.CancelAtPeriodEnd = true;
+                    workspace.PlanExpiresAtUtc = cancelDetail.CurrentPeriodEndUtc;
+                    workspace.UpdatedAt = DateTimeOffset.UtcNow;
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+
+                    string scheduledDetail = $"Cancelamento agendado para o fim do ciclo pago ({workspace.PlanExpiresAtUtc:dd/MM/yyyy}).{(string.IsNullOrWhiteSpace(request.Reason) ? "" : $" Motivo: {request.Reason}")}";
+                    await _auditService.LogAsync(
+                        id,
+                        userId,
+                        "SchedulePlanCancellation",
+                        "Workspace",
+                        id.ToString(),
+                        scheduledDetail,
+                        cancellationToken);
+
+                    WorkspaceQuotaDto activeUntilEnd = await _quotaService.GetWorkspaceQuotaAsync(id, cancellationToken);
+                    return ServiceResult<WorkspaceQuotaDto>.Success(activeUntilEnd);
                 }
             }
 
             workspace.StripeSubscriptionId = null;
+            workspace.CancelAtPeriodEnd = false;
             workspace.PlanExpiresAtUtc = null;
 
-            WorkspaceQuotaDto updated = await _quotaService.UpdatePlanAsync(id, request.Plan, cancellationToken);
+            WorkspaceQuotaDto updated = await _quotaService.UpdatePlanAsync(id, PlanTier.Starter, cancellationToken);
+            await DowngradeInheritedSecondaryWorkspacesAsync(workspace.OwnerUserId, workspace.Id, cancellationToken);
+
             string actionDetail = $"Assinatura retornada ao plano gratuito Starter.{(string.IsNullOrWhiteSpace(request.Reason) ? "" : $" Motivo: {request.Reason}")}";
 
             await _auditService.LogAsync(
@@ -418,6 +702,7 @@ public class WorkspaceService : IWorkspaceService
         }
 
         bool alreadyProcessed = await _dbContext.AuditLogs
+            .IgnoreQueryFilters()
             .AnyAsync(a => a.Action == "StripeCheckoutConfirmed" && a.EntityId == trimmedSessionId, cancellationToken);
 
         try
@@ -436,20 +721,29 @@ public class WorkspaceService : IWorkspaceService
                 {
                     workspace.StripeSubscriptionId = stripeSubscriptionId;
                 }
+
+                workspace.CancelAtPeriodEnd = false;
             }
 
             WorkspaceQuotaDto updated = await _quotaService.UpdatePlanAsync(id, effectivePlan, cancellationToken);
 
             if (!alreadyProcessed)
             {
-                await _auditService.LogAsync(
-                    id,
-                    userId,
-                    "StripeCheckoutConfirmed",
-                    "StripeSession",
-                    trimmedSessionId,
-                    $"Pagamento confirmado via Stripe (Sessão: {trimmedSessionId[..Math.Min(18, trimmedSessionId.Length)]}...). Plano ativado: {effectivePlan}.",
-                    cancellationToken);
+                try
+                {
+                    await _auditService.LogAsync(
+                        id,
+                        userId,
+                        "StripeCheckoutConfirmed",
+                        "StripeSession",
+                        trimmedSessionId,
+                        $"Pagamento confirmado via Stripe (Sessão: {trimmedSessionId[..Math.Min(18, trimmedSessionId.Length)]}...). Plano ativado: {effectivePlan}.",
+                        cancellationToken);
+                }
+                catch (DbUpdateException)
+                {
+                    // Idempotência distribuída garantida pelo índice único IX_audit_logs_stripe_idempotency
+                }
             }
 
             return ServiceResult<WorkspaceQuotaDto>.Success(updated);
@@ -539,9 +833,9 @@ public class WorkspaceService : IWorkspaceService
 
             string eventType = webhookEvent.EventType ?? string.Empty;
 
-            if (string.Equals(eventType, "checkout.session.completed", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(eventType, "checkout.session.completed", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(eventType, "checkout.session.async_payment_succeeded", StringComparison.OrdinalIgnoreCase))
             {
-                // Proteção contra sobrescrita fora de ordem: se o workspace já possui uma assinatura diferente e ativa, não sobrescreve com uma sessão antiga atrasada
                 bool hasDifferentActiveSub = !string.IsNullOrWhiteSpace(targetWorkspace.StripeSubscriptionId) &&
                     !string.IsNullOrWhiteSpace(webhookEvent.SubscriptionId) &&
                     !string.Equals(targetWorkspace.StripeSubscriptionId, webhookEvent.SubscriptionId, StringComparison.OrdinalIgnoreCase);
@@ -557,6 +851,7 @@ public class WorkspaceService : IWorkspaceService
                     {
                         targetWorkspace.StripeSubscriptionId = webhookEvent.SubscriptionId;
                     }
+                    targetWorkspace.CancelAtPeriodEnd = false;
 
                     await _quotaService.UpdatePlanAsync(targetWorkspace.Id, targetPlan, cancellationToken);
                 }
@@ -571,33 +866,118 @@ public class WorkspaceService : IWorkspaceService
 
                     if (!sessionLogged)
                     {
-                        await _auditService.LogAsync(
-                            targetWorkspace.Id,
-                            null,
-                            "StripeCheckoutConfirmed",
-                            "StripeSession",
-                            webhookEvent.SessionId,
-                            $"Assinatura ativada via Webhook Stripe ({webhookEvent.ResolvedPlan ?? PlanTier.Professional}).",
-                            cancellationToken);
+                        try
+                        {
+                            await _auditService.LogAsync(
+                                targetWorkspace.Id,
+                                null,
+                                "StripeCheckoutConfirmed",
+                                "StripeSession",
+                                webhookEvent.SessionId,
+                                $"Assinatura ativada via Webhook Stripe ({webhookEvent.ResolvedPlan ?? PlanTier.Professional}).",
+                                cancellationToken);
+                        }
+                        catch (DbUpdateException)
+                        {
+                            // Sessão já registrada concorrentemente
+                        }
+                    }
+                }
+            }
+            else if (string.Equals(eventType, "customer.subscription.created", StringComparison.OrdinalIgnoreCase) ||
+                     string.Equals(eventType, "customer.subscription.updated", StringComparison.OrdinalIgnoreCase))
+            {
+                string status = webhookEvent.SubscriptionStatus ?? "active";
+                bool isTerminal = string.Equals(status, "canceled", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(status, "unpaid", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(status, "incomplete_expired", StringComparison.OrdinalIgnoreCase);
+
+                if (isTerminal)
+                {
+                    if (string.IsNullOrWhiteSpace(targetWorkspace.StripeSubscriptionId) ||
+                        string.Equals(targetWorkspace.StripeSubscriptionId, webhookEvent.SubscriptionId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetWorkspace.StripeSubscriptionId = null;
+                        targetWorkspace.CancelAtPeriodEnd = false;
+                        targetWorkspace.PlanExpiresAtUtc = null;
+                        await _quotaService.UpdatePlanAsync(targetWorkspace.Id, PlanTier.Starter, cancellationToken);
+                        await DowngradeInheritedSecondaryWorkspacesAsync(targetWorkspace.OwnerUserId, targetWorkspace.Id, cancellationToken);
+                    }
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(webhookEvent.CustomerId))
+                    {
+                        targetWorkspace.StripeCustomerId = webhookEvent.CustomerId;
+                    }
+                    if (!string.IsNullOrWhiteSpace(webhookEvent.SubscriptionId))
+                    {
+                        targetWorkspace.StripeSubscriptionId = webhookEvent.SubscriptionId;
+                    }
+                    if (webhookEvent.CancelAtPeriodEnd.HasValue)
+                    {
+                        targetWorkspace.CancelAtPeriodEnd = webhookEvent.CancelAtPeriodEnd.Value;
+                    }
+                    if (webhookEvent.CurrentPeriodEndUtc.HasValue)
+                    {
+                        targetWorkspace.PlanExpiresAtUtc = webhookEvent.CurrentPeriodEndUtc.Value;
+                    }
+
+                    PlanTier syncedPlan = webhookEvent.ResolvedPlan ?? targetWorkspace.Plan;
+                    if (syncedPlan != PlanTier.Starter)
+                    {
+                        await _quotaService.UpdatePlanAsync(targetWorkspace.Id, syncedPlan, cancellationToken);
+                    }
+                    else
+                    {
+                        targetWorkspace.UpdatedAt = DateTimeOffset.UtcNow;
+                        await _dbContext.SaveChangesAsync(cancellationToken);
                     }
                 }
             }
             else if (string.Equals(eventType, "customer.subscription.deleted", StringComparison.OrdinalIgnoreCase))
             {
-                // Proteção contra eventos fora de ordem: apenas desfaz a assinatura se corresponder à assinatura ativa do workspace
                 if (string.IsNullOrWhiteSpace(targetWorkspace.StripeSubscriptionId) ||
                     string.IsNullOrWhiteSpace(webhookEvent.SubscriptionId) ||
                     string.Equals(targetWorkspace.StripeSubscriptionId, webhookEvent.SubscriptionId, StringComparison.OrdinalIgnoreCase))
                 {
                     targetWorkspace.StripeSubscriptionId = null;
+                    targetWorkspace.CancelAtPeriodEnd = false;
                     targetWorkspace.PlanExpiresAtUtc = null;
                     await _quotaService.UpdatePlanAsync(targetWorkspace.Id, PlanTier.Starter, cancellationToken);
+                    await DowngradeInheritedSecondaryWorkspacesAsync(targetWorkspace.OwnerUserId, targetWorkspace.Id, cancellationToken);
                 }
+            }
+            else if (string.Equals(eventType, "invoice.payment_succeeded", StringComparison.OrdinalIgnoreCase))
+            {
+                DateTimeOffset nowUtc = DateTimeOffset.UtcNow;
+                targetWorkspace.MonthlyFilesUploaded = 0;
+                targetWorkspace.QuotaPeriodStartedAtUtc = nowUtc;
+                if (webhookEvent.CurrentPeriodEndUtc.HasValue)
+                {
+                    targetWorkspace.PlanExpiresAtUtc = webhookEvent.CurrentPeriodEndUtc.Value;
+                }
+                if (!targetWorkspace.CancelAtPeriodEnd && webhookEvent.ResolvedPlan.HasValue)
+                {
+                    await _quotaService.UpdatePlanAsync(targetWorkspace.Id, webhookEvent.ResolvedPlan.Value, cancellationToken);
+                }
+                else
+                {
+                    targetWorkspace.UpdatedAt = nowUtc;
+                    await _dbContext.SaveChangesAsync(cancellationToken);
+                }
+
+                await _auditService.LogAsync(
+                    targetWorkspace.Id,
+                    null,
+                    "StripeInvoicePaid",
+                    "StripeInvoice",
+                    webhookEvent.EventId ?? "invoice_paid",
+                    "Renovação / fatura quitada com sucesso na Stripe.",
+                    cancellationToken);
             }
             else if (string.Equals(eventType, "invoice.payment_failed", StringComparison.OrdinalIgnoreCase))
             {
-                // Cobrança falhou: mantemos o plano ativo durante o período de tolerância (Grace Period / Smart Retries da Stripe).
-                // O downgrade definitivo só ocorre quando a Stripe efetivamente cancelar a assinatura (customer.subscription.deleted).
                 await _auditService.LogAsync(
                     targetWorkspace.Id,
                     null,
@@ -607,17 +987,50 @@ public class WorkspaceService : IWorkspaceService
                     "Cobrança recorrente falhou na Stripe. Assinatura em período de tolerância (Smart Retries ativo).",
                     cancellationToken);
             }
-
-            if (!string.IsNullOrWhiteSpace(webhookEvent.EventId))
+            else if (string.Equals(eventType, "charge.refunded", StringComparison.OrdinalIgnoreCase) && webhookEvent.IsFullRefund)
             {
+                if (!string.IsNullOrWhiteSpace(targetWorkspace.StripeSubscriptionId))
+                {
+                    await _stripeBillingService.CancelSubscriptionAsync(
+                        targetWorkspace.StripeSubscriptionId,
+                        cancelImmediately: true,
+                        cancellationToken: cancellationToken);
+                }
+
+                targetWorkspace.StripeSubscriptionId = null;
+                targetWorkspace.CancelAtPeriodEnd = false;
+                targetWorkspace.PlanExpiresAtUtc = null;
+                await _quotaService.UpdatePlanAsync(targetWorkspace.Id, PlanTier.Starter, cancellationToken);
+                await DowngradeInheritedSecondaryWorkspacesAsync(targetWorkspace.OwnerUserId, targetWorkspace.Id, cancellationToken);
+
                 await _auditService.LogAsync(
                     targetWorkspace.Id,
                     null,
-                    "StripeWebhookProcessed",
-                    "StripeWebhook",
-                    webhookEvent.EventId,
-                    $"Evento Stripe '{eventType}' processado com sucesso.",
+                    "StripeChargeRefunded",
+                    "StripeCharge",
+                    webhookEvent.EventId ?? "charge_refunded",
+                    "Reembolso integral confirmado na Stripe. Assinatura encerrada e organização retornada ao plano Starter.",
                     cancellationToken);
+            }
+
+            if (!string.IsNullOrWhiteSpace(webhookEvent.EventId))
+            {
+                try
+                {
+                    await _auditService.LogAsync(
+                        targetWorkspace.Id,
+                        null,
+                        "StripeWebhookProcessed",
+                        "StripeWebhook",
+                        webhookEvent.EventId,
+                        $"Evento Stripe '{eventType}' processado com sucesso.",
+                        cancellationToken);
+                }
+                catch (DbUpdateException)
+                {
+                    // Idempotência distribuída entre múltiplas instâncias garantida por IX_audit_logs_stripe_idempotency
+                    return ServiceResult.Success();
+                }
             }
 
             return ServiceResult.Success();
@@ -630,6 +1043,87 @@ public class WorkspaceService : IWorkspaceService
                 WebhookEventLocks.TryRemove(webhookEvent.EventId, out _);
             }
         }
+    }
+
+    private async Task DowngradeInheritedSecondaryWorkspacesAsync(
+        Guid? ownerUserId,
+        Guid primaryCanceledWorkspaceId,
+        CancellationToken cancellationToken)
+    {
+        if (!ownerUserId.HasValue)
+        {
+            return;
+        }
+
+        Guid uid = ownerUserId.Value;
+        bool stillHasPaidEnterprise = await _dbContext.Workspaces
+            .IgnoreQueryFilters()
+            .AnyAsync(
+                w => w.OwnerUserId == uid &&
+                     w.Id != primaryCanceledWorkspaceId &&
+                     w.Plan == PlanTier.Enterprise &&
+                     w.StripeSubscriptionId != null &&
+                     w.StripeSubscriptionId != "",
+                cancellationToken);
+
+        if (stillHasPaidEnterprise)
+        {
+            return;
+        }
+
+        List<Workspace> secondaryWorkspaces = await _dbContext.Workspaces
+            .IgnoreQueryFilters()
+            .Where(
+                w => w.OwnerUserId == uid &&
+                     w.Id != primaryCanceledWorkspaceId &&
+                     w.Plan != PlanTier.Starter &&
+                     (w.StripeSubscriptionId == null || w.StripeSubscriptionId == ""))
+            .ToListAsync(cancellationToken);
+
+        foreach (Workspace secWs in secondaryWorkspaces)
+        {
+            secWs.Plan = PlanTier.Starter;
+            secWs.MonthlyFilesQuota = 5;
+            secWs.MaxRowsPerFile = 500;
+            secWs.CancelAtPeriodEnd = false;
+            secWs.PlanExpiresAtUtc = null;
+            secWs.UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        if (secondaryWorkspaces.Count > 0)
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+    }
+
+    private static bool IsAllowedRedirectUrl(string? candidateUrl, string defaultOrigin)
+    {
+        if (string.IsNullOrWhiteSpace(candidateUrl))
+        {
+            return false;
+        }
+
+        if (!Uri.TryCreate(candidateUrl.Trim(), UriKind.Absolute, out Uri? parsed))
+        {
+            return false;
+        }
+
+        if (parsed.Scheme != Uri.UriSchemeHttps && parsed.Scheme != Uri.UriSchemeHttp)
+        {
+            return false;
+        }
+
+        if (Uri.TryCreate(defaultOrigin, UriKind.Absolute, out Uri? defaultUri) &&
+            string.Equals(parsed.Host, defaultUri.Host, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        string host = parsed.Host.ToLowerInvariant();
+        return host == "dataconform.com.br" ||
+               host == "www.dataconform.com.br" ||
+               host == "localhost" ||
+               host == "127.0.0.1";
     }
 
     private static WorkspaceDto MapToWorkspaceDto(Workspace workspace, int projectsCount)
@@ -645,7 +1139,10 @@ public class WorkspaceService : IWorkspaceService
             Plan = workspace.Plan,
             MonthlyFilesUploaded = workspace.MonthlyFilesUploaded,
             MonthlyFilesQuota = workspace.MonthlyFilesQuota,
-            MaxRowsPerFile = workspace.MaxRowsPerFile
+            MaxRowsPerFile = workspace.MaxRowsPerFile,
+            CancelAtPeriodEnd = workspace.CancelAtPeriodEnd,
+            PlanExpiresAtUtc = workspace.PlanExpiresAtUtc,
+            HasActiveSubscription = !string.IsNullOrWhiteSpace(workspace.StripeSubscriptionId)
         };
     }
 }

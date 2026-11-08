@@ -10,6 +10,16 @@ namespace DataConform.Infrastructure.Security;
 
 public class JwtTokenGenerator : IJwtTokenGenerator
 {
+    public const string DevelopmentFallbackSecret =
+        "DataConformDevOnlyJwtKey2026WithMinimum64CharactersForHmacSha256Security!";
+
+    private static readonly HashSet<string> KnownDevelopmentSecrets = new HashSet<string>(StringComparer.Ordinal)
+    {
+        DevelopmentFallbackSecret,
+        "DataConformSuperSecretJwtKey2026WithSufficientLengthForHmacSha256SecurityStandards!",
+        "DataConformSuperSecretJwtKey2026WithSufficientLengthForHmacSha256!"
+    };
+
     private readonly IConfiguration _configuration;
 
     public JwtTokenGenerator(IConfiguration configuration)
@@ -17,9 +27,47 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         _configuration = configuration;
     }
 
+    public static string ResolveSecretKey(IConfiguration configuration, bool isProductionEnvironment = false)
+    {
+        string? configuredSecret = configuration["Jwt:Secret"];
+        string environmentName = configuration["ASPNETCORE_ENVIRONMENT"]
+            ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+            ?? "Development";
+
+        bool enforceProductionSecret = isProductionEnvironment ||
+            string.Equals(environmentName, "Production", StringComparison.OrdinalIgnoreCase);
+
+        if (enforceProductionSecret)
+        {
+            if (string.IsNullOrWhiteSpace(configuredSecret) ||
+                configuredSecret.Trim().Length < 32 ||
+                KnownDevelopmentSecrets.Contains(configuredSecret.Trim()))
+            {
+                throw new InvalidOperationException(
+                    "Configuração crítica de segurança inválida: defina uma chave exclusiva e forte em Jwt:Secret (mínimo de 32 caracteres) no ambiente de Produção.");
+            }
+
+            return configuredSecret.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(configuredSecret))
+        {
+            return DevelopmentFallbackSecret;
+        }
+
+        string trimmed = configuredSecret.Trim();
+        if (trimmed.Length < 32)
+        {
+            throw new InvalidOperationException(
+                "A chave Jwt:Secret deve conter no mínimo 32 caracteres para assinatura HMAC-SHA256.");
+        }
+
+        return trimmed;
+    }
+
     public string GenerateToken(User user, Workspace workspace)
     {
-        string secretKey = _configuration["Jwt:Secret"] ?? "DataConformSuperSecretJwtKey2026WithSufficientLengthForHmacSha256!";
+        string secretKey = ResolveSecretKey(_configuration);
         string issuer = _configuration["Jwt:Issuer"] ?? "DataConform";
         string audience = _configuration["Jwt:Audience"] ?? "DataConform";
         int expirationMinutes = int.TryParse(_configuration["Jwt:ExpirationInMinutes"], out int exp) ? exp : 1440;

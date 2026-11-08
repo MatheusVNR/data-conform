@@ -10,4 +10,6 @@ public sealed class WorkspaceQuotaDto
     public int MonthlyFilesQuota { get; init; }
     public int MaxRowsPerFile { get; init; }
     public double UsagePercentage { get; init; }
+    public bool CancelAtPeriodEnd { get; init; }
+    public DateTimeOffset? PlanExpiresAtUtc { get; init; }
 }

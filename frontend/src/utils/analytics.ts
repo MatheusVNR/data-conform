@@ -1,6 +1,6 @@
 /**
  * DataConform - Utilitário Ultraleve de Atribuição e Eventos de Funil (Zero-Bloat, LGPD Compliant)
- * 
+ *
  * Regras:
  * - Não coleta dados pessoais sensíveis ou conteúdo de arquivos.
  * - Suporta First-Touch (via localStorage) e Last-Touch (via sessionStorage).

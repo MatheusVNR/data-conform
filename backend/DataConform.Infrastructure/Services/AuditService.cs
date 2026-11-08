@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using DataConform.Application.Common.Interfaces;
 using DataConform.Application.Common.Models;
 using DataConform.Domain.Entities;
@@ -7,8 +7,8 @@ namespace DataConform.Infrastructure.Services;
 
 public class AuditService : IAuditService
 {
-    private const string ForbiddenTitle = "Acesso negado Ã  organizaÃ§Ã£o";
-    private const string ForbiddenMessage = "VocÃª nÃ£o possui permissÃ£o para visualizar ou modificar recursos desta organizaÃ§Ã£o.";
+    private const string ForbiddenTitle = "Acesso negado à organização";
+    private const string ForbiddenMessage = "Você não possui permissão para visualizar ou modificar recursos desta organização.";
 
     private readonly IApplicationDbContext _context;
     private readonly ITenantAccessService _tenantAccessService;

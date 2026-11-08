@@ -7,6 +7,7 @@ public class FileValidationResult
     public int TotalRows { get; set; }
     public int ValidRows { get; set; }
     public int ErrorRows { get; set; }
+    public int TotalIssuesCount { get; set; }
     public List<ValidationIssue> Issues { get; set; } = new List<ValidationIssue>();
 }
 

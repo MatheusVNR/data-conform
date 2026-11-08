@@ -1,0 +1,49 @@
+name: PostgreSQL Logical Backup (Neon / Production)
+
+on:
+  schedule:
+    # Executa diariamente às 06:00 UTC (03:00 BRT)
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  pg-backup:
+    name: Daily pg_dump Snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if PRODUCTION_DATABASE_URL secret is configured
+        id: check_secret
+        env:
+          DB_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          if [ -z "$DB_URL" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Aviso: Secret PRODUCTION_DATABASE_URL ainda não configurado. Backup ignorado sem erro."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install PostgreSQL 17 client & run compressed pg_dump
+        if: steps.check_secret.outputs.configured == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
+          mkdir -p backups
+          pg_dump "$DATABASE_URL" --no-owner --no-privileges --format=custom --compress=9 --file="backups/dataconform_${TIMESTAMP}.dump"
+          ls -lh backups/
+
+      - name: Upload backup artifact (retained for 14 days in private GitHub Actions storage)
+        if: steps.check_secret.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dataconform-db-backup-${{ github.run_id }}
+          path: backups/*.dump
+          retention-days: 14
+          if-no-files-found: error

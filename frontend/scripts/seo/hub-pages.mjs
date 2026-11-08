@@ -125,7 +125,7 @@ export const PRICING_PLANS = [
       'Para analistas, consultores e pequenas empresas validarem cargas iniciais e testarem todos os presets de ERP sem custo.',
     features: [
       'Acesso a todos os 10 presets de ERP + layout Genérico / CSV',
-      'Motor completo com as 17 regras estruturais e fiscais (CPF/CNPJ, NCM, CEP, UF, UTF-8)',
+      'Motor completo com as 18 regras estruturais e fiscais (CPF/CNPJ, NCM, CEP, UF, UTF-8, chave primária)',
       'Exportação preliminar de inconsistências em CSV (10 primeiros registros)',
       'Emissão de laudo técnico preliminar em PDF via navegador com marca d\'água',
       'Isolamento Multi-Tenant com trilha de auditoria básica',
@@ -147,8 +147,8 @@ export const PRICING_PLANS = [
     features: [
       'Cota mensal ampliada para 500 arquivos validados por mês',
       'Suporte a planilhas densas de até 15.000 linhas (25 MB)',
-      'Todos os dicionários nativos (TOTVS Protheus, SAP B1, S/4HANA, Senior, Sankhya, Omie, ContaAzul)',
-      'Laudo executivo White-Label em PDF com Termo de Aceite e campos de assinatura',
+      'Todos os perfis de referência (TOTVS Protheus, SAP B1, S/4HANA, Senior, Sankhya, Omie, ContaAzul)',
+      'Laudo executivo oficial em PDF (sem marca d\'água) com Termo de Aceite e campos de assinatura',
       'Múltiplos projetos por ERP e trilha de auditoria completa da organização',
     ],
   },

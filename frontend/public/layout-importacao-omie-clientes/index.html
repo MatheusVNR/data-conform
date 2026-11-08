@@ -24,7 +24,7 @@
     <meta name="twitter:description" content="Valide sua planilha CSV de clientes e fornecedores antes de importar no ERP Omie. Confira codigo_cliente, razao_social, cnpj_cpf, email, estado e cep grátis." />
     <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
     <link rel="stylesheet" href="/seo.css" />
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"Omie — Planilha de Clientes e Fornecedores","item":"https://dataconform.com.br/layout-importacao-omie-clientes/"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"Omie — Modelo de Clientes e Fornecedores","item":"https://dataconform.com.br/layout-importacao-omie-clientes/"}]}</script>
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Posso baixar uma planilha modelo CSV pronta para o Omie?","acceptedAnswer":{"@type":"Answer","text":"Sim. Na vitrine de dicionários da página inicial ou dentro de projetos, clique em \"Baixar Modelo CSV\" para obter layout_omie_clientes.csv."}},{"@type":"Question","name":"Se minha planilha tiver uma coluna chamada status, ela dará erro?","acceptedAnswer":{"@type":"Answer","text":"Não. Colunas adicionais como status são preservadas e o motor sabe diferenciá-las das colunas de estado/UF."}},{"@type":"Question","name":"Quanto custa validar planilhas para o Omie no DataConform?","acceptedAnswer":{"@type":"Answer","text":"O plano Starter é gratuito (até 5 arquivos/mês de 500 linhas). O plano Professional custa R$ 79,90/mês (até 500 arquivos de 15.000 linhas)."}}]}</script>
     <script>
       (function() {
@@ -77,14 +77,14 @@
         <ol>
           <li><a href="/">Início</a></li>
           <li><a href="/layouts-de-importacao-erp/">Layouts de Importação ERP</a></li>
-          <li aria-current="page">Omie — Planilha de Clientes e Fornecedores</li>
+          <li aria-current="page">Omie — Modelo de Clientes e Fornecedores</li>
         </ol>
       </nav>
         <article class="seo-article">
           <header class="seo-hero">
             <div class="seo-badge-row">
               <span class="seo-pill-primary">Omie</span>
-              <span class="seo-pill-outline">Planilha Oficial de Clientes e Fornecedores — ERP Omie</span>
+              <span class="seo-pill-outline">Modelo de Referência de Clientes e Fornecedores — ERP Omie</span>
             </div>
             <h1>Layout de Importação Omie (Clientes e Fornecedores): Validação Prévia de Planilha CSV</h1>
             <p class="seo-lead">Evite erros na importação em lote de clientes e fornecedores no ERP Omie. Audite codigo_cliente, razao_social, cnpj_cpf, email, valor_limite_credito, estado e cep com diagnóstico linha a linha.</p>
@@ -95,14 +95,14 @@
           </header>
 
           <section class="seo-section">
-            <h2>Para que serve o layout Planilha de Clientes e Fornecedores no Omie</h2>
+            <h2>Para que serve o layout Modelo de Clientes e Fornecedores no Omie</h2>
             <p>O ERP Omie é amplamente utilizado para gestão integrada de faturamento, finanças e emissão de NF-e/NFS-e. Ao migrar cadastros de clientes e fornecedores por planilha para o Omie, campos com CPF/CNPJ inválido, CEPs com zero à esquerda cortado pelo Excel ou siglas de estado incorretas fazem com que a importação falhe ou gere cadastros que travam na emissão da nota fiscal.</p>
           <p>Com o preset &quot;Omie&quot; do DataConform, você audita toda a sua planilha CSV antes de subir no ERP. O motor verifica automaticamente as 7 colunas obrigatórias do modelo (codigo_cliente, razao_social, cnpj_cpf, email, valor_limite_credito, estado e cep), apontando exatamente a linha e o valor que precisam de correção.</p>
           </section>
 
           <section class="seo-section">
-            <h2>Tabela de Colunas Obrigatórias Reais do Preset (Planilha de Clientes e Fornecedores)</h2>
-            <p>O preset oficial do DataConform para <strong>Omie</strong> exige as seguintes colunas no cabeçalho da planilha CSV (arquivo de referência: <code>layout_omie_clientes.csv</code>):</p>
+            <h2>Tabela de Colunas Sugeridas no Perfil (Modelo de Clientes e Fornecedores)</h2>
+            <p>O perfil de referência do DataConform para <strong>Omie</strong> inspeciona as seguintes colunas no cabeçalho da planilha CSV (arquivo de exemplo: <code>layout_omie_clientes.csv</code>), lembrando que a obrigatoriedade final no ERP pode variar conforme versão e parametrização local:</p>
             <div class="seo-table-wrap">
               <table class="seo-table">
                 <thead>
@@ -162,7 +162,7 @@
           </section>
 
           <section class="seo-section">
-            <h2>Exemplo de Estrutura CSV Homologada (layout_omie_clientes.csv)</h2>
+            <h2>Exemplo de Estrutura CSV de Referência (layout_omie_clientes.csv)</h2>
             <p>Abaixo está a estrutura real do arquivo CSV utilizado pelo DataConform para homologar cargas deste módulo, incluindo linhas íntegras e linhas de teste para captura de inconsistências:</p>
             <pre class="seo-code-block"><code>codigo_cliente,razao_social,cnpj_cpf,email,valor_limite_credito,estado,cep,status
 1001,Alpha Tecnologia e Servicos LTDA,12.345.678/0001-95,contato@alphatech.com.br,50000.00,SP,01310-100,ATIVO
@@ -281,7 +281,7 @@
               <ul>
                 <li><a href="/layout-importacao-contaazul-clientes/"><strong>ContaAzul</strong> — Layout de Carga Cadastral e Financeira — ERP ContaAzul</a></li>
               <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/"><strong>Sankhya</strong> — Tabela TGFPAR (Parceiros de Negócio — Sankhya Om / Sankhya-W)</a></li>
-              <li><a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus</strong> — Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotina MATA030</a></li>
+              <li><a href="/layout-importacao-protheus-sa1-clientes/"><strong>TOTVS Protheus</strong> — Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotinas CRMA980 / MATA030</a></li>
                 <li><a href="/layouts-de-importacao-erp/"><strong>Ver todos os 10 presets de ERP →</strong></a></li>
               </ul>
             </div>
@@ -299,7 +299,9 @@
             <a href="/">Início &amp; Simulador</a> •
             <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
             <a href="/regras-de-validacao-csv/">Regras CSV</a> •
-            <a href="/precos/">Preços</a>
+            <a href="/precos/">Preços</a> •
+            <a href="/termos/">Termos de Uso</a> •
+            <a href="/privacidade/">Privacidade (LGPD)</a>
           </p>
         </div>
         <div class="seo-footer-col">
@@ -318,7 +320,7 @@
             <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
             <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
             <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
-            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Modelo de Clientes e Fornecedores)</a></li>
             <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
           </ul>
         </div>
@@ -337,7 +339,7 @@
         </div>
       </div>
       <div class="seo-footer-bottom">
-        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>© 2026 DataConform. Software independente sem vínculo ou endosso oficial de TOTVS®, SAP®, Senior®, Sankhya®, Omie® ou ContaAzul®.</span>
         <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
       </div>
     </div>

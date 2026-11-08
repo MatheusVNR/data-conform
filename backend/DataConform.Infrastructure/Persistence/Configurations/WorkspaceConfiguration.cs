@@ -63,6 +63,13 @@ public class WorkspaceConfiguration : IEntityTypeConfiguration<Workspace>
         builder.Property(w => w.PlanExpiresAtUtc)
             .IsRequired(false);
 
+        builder.Property(w => w.CancelAtPeriodEnd)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(w => w.QuotaPeriodStartedAtUtc)
+            .IsRequired(false);
+
         builder.HasMany(w => w.Projects)
             .WithOne(p => p.Workspace)
             .HasForeignKey(p => p.WorkspaceId)

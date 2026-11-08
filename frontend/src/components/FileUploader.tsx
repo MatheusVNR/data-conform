@@ -229,7 +229,7 @@ export const FileUploader: FC<FileUploaderProps> = ({
             type="button"
             className="btn btn-secondary btn-xs"
             onClick={handleDownloadSampleCsv}
-            title={`Baixar planilha modelo homologada para ${erpPreset.systemName}`}
+            title={`Baixar planilha modelo de referência para ${erpPreset.systemName}`}
           >
             ⬇ Modelo {erpPreset.systemName}
           </button>

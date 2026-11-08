@@ -26,6 +26,7 @@ const LegalPrivacyModal = lazy(() =>
   import('./components/LegalPrivacyModal').then((m) => ({ default: m.LegalPrivacyModal }))
 );
 import {
+  ApiHttpError,
   confirmStripeCheckout,
   createProject,
   createWorkspace,
@@ -43,6 +44,7 @@ import {
   updateWorkspace,
   uploadFile,
   validateFile,
+  warmUpBackend,
 } from './services/api';
 import type {
   AuthResponseDto,
@@ -189,9 +191,14 @@ export const App: FC = () => {
             if (isMounted) {
               setCurrentUser(authenticatedUser);
             }
-          } catch {
-            logout();
+          } catch (err: unknown) {
+            if (err instanceof ApiHttpError && (err.status === 401 || err.status === 403)) {
+              logout();
+            }
           }
+        } else if (import.meta.env.MODE !== 'test') {
+          // Acorda silenciosamente o container gratuito (Render Free) enquanto o visitante lê a página ou usa o simulador
+          warmUpBackend();
         }
 
         // Isolamento estrito Multi-Tenant: somente busca e carrega organizações se o usuário estiver autenticado
@@ -264,6 +271,9 @@ export const App: FC = () => {
                 monthlyFilesUploaded: confirmedQuota.monthlyFilesUploaded,
                 monthlyFilesQuota: confirmedQuota.monthlyFilesQuota,
                 maxRowsPerFile: confirmedQuota.maxRowsPerFile,
+                cancelAtPeriodEnd: confirmedQuota.cancelAtPeriodEnd,
+                planExpiresAtUtc: confirmedQuota.planExpiresAtUtc,
+                hasActiveSubscription: confirmedQuota.hasActiveSubscription,
               };
               wsList = wsList.map((w: WorkspaceDto) => (w.id === selectedWs.id ? selectedWs : w));
               if (isMounted) {
@@ -519,6 +529,9 @@ export const App: FC = () => {
         monthlyFilesUploaded: updatedQuota.monthlyFilesUploaded,
         monthlyFilesQuota: updatedQuota.monthlyFilesQuota,
         maxRowsPerFile: updatedQuota.maxRowsPerFile,
+        cancelAtPeriodEnd: updatedQuota.cancelAtPeriodEnd,
+        planExpiresAtUtc: updatedQuota.planExpiresAtUtc,
+        hasActiveSubscription: updatedQuota.hasActiveSubscription,
       };
       setActiveWorkspace(updatedWs);
       setWorkspaces((prev: WorkspaceDto[]) =>
@@ -638,7 +651,7 @@ export const App: FC = () => {
                     <strong>✓ Ambiente Isolado:</strong> Organização exclusiva com trilha de auditoria própria
                   </li>
                   <li>
-                    <strong>✓ Dicionários Nativos:</strong> Presets oficiais para TOTVS, SAP, Senior, Sankhya, Omie e ContaAzul
+                    <strong>✓ Perfis de Referência:</strong> Modelos prontos para TOTVS, SAP, Senior, Sankhya, Omie e ContaAzul
                   </li>
                   <li>
                     <strong>✓ Diagnóstico Instantâneo:</strong> Laudo interativo com cópia rápida e exportação CSV
@@ -670,9 +683,9 @@ export const App: FC = () => {
             <section className="visitor-erp-presets-section">
               <div className="section-header">
                 <div>
-                  <h2>Dicionários de Dados Homologados por ERP</h2>
+                  <h2>Perfis de Referência de Dados por ERP</h2>
                   <p className="section-subtitle">
-                    Cada projeto conta com mapeamento exclusivo das tabelas, campos obrigatórios e modelos CSV oficiais dos principais ERPs do mercado.
+                    Cada projeto conta com mapeamento de referência das tabelas, campos sugeridos e modelos CSV dos principais ERPs em operação no mercado.
                   </p>
                 </div>
                 <a href="/layouts-de-importacao-erp/" className="btn btn-outline btn-sm">
@@ -714,7 +727,7 @@ export const App: FC = () => {
                             document.body.removeChild(link);
                             URL.revokeObjectURL(url);
                           }}
-                          title={`Baixar planilha modelo homologada para ${preset.systemName}`}
+                          title={`Baixar planilha modelo de referência para ${preset.systemName}`}
                         >
                           ⬇ Baixar Modelo CSV
                         </button>
@@ -786,7 +799,7 @@ export const App: FC = () => {
                   <ul className="plan-features-list">
                     <li><span className="feat-check">✓</span><span>500 validações de arquivos por mês</span></li>
                     <li><span className="feat-check">✓</span><span>Até 15.000 linhas e 25 MB por planilha</span></li>
-                    <li><span className="feat-check">✓</span><span>Laudo Executivo PDF White-Label c/ Termo de Aceite</span></li>
+                    <li><span className="feat-check">✓</span><span>Laudo Executivo PDF Oficial (sem marca d'água) c/ Termo de Aceite</span></li>
                     <li><span className="feat-check">✓</span><span>Exportação CSV integral e trilha de auditoria</span></li>
                   </ul>
                   <div className="plan-card-action">
@@ -903,6 +916,7 @@ export const App: FC = () => {
 
                   <span className="quota-footnote">
                     Capacidade máxima: {quota.maxRowsPerFile.toLocaleString('pt-BR')} linhas por planilha
+                    {quota.cancelAtPeriodEnd ? ' • Renovação cancelada (ativo até fim do ciclo)' : ''}
                   </span>
                 </div>
               )}
@@ -1016,16 +1030,24 @@ export const App: FC = () => {
                 Trilha de Auditoria
               </button>
             )}
+            <a href="/termos/" className="footer-link-btn">
+              Termos de Uso
+            </a>
+            <a href="/privacidade/" className="footer-link-btn">
+              Privacidade (LGPD)
+            </a>
             <button type="button" className="footer-link-btn" onClick={() => setIsLegalOpen(true)}>
-              Termos & Privacidade (LGPD)
+              Resumo Contratual
             </button>
             <button type="button" className="footer-link-btn" onClick={() => setIsFeedbackOpen(true)}>
-              💬 Enviar Feedback / Sugestão
+              💬 Suporte & Atendimento
             </button>
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} DataConform Software. Todos os direitos reservados.</span>
+          <span>
+            © {new Date().getFullYear()} DataConform Software. Plataforma independente sem vínculo ou endosso oficial de TOTVS®, SAP®, Senior®, Sankhya®, Omie® ou ContaAzul®.
+          </span>
           <span>Homologação RFC 4180 • Isolamento Multi-Tenant JWT & TLS</span>
         </div>
       </footer>
@@ -1082,6 +1104,7 @@ export const App: FC = () => {
             onClose={() => setIsPlanOpen(false)}
             onPlanChanged={handlePlanChanged}
             onRequireAuth={() => handleOpenAuth('register')}
+            onOpenSupport={() => setIsFeedbackOpen(true)}
           />
         )}
 
@@ -1089,6 +1112,7 @@ export const App: FC = () => {
           <LegalPrivacyModal
             isOpen={isLegalOpen}
             onClose={() => setIsLegalOpen(false)}
+            onOpenSupport={() => setIsFeedbackOpen(true)}
           />
         )}
 

@@ -25,7 +25,7 @@
     <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"}]}</script>
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quais ERPs possuem presets nativos no DataConform?","acceptedAnswer":{"@type":"Answer","text":"São 10 presets nativos (TOTVS Protheus SA1, SA2 e SB1, SAP Business One OCRD e OITM, SAP S/4HANA BP, Senior E085CLI, Sankhya TGFPAR, Omie e ContaAzul) mais o layout Genérico / CSV."}},{"@type":"Question","name":"Posso baixar uma planilha modelo CSV para cada ERP?","acceptedAnswer":{"@type":"Answer","text":"Sim. Cada preset disponibiliza para download imediato um arquivo CSV de exemplo em UTF-8 contendo o cabeçalho oficial e linhas demonstrativas."}},{"@type":"Question","name":"É possível customizar as colunas obrigatórias ao validar um arquivo?","acceptedAnswer":{"@type":"Answer","text":"Sim. O DataConform pré-carrega as colunas obrigatórias do ERP escolhido, permitindo adicionar ou ajustar nomes de colunas conforme sua implantação."}}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Quais ERPs possuem presets nativos no DataConform?","acceptedAnswer":{"@type":"Answer","text":"São 10 presets nativos (TOTVS Protheus SA1, SA2 e SB1, SAP Business One OCRD e OITM, SAP S/4HANA BP, Senior E085CLI, Sankhya TGFPAR, Omie e ContaAzul) mais o layout Genérico / CSV."}},{"@type":"Question","name":"Posso baixar uma planilha modelo CSV para cada ERP?","acceptedAnswer":{"@type":"Answer","text":"Sim. Cada preset disponibiliza para download imediato um arquivo CSV de exemplo em UTF-8 contendo o cabeçalho de referência e linhas demonstrativas."}},{"@type":"Question","name":"É possível customizar as colunas obrigatórias ao validar um arquivo?","acceptedAnswer":{"@type":"Answer","text":"Sim. O DataConform pré-carrega as colunas obrigatórias do ERP escolhido, permitindo adicionar ou ajustar nomes de colunas conforme sua implantação."}}]}</script>
     <script>
       (function() {
         try {
@@ -89,18 +89,18 @@
             <p class="seo-lead">Consulte a estrutura técnica das planilhas de carga para TOTVS Protheus, SAP Business One, SAP S/4HANA, Senior ERP, Sankhya, Omie e ContaAzul. Homologue seus arquivos CSV linha a linha antes de executar a importação definitiva no banco de dados.</p>
             <div class="seo-cta-row">
               <a href="/#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
-              <a href="/regras-de-validacao-csv/" class="seo-btn seo-btn-secondary">Conhecer as 17 regras de validação</a>
+              <a href="/regras-de-validacao-csv/" class="seo-btn seo-btn-secondary">Conhecer as 18 regras de validação</a>
             </div>
           </header>
 
           <section class="seo-section">
             <h2>Por que Homologar o Layout CSV Antes da Carga no ERP</h2>
-            <p>Projetos de migração e cargas cadastrais atrasam quando as planilhas não respeitam o dicionário técnico do ERP. Uma coluna ausente, um CNPJ com zero à esquerda suprimido pelo Excel ou um NCM de 7 dígitos interrompem rotinas como o MATA030/MATA010 do TOTVS Protheus, o DTW do SAP Business One e o Migration Cockpit do SAP S/4HANA.</p>
-            <p>Ao selecionar o ERP de destino no DataConform, a plataforma verifica todas as colunas obrigatórias e aplica validações fiscais em cada célula, gerando laudo em PDF e exportação CSV das inconsistências.</p>
+            <p>Projetos de migração e cargas cadastrais atrasam quando as planilhas não respeitam o dicionário técnico do ERP. Uma coluna ausente, um CNPJ com zero à esquerda suprimido pelo Excel ou um NCM de 7 dígitos interrompem rotinas como o CRMA980/MATA030/MATA010 do TOTVS Protheus, o DTW do SAP Business One e o Migration Cockpit do SAP S/4HANA.</p>
+            <p>Ao selecionar o ERP de destino no DataConform, a plataforma verifica todas as colunas configuradas no perfil e aplica validações fiscais em cada célula, gerando laudo em PDF e exportação CSV das inconsistências.</p>
           </section>
 
           <section class="seo-section">
-            <h2>Tabela Comparativa dos Layouts de Importação Homologados</h2>
+            <h2>Tabela Comparativa dos Perfis de Importação por ERP</h2>
             <div class="seo-table-wrap">
               <table class="seo-table">
                 <thead>
@@ -114,14 +114,14 @@
                 <tbody>
               <tr>
                 <td><strong>TOTVS Protheus</strong></td>
-                <td>Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotina MATA030</td>
+                <td>Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotinas CRMA980 / MATA030</td>
                 <td><code>A1_COD, A1_LOJA, A1_NOME, A1_CGC, A1_EMAIL, A1_LC, A1_EST, A1_CEP</code></td>
                 <td><a href="/layout-importacao-protheus-sa1-clientes/">Ver layout e regras →</a></td>
               </tr>
               <tr>
                 <td><strong>TOTVS Protheus - Fornecedores</strong></td>
                 <td>Tabela SA2 (Fornecedores — SIGACOM / SIGAFIN) • Rotina MATA020</td>
-                <td><code>A2_COD, A2_LOJA, A2_NOME, A2_CGC, A2_EMAIL, A2_LC, A2_EST</code></td>
+                <td><code>A2_COD, A2_LOJA, A2_NOME, A2_CGC, A2_EMAIL, A2_EST</code></td>
                 <td><a href="/layout-importacao-protheus-sa2-fornecedores/">Ver layout e regras →</a></td>
               </tr>
               <tr>
@@ -139,7 +139,7 @@
               <tr>
                 <td><strong>SAP Business One - Itens</strong></td>
                 <td>Objeto OITM (Item Master Data — DTW / Data Transfer Workbench)</td>
-                <td><code>ItemCode, ItemName, SalUnitMsr, Price, NcmCode</code></td>
+                <td><code>ItemCode, ItemName, SalUnitMsr, NcmCode</code></td>
                 <td><a href="/layout-importacao-sap-business-one-oitm-itens/">Ver layout e regras →</a></td>
               </tr>
               <tr>
@@ -162,7 +162,7 @@
               </tr>
               <tr>
                 <td><strong>Omie</strong></td>
-                <td>Planilha Oficial de Clientes e Fornecedores — ERP Omie</td>
+                <td>Modelo de Referência de Clientes e Fornecedores — ERP Omie</td>
                 <td><code>codigo_cliente, razao_social, cnpj_cpf, email, valor_limite_credito, estado, cep</code></td>
                 <td><a href="/layout-importacao-omie-clientes/">Ver layout e regras →</a></td>
               </tr>
@@ -193,7 +193,7 @@
               <span class="seo-field-tag"><code>layout_totvs_protheus_sa1.csv</code></span>
             </div>
             <h3><a href="/layout-importacao-protheus-sa1-clientes/">SA1 (Clientes) — TOTVS Protheus</a></h3>
-            <p>Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotina MATA030.</p>
+            <p>Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotinas CRMA980 / MATA030.</p>
             <div class="seo-card-actions">
               <a href="/layout-importacao-protheus-sa1-clientes/" class="seo-btn seo-btn-secondary seo-btn-sm">Guia do layout</a>
               <a href="/?erp=protheus-sa1#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Simulador</a>
@@ -288,8 +288,8 @@
               <span class="seo-code-pill">Omie</span>
               <span class="seo-field-tag"><code>layout_omie_clientes.csv</code></span>
             </div>
-            <h3><a href="/layout-importacao-omie-clientes/">Planilha de Clientes e Fornecedores — Omie</a></h3>
-            <p>Planilha Oficial de Clientes e Fornecedores — ERP Omie.</p>
+            <h3><a href="/layout-importacao-omie-clientes/">Modelo de Clientes e Fornecedores — Omie</a></h3>
+            <p>Modelo de Referência de Clientes e Fornecedores — ERP Omie.</p>
             <div class="seo-card-actions">
               <a href="/layout-importacao-omie-clientes/" class="seo-btn seo-btn-secondary seo-btn-sm">Guia do layout</a>
               <a href="/?erp=omie-clientes#sandbox" class="seo-btn seo-btn-primary seo-btn-sm">Simulador</a>
@@ -319,7 +319,7 @@
           </div>
           <div class="seo-faq-item">
             <h3>Posso baixar uma planilha modelo CSV para cada ERP?</h3>
-            <p>Sim. Cada preset disponibiliza para download imediato um arquivo CSV de exemplo em UTF-8 contendo o cabeçalho oficial e linhas demonstrativas.</p>
+            <p>Sim. Cada preset disponibiliza para download imediato um arquivo CSV de exemplo em UTF-8 contendo o cabeçalho de referência e linhas demonstrativas.</p>
           </div>
           <div class="seo-faq-item">
             <h3>É possível customizar as colunas obrigatórias ao validar um arquivo?</h3>
@@ -351,7 +351,9 @@
             <a href="/">Início &amp; Simulador</a> •
             <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
             <a href="/regras-de-validacao-csv/">Regras CSV</a> •
-            <a href="/precos/">Preços</a>
+            <a href="/precos/">Preços</a> •
+            <a href="/termos/">Termos de Uso</a> •
+            <a href="/privacidade/">Privacidade (LGPD)</a>
           </p>
         </div>
         <div class="seo-footer-col">
@@ -370,7 +372,7 @@
             <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
             <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
             <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
-            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Modelo de Clientes e Fornecedores)</a></li>
             <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
           </ul>
         </div>
@@ -389,7 +391,7 @@
         </div>
       </div>
       <div class="seo-footer-bottom">
-        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>© 2026 DataConform. Software independente sem vínculo ou endosso oficial de TOTVS®, SAP®, Senior®, Sankhya®, Omie® ou ContaAzul®.</span>
         <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
       </div>
     </div>

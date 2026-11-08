@@ -7,6 +7,7 @@ public interface ISubscriptionQuotaService
 {
     Task<QuotaCheckResult> CheckUploadQuotaAsync(Guid workspaceId, int rowCount, CancellationToken cancellationToken = default);
     Task IncrementFilesUploadedAsync(Guid workspaceId, CancellationToken cancellationToken = default);
+    Task DecrementFilesUploadedAsync(Guid workspaceId, CancellationToken cancellationToken = default);
     Task<WorkspaceQuotaDto> GetWorkspaceQuotaAsync(Guid workspaceId, CancellationToken cancellationToken = default);
     Task<WorkspaceQuotaDto> UpdatePlanAsync(Guid workspaceId, PlanTier newPlan, CancellationToken cancellationToken = default);
 }

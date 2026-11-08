@@ -1,7 +1,12 @@
 import type {
   AuditLogDto,
   AuthResponseDto,
+  BillingConfigDto,
+  BillingPortalResponseDto,
+  CheckoutSessionResponseDto,
   ConfirmCheckoutRequest,
+  CreateBillingPortalRequest,
+  CreateCheckoutSessionRequest,
   CreateCustomerFeedbackRequest,
   CreateImportProjectRequest,
   CreateWorkspaceRequest,
@@ -15,6 +20,12 @@ import type {
   WorkspaceDto,
   WorkspaceQuotaDto,
 } from '../types';
+
+interface ApiErrorPayload {
+  error?: string;
+  detail?: string;
+  title?: string;
+}
 
 const configuredApiUrl: string | undefined = import.meta.env.VITE_API_URL as string | undefined;
 const API_BASE_URL: string = configuredApiUrl && configuredApiUrl.trim().length > 0
@@ -56,17 +67,43 @@ function getHeaders(includeContentType: boolean = true): HeadersInit {
   return headers;
 }
 
-const DEFAULT_REQUEST_TIMEOUT_MS: number = 30000;
+const DEFAULT_REQUEST_TIMEOUT_MS: number = 65000;
+const HEAVY_FILE_TIMEOUT_MS: number = 180000;
 
-function createTimeoutSignal(): AbortSignal | undefined {
+export class ApiHttpError extends Error {
+  public readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'ApiHttpError';
+    this.status = status;
+  }
+}
+
+export function warmUpBackend(): void {
+  void apiFetch(`${API_BASE_URL}/billing/config`, { method: 'GET' }, DEFAULT_REQUEST_TIMEOUT_MS).catch(
+    () => undefined
+  );
+}
+
+function createTimeoutSignal(timeoutMs: number = DEFAULT_REQUEST_TIMEOUT_MS): AbortSignal | undefined {
   if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
-    return AbortSignal.timeout(DEFAULT_REQUEST_TIMEOUT_MS);
+    return AbortSignal.timeout(timeoutMs);
   }
   return undefined;
 }
 
-export async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
-  const signal: AbortSignal | undefined = init?.signal ?? createTimeoutSignal();
+async function extractErrorMessage(response: Response, fallbackMessage: string): Promise<string> {
+  const errorData: ApiErrorPayload = (await response.json().catch(() => ({}))) as ApiErrorPayload;
+  return errorData.detail || errorData.error || errorData.title || fallbackMessage;
+}
+
+export async function apiFetch(
+  input: string,
+  init?: RequestInit,
+  timeoutMs: number = DEFAULT_REQUEST_TIMEOUT_MS
+): Promise<Response> {
+  const signal: AbortSignal | undefined = init?.signal ?? createTimeoutSignal(timeoutMs);
   return fetch(input, {
     ...init,
     ...(signal ? { signal } : {}),
@@ -82,8 +119,7 @@ export async function login(request: LoginRequestDto): Promise<AuthResponseDto> 
   });
 
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'E-mail ou senha incorretos.');
+    throw new Error(await extractErrorMessage(response, 'E-mail ou senha incorretos.'));
   }
 
   const data: AuthResponseDto = (await response.json()) as AuthResponseDto;
@@ -99,8 +135,7 @@ export async function register(request: RegisterRequestDto): Promise<AuthRespons
   });
 
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'Erro ao criar conta corporativa.');
+    throw new Error(await extractErrorMessage(response, 'Erro ao criar conta corporativa.'));
   }
 
   const data: AuthResponseDto = (await response.json()) as AuthResponseDto;
@@ -114,7 +149,7 @@ export async function getCurrentUser(): Promise<AuthResponseDto> {
   });
 
   if (!response.ok) {
-    throw new Error('Sessão expirada ou não autenticada.');
+    throw new ApiHttpError(response.status, 'Sessão expirada ou não autenticada.');
   }
 
   return (await response.json()) as AuthResponseDto;
@@ -124,13 +159,13 @@ export function logout(): void {
   clearAuthToken();
 }
 
-// Workspaces
+// Workspaces & Billing
 export async function getWorkspaces(): Promise<WorkspaceDto[]> {
   const response: Response = await apiFetch(`${API_BASE_URL}/workspaces`, {
     headers: getHeaders(false),
   });
   if (!response.ok) {
-    throw new Error('Falha ao carregar organizações / workspaces');
+    throw new Error(await extractErrorMessage(response, 'Falha ao carregar organizações / workspaces'));
   }
   return (await response.json()) as WorkspaceDto[];
 }
@@ -143,8 +178,7 @@ export async function createWorkspace(request: CreateWorkspaceRequest): Promise<
   });
 
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'Erro ao criar organização');
+    throw new Error(await extractErrorMessage(response, 'Erro ao criar organização'));
   }
 
   return (await response.json()) as WorkspaceDto;
@@ -158,8 +192,7 @@ export async function updateWorkspace(workspaceId: string, request: UpdateWorksp
   });
 
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'Erro ao renomear organização');
+    throw new Error(await extractErrorMessage(response, 'Erro ao renomear organização'));
   }
 
   return (await response.json()) as WorkspaceDto;
@@ -172,8 +205,7 @@ export async function deleteWorkspace(workspaceId: string): Promise<void> {
   });
 
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'Erro ao excluir organização');
+    throw new Error(await extractErrorMessage(response, 'Erro ao excluir organização'));
   }
 }
 
@@ -182,9 +214,64 @@ export async function getWorkspaceQuota(workspaceId: string): Promise<WorkspaceQ
     headers: getHeaders(false),
   });
   if (!response.ok) {
-    throw new Error('Falha ao obter cota do workspace');
+    throw new Error(await extractErrorMessage(response, 'Falha ao obter cota do workspace'));
   }
   return (await response.json()) as WorkspaceQuotaDto;
+}
+
+export async function getBillingConfig(): Promise<BillingConfigDto> {
+  const response: Response = await apiFetch(`${API_BASE_URL}/workspaces/billing-config`, {
+    headers: getHeaders(false),
+  });
+  if (!response.ok) {
+    return {
+      checkoutEnabled: false,
+      customerPortalEnabled: false,
+      isLiveMode: false,
+      supportEmail: null,
+    };
+  }
+  return (await response.json()) as BillingConfigDto;
+}
+
+export async function createCheckoutSession(
+  workspaceId: string,
+  request: CreateCheckoutSessionRequest
+): Promise<CheckoutSessionResponseDto> {
+  const response: Response = await apiFetch(
+    `${API_BASE_URL}/workspaces/${workspaceId}/billing/checkout-session`,
+    {
+      method: 'POST',
+      headers: getHeaders(true),
+      body: JSON.stringify(request),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(await extractErrorMessage(response, 'Erro ao iniciar sessão de pagamento segura via Stripe'));
+  }
+
+  return (await response.json()) as CheckoutSessionResponseDto;
+}
+
+export async function createBillingPortalSession(
+  workspaceId: string,
+  request: CreateBillingPortalRequest = {}
+): Promise<BillingPortalResponseDto> {
+  const response: Response = await apiFetch(
+    `${API_BASE_URL}/workspaces/${workspaceId}/billing/portal-session`,
+    {
+      method: 'POST',
+      headers: getHeaders(true),
+      body: JSON.stringify(request),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(await extractErrorMessage(response, 'Erro ao abrir o portal de assinatura da Stripe'));
+  }
+
+  return (await response.json()) as BillingPortalResponseDto;
 }
 
 export async function changeWorkspacePlan(
@@ -199,8 +286,7 @@ export async function changeWorkspacePlan(
   });
 
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'Erro ao alterar plano do workspace');
+    throw new Error(await extractErrorMessage(response, 'Erro ao alterar plano do workspace'));
   }
 
   return (await response.json()) as WorkspaceQuotaDto;
@@ -217,8 +303,7 @@ export async function confirmStripeCheckout(
   });
 
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'Erro ao confirmar pagamento do Stripe');
+    throw new Error(await extractErrorMessage(response, 'Erro ao confirmar pagamento do Stripe'));
   }
 
   return (await response.json()) as WorkspaceQuotaDto;
@@ -229,7 +314,7 @@ export async function getWorkspaceAuditLogs(workspaceId: string): Promise<AuditL
     headers: getHeaders(false),
   });
   if (!response.ok) {
-    throw new Error('Falha ao carregar logs de auditoria');
+    throw new Error(await extractErrorMessage(response, 'Falha ao carregar logs de auditoria'));
   }
   return (await response.json()) as AuditLogDto[];
 }
@@ -240,7 +325,7 @@ export async function getProjects(workspaceId: string): Promise<ImportProjectDto
     headers: getHeaders(false),
   });
   if (!response.ok) {
-    throw new Error('Falha ao carregar projetos do workspace');
+    throw new Error(await extractErrorMessage(response, 'Falha ao carregar projetos do workspace'));
   }
   return (await response.json()) as ImportProjectDto[];
 }
@@ -256,8 +341,7 @@ export async function createProject(
   });
 
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'Erro ao criar projeto');
+    throw new Error(await extractErrorMessage(response, 'Erro ao criar projeto'));
   }
 
   return (await response.json()) as ImportProjectDto;
@@ -270,8 +354,7 @@ export async function deleteProject(projectId: string): Promise<void> {
   });
 
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'Erro ao excluir projeto');
+    throw new Error(await extractErrorMessage(response, 'Erro ao excluir projeto'));
   }
 }
 
@@ -281,7 +364,7 @@ export async function getFiles(projectId: string): Promise<ImportFileDto[]> {
     headers: getHeaders(false),
   });
   if (!response.ok) {
-    throw new Error('Falha ao carregar arquivos do projeto');
+    throw new Error(await extractErrorMessage(response, 'Falha ao carregar arquivos do projeto'));
   }
   return (await response.json()) as ImportFileDto[];
 }
@@ -296,15 +379,18 @@ export async function uploadFile(projectId: string, file: File): Promise<ImportF
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response: Response = await apiFetch(`${API_BASE_URL}/projects/${projectId}/files/upload`, {
-    method: 'POST',
-    headers,
-    body: formData,
-  });
+  const response: Response = await apiFetch(
+    `${API_BASE_URL}/projects/${projectId}/files/upload`,
+    {
+      method: 'POST',
+      headers,
+      body: formData,
+    },
+    HEAVY_FILE_TIMEOUT_MS
+  );
 
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { error?: string; detail?: string; title?: string };
-    throw new Error(errorData.detail || errorData.title || errorData.error || 'Erro ao enviar arquivo');
+    throw new Error(await extractErrorMessage(response, 'Erro ao enviar arquivo'));
   }
 
   return (await response.json()) as ImportFileDto;
@@ -318,14 +404,17 @@ export async function validateFile(
     ? `${API_BASE_URL}/files/${fileId}/validate?requiredColumns=${encodeURIComponent(requiredColumns)}`
     : `${API_BASE_URL}/files/${fileId}/validate`;
 
-  const response: Response = await apiFetch(url, {
-    method: 'POST',
-    headers: getHeaders(false),
-  });
+  const response: Response = await apiFetch(
+    url,
+    {
+      method: 'POST',
+      headers: getHeaders(false),
+    },
+    HEAVY_FILE_TIMEOUT_MS
+  );
 
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { error?: string; detail?: string; title?: string };
-    throw new Error(errorData.detail || errorData.title || errorData.error || 'Erro ao validar arquivo');
+    throw new Error(await extractErrorMessage(response, 'Erro ao validar arquivo'));
   }
 
   return (await response.json()) as ValidationReportDto;
@@ -336,7 +425,7 @@ export async function getFileReport(fileId: string): Promise<ValidationReportDto
     headers: getHeaders(false),
   });
   if (!response.ok) {
-    throw new Error('Falha ao carregar relatório do arquivo');
+    throw new Error(await extractErrorMessage(response, 'Falha ao carregar relatório do arquivo'));
   }
   return (await response.json()) as ValidationReportDto;
 }
@@ -347,8 +436,7 @@ export async function deleteFile(fileId: string): Promise<void> {
     headers: getHeaders(false),
   });
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'Erro ao excluir arquivo');
+    throw new Error(await extractErrorMessage(response, 'Erro ao excluir arquivo'));
   }
 }
 
@@ -362,8 +450,7 @@ export async function createCustomerFeedback(
   });
 
   if (!response.ok) {
-    const errorData = (await response.json().catch(() => ({}))) as { error?: string };
-    throw new Error(errorData.error || 'Erro ao enviar feedback para o servidor.');
+    throw new Error(await extractErrorMessage(response, 'Erro ao enviar feedback para o servidor.'));
   }
 
   return (await response.json()) as CustomerFeedbackDto;
@@ -375,7 +462,7 @@ export async function getCustomerFeedbacks(): Promise<CustomerFeedbackDto[]> {
   });
 
   if (!response.ok) {
-    throw new Error('Falha ao carregar lista de feedbacks.');
+    throw new Error(await extractErrorMessage(response, 'Falha ao carregar lista de feedbacks.'));
   }
 
   return (await response.json()) as CustomerFeedbackDto[];

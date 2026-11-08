@@ -8,8 +8,8 @@ namespace DataConform.Application.Services;
 
 public class ProjectService : IProjectService
 {
-    private const string ForbiddenTitle = "Acesso negado Ã  organizaÃ§Ã£o";
-    private const string ForbiddenMessage = "VocÃª nÃ£o possui permissÃ£o para visualizar ou modificar recursos desta organizaÃ§Ã£o.";
+    private const string ForbiddenTitle = "Acesso negado à organização";
+    private const string ForbiddenMessage = "Você não possui permissão para visualizar ou modificar recursos desta organização.";
 
     private readonly IApplicationDbContext _dbContext;
     private readonly IAuditService _auditService;
@@ -39,7 +39,7 @@ public class ProjectService : IProjectService
         {
             return ServiceResult<ImportProjectDto>.Failure(
                 ServiceErrorType.Validation,
-                "O nome do projeto Ã© obrigatÃ³rio.");
+                "O nome do projeto é obrigatório.");
         }
 
         bool workspaceExists = await _dbContext.Workspaces
@@ -49,7 +49,7 @@ public class ProjectService : IProjectService
         {
             return ServiceResult<ImportProjectDto>.Failure(
                 ServiceErrorType.NotFound,
-                "Workspace informado nÃ£o foi encontrado.");
+                "Workspace informado não foi encontrado.");
         }
 
         bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(userId, primaryWorkspaceId, workspaceId, cancellationToken);
@@ -78,7 +78,7 @@ public class ProjectService : IProjectService
             "CreateProject",
             "ImportProject",
             project.Id.ToString(),
-            $"Projeto '{project.Name}' (Destino: {project.TargetSystem ?? "GenÃ©rico"}) criado.",
+            $"Projeto '{project.Name}' (Destino: {project.TargetSystem ?? "Genérico"}) criado.",
             cancellationToken);
 
         ImportProjectDto dto = MapToProjectDto(project, 0);
@@ -98,7 +98,7 @@ public class ProjectService : IProjectService
         {
             return ServiceResult<List<ImportProjectDto>>.Failure(
                 ServiceErrorType.NotFound,
-                "Workspace informado nÃ£o foi encontrado.");
+                "Workspace informado não foi encontrado.");
         }
 
         bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(userId, primaryWorkspaceId, workspaceId, cancellationToken);
@@ -143,7 +143,7 @@ public class ProjectService : IProjectService
         {
             return ServiceResult<ImportProjectDto>.Failure(
                 ServiceErrorType.NotFound,
-                "Projeto de importaÃ§Ã£o nÃ£o encontrado.");
+                "Projeto de importação não encontrado.");
         }
 
         bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(userId, primaryWorkspaceId, project.WorkspaceId, cancellationToken);
@@ -162,6 +162,7 @@ public class ProjectService : IProjectService
     public async Task<ServiceResult> DeleteProjectAsync(
         Guid projectId,
         Guid? userId,
+        Guid? primaryWorkspaceId = null,
         CancellationToken cancellationToken = default)
     {
         ImportProject? project = await _dbContext.ImportProjects
@@ -173,6 +174,23 @@ public class ProjectService : IProjectService
             return ServiceResult.Failure(
                 ServiceErrorType.NotFound,
                 "Projeto de importação não encontrado.");
+        }
+
+        if (userId.HasValue || primaryWorkspaceId.HasValue)
+        {
+            bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(
+                userId,
+                primaryWorkspaceId,
+                project.WorkspaceId,
+                cancellationToken);
+
+            if (!canAccess)
+            {
+                return ServiceResult.Failure(
+                    ServiceErrorType.Forbidden,
+                    ForbiddenMessage,
+                    ForbiddenTitle);
+            }
         }
 
         Guid workspaceId = project.WorkspaceId;
@@ -206,7 +224,7 @@ public class ProjectService : IProjectService
             "DeleteProject",
             "ImportProject",
             projectId.ToString(),
-            $"Projeto '{projectName}' e todos os seus arquivos foram excluÃ­dos.",
+            $"Projeto '{projectName}' e todos os seus arquivos foram excluídos.",
             cancellationToken);
 
         return ServiceResult.Success();

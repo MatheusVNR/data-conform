@@ -10,9 +10,18 @@ interface FeedbackModalProps {
   onClose: () => void;
 }
 
+export type FeedbackCategory =
+  | 'support'
+  | 'commercial'
+  | 'improvement'
+  | 'new-erp'
+  | 'bug'
+  | 'praise'
+  | 'other';
+
 export interface FeedbackSubmission {
   id: string;
-  category: 'improvement' | 'new-erp' | 'bug' | 'praise' | 'other';
+  category: FeedbackCategory;
   rating: number;
   subject: string;
   message: string;
@@ -30,7 +39,7 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
   activeWorkspace,
   onClose,
 }) => {
-  const [category, setCategory] = useState<'improvement' | 'new-erp' | 'bug' | 'praise' | 'other'>('improvement');
+  const [category, setCategory] = useState<FeedbackCategory>('support');
   const [rating, setRating] = useState<number>(5);
   const [subject, setSubject] = useState<string>('');
   const [message, setMessage] = useState<string>('');
@@ -40,6 +49,7 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const contactEmail: string = customEmail !== null ? customEmail : (currentUser?.email ?? '');
+  const requiresEmail: boolean = category === 'support' || category === 'commercial';
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -60,29 +70,39 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     if (!message.trim()) {
-      setError('Por favor, descreva seu feedback ou sugestão.');
+      setError('Por favor, descreva sua solicitação, dúvida ou sugestão.');
+      return;
+    }
+    if (requiresEmail && !contactEmail.trim()) {
+      setError('Informe um e-mail para retorno para que nossa equipe possa responder seu chamado.');
       return;
     }
 
     setIsSubmitting(true);
     setError(null);
 
+    const defaultSubject: string =
+      category === 'support'
+        ? 'Chamado de Suporte Técnico / Assinatura'
+        : category === 'commercial'
+          ? 'Atendimento Comercial / Privacidade LGPD'
+          : 'Feedback Geral';
+
     try {
       await createCustomerFeedback({
         workspaceId: activeWorkspace?.id,
         category,
         rating,
-        subject: subject.trim() || 'Feedback Geral',
+        subject: subject.trim() || defaultSubject,
         message: message.trim(),
         contactEmail: contactEmail.trim() || undefined,
       });
 
-      // Salva também localmente para histórico do usuário
       const newFeedback: FeedbackSubmission = {
         id: `fbk-${Date.now()}`,
         category,
         rating,
-        subject: subject.trim() || 'Feedback Geral',
+        subject: subject.trim() || defaultSubject,
         message: message.trim(),
         contactEmail: contactEmail.trim(),
         workspaceName: activeWorkspace?.name,
@@ -98,29 +118,7 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
       setSubmitted(true);
       setError(null);
     } catch {
-      // Fallback local se estiver offline
-      try {
-        const newFeedback: FeedbackSubmission = {
-          id: `fbk-${Date.now()}`,
-          category,
-          rating,
-          subject: subject.trim() || 'Feedback Geral',
-          message: message.trim(),
-          contactEmail: contactEmail.trim(),
-          workspaceName: activeWorkspace?.name,
-          workspaceId: activeWorkspace?.id,
-          createdAt: new Date().toISOString(),
-        };
-
-        const existingRaw: string | null = localStorage.getItem(FEEDBACK_STORAGE_KEY);
-        const existing: FeedbackSubmission[] = existingRaw ? (JSON.parse(existingRaw) as FeedbackSubmission[]) : [];
-        existing.unshift(newFeedback);
-        localStorage.setItem(FEEDBACK_STORAGE_KEY, JSON.stringify(existing));
-
-        setSubmitted(true);
-      } catch {
-        setError('Não foi possível gravar o feedback. Tente novamente.');
-      }
+      setError('Não foi possível registrar sua solicitação no servidor neste momento. Verifique sua conexão e tente novamente.');
     } finally {
       setIsSubmitting(false);
     }
@@ -148,9 +146,9 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
       <div className="modal-card feedback-modal-card">
         <div className="modal-header">
           <div>
-            <h3>💬 Canal Direto de Feedback & Melhorias</h3>
+            <h3>💬 Canal de Suporte, Atendimento Comercial & Feedback</h3>
             <span className="modal-subtitle-inline">
-              Sua opinião direciona o roadmap do DataConform antes de qualquer decisão técnica
+              Suporte técnico sobre cargas e assinaturas, dúvidas comerciais, solicitações LGPD e sugestões
             </span>
           </div>
           <button type="button" className="btn-close" onClick={handleResetAndClose} aria-label="Fechar">
@@ -160,10 +158,10 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
 
         {submitted ? (
           <div className="modal-body feedback-success-body">
-            <div className="feedback-success-icon">🎉</div>
-            <h4>Muito obrigado pelo seu feedback!</h4>
+            <div className="feedback-success-icon">✅</div>
+            <h4>Solicitação registrada com sucesso!</h4>
             <p>
-              Registramos sua sugestão com sucesso. Nossa equipe analisa cada contribuição para evoluir os dicionários, as regras de negócio e a experiência do produto.
+              Recebemos sua mensagem em nossa central de atendimento. Caso tenha informado seu e-mail para retorno, nossa equipe responderá em até 1 dia útil.
             </p>
             <div className="feedback-success-actions">
               <button type="button" className="btn btn-primary" onClick={handleResetAndClose}>
@@ -172,14 +170,34 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} noValidate>
             <div className="modal-body">
               {error && <div className="inline-alert-error">{error}</div>}
 
-              {/* Categoria do Feedback */}
               <div className="form-group">
-                <label>Qual o objetivo do seu contato?</label>
+                <label>Qual o assunto do seu contato?</label>
                 <div className="feedback-category-chips">
+                  <button
+                    type="button"
+                    className={`feedback-chip ${category === 'support' ? 'active' : ''}`}
+                    onClick={() => setCategory('support')}
+                  >
+                    🛠️ Suporte Técnico / Assinatura
+                  </button>
+                  <button
+                    type="button"
+                    className={`feedback-chip ${category === 'commercial' ? 'active' : ''}`}
+                    onClick={() => setCategory('commercial')}
+                  >
+                    💼 Dúvida Comercial / LGPD
+                  </button>
+                  <button
+                    type="button"
+                    className={`feedback-chip ${category === 'new-erp' ? 'active' : ''}`}
+                    onClick={() => setCategory('new-erp')}
+                  >
+                    🎯 Solicitar Layout / ERP
+                  </button>
                   <button
                     type="button"
                     className={`feedback-chip ${category === 'improvement' ? 'active' : ''}`}
@@ -189,31 +207,16 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
                   </button>
                   <button
                     type="button"
-                    className={`feedback-chip ${category === 'new-erp' ? 'active' : ''}`}
-                    onClick={() => setCategory('new-erp')}
-                  >
-                    🎯 Solicitar Novo ERP / Layout
-                  </button>
-                  <button
-                    type="button"
                     className={`feedback-chip ${category === 'bug' ? 'active' : ''}`}
                     onClick={() => setCategory('bug')}
                   >
-                    ⚠️ Reportar Dificuldade
-                  </button>
-                  <button
-                    type="button"
-                    className={`feedback-chip ${category === 'praise' ? 'active' : ''}`}
-                    onClick={() => setCategory('praise')}
-                  >
-                    ⭐ Elogio / Outro
+                    ⚠️ Reportar Problema
                   </button>
                 </div>
               </div>
 
-              {/* Avaliação de Satisfação */}
               <div className="form-group">
-                <label>Como você avalia sua experiência até agora?</label>
+                <label>Avaliação da sua experiência (Opcional)</label>
                 <div className="feedback-stars-row" role="radiogroup" aria-label="Nota de Satisfação">
                   {[1, 2, 3, 4, 5].map((star: number) => (
                     <button
@@ -236,36 +239,35 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
                 </div>
               </div>
 
-              {/* Título opcional */}
               <div className="form-group">
                 <label htmlFor="fbk-subject">Assunto Resumido (Opcional)</label>
                 <input
                   id="fbk-subject"
                   type="text"
                   className="form-input"
-                  placeholder="Ex: Validação de campo específico no TOTVS ou facilidade de upload"
+                  placeholder="Ex: Dúvida sobre assinatura Professional, reembolso ou layout Protheus"
                   value={subject}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSubject(e.target.value)}
                 />
               </div>
 
-              {/* Mensagem detalhada */}
               <div className="form-group">
-                <label htmlFor="fbk-message">O que podemos fazer para aprimorar sua rotina? *</label>
+                <label htmlFor="fbk-message">Detalhes da sua solicitação ou mensagem *</label>
                 <textarea
                   id="fbk-message"
                   className="form-input"
                   rows={4}
-                  placeholder="Conte-nos o que achou, que rotina foi difícil ou o que gostaria de ver na plataforma antes de pensar em cancelar ou buscar outra solução..."
+                  placeholder="Descreva sua dúvida técnica, solicitação de faturamento/reembolso, requisição LGPD ou sugestão de evolução..."
                   value={message}
                   onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setMessage(e.target.value)}
                   required
                 />
               </div>
 
-              {/* E-mail para retorno */}
               <div className="form-group">
-                <label htmlFor="fbk-email">E-mail para Retorno (Opcional)</label>
+                <label htmlFor="fbk-email">
+                  E-mail para Retorno {requiresEmail ? '*' : '(Opcional)'}
+                </label>
                 <input
                   id="fbk-email"
                   type="email"
@@ -273,9 +275,10 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
                   placeholder="seu.email@empresa.com.br"
                   value={contactEmail}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomEmail(e.target.value)}
+                  required={requiresEmail}
                 />
                 <span className="form-hint">
-                  Preencha caso queira receber um retorno direto da nossa equipe técnica sobre a sugestão.
+                  Utilizado exclusivamente para responder ao seu atendimento técnico, comercial ou solicitação LGPD.
                 </span>
               </div>
             </div>
@@ -285,7 +288,7 @@ export const FeedbackModal: FC<FeedbackModalProps> = ({
                 Cancelar
               </button>
               <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                {isSubmitting ? 'Enviando...' : '🚀 Enviar Feedback'}
+                {isSubmitting ? 'Enviando...' : '📨 Registrar Solicitação'}
               </button>
             </div>
           </form>

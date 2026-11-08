@@ -14,6 +14,7 @@ public static class WebhookEndpoints
         group.MapPost("/stripe", HandleStripeWebhook)
             .WithName("HandleStripeWebhook")
             .AllowAnonymous()
+            .RequireRateLimiting("WebhookPolicy")
             .Produces(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 

@@ -1,11 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  ApiHttpError,
   clearAuthToken,
   createCustomerFeedback,
   getAuthToken,
+  getCurrentUser,
   login,
   setAuthToken,
   validateFile,
+  warmUpBackend,
 } from './api';
 
 function mockFetchResponse(status: number, body: unknown): ReturnType<typeof vi.fn> {
@@ -89,5 +92,24 @@ describe('validateFile', () => {
     mockFetchResponse(403, { title: 'Limite', detail: 'Limite mensal atingido' });
 
     await expect(validateFile('file-1')).rejects.toThrow('Limite mensal atingido');
+  });
+});
+
+describe('resiliência para hospedagem gratuita (Render Free)', () => {
+  it('getCurrentUser lança ApiHttpError tipado com código HTTP em falha 401', async () => {
+    mockFetchResponse(401, {});
+
+    await expect(getCurrentUser()).rejects.toBeInstanceOf(ApiHttpError);
+  });
+
+  it('warmUpBackend dispara GET /api/billing/config sem propagar exceção em falha de rede', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error('cold start timeout'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    expect(() => warmUpBackend()).not.toThrow();
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/billing/config',
+      expect.objectContaining({ method: 'GET' })
+    );
   });
 });

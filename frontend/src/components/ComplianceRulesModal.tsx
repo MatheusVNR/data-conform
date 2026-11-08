@@ -37,7 +37,7 @@ const BUSINESS_PILLARS: BusinessPillar[] = [
   },
   {
     badge: 'Aderência a Dicionários de ERP',
-    title: 'Templates Homologados por Sistema Destino',
+    title: 'Perfis de Referência por Sistema Destino',
     impact: 'Pronto para TOTVS, SAP, Senior, Sankhya e Omie',
     description:
       'Adapta a exigência de campos obrigatórios de acordo com o módulo e o ERP da sua operação, permitindo que equipes de negócio validem cargas sem depender de scripts técnicos da TI.',

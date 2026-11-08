@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Layout de Importação TOTVS Protheus SA1 (Clientes) em CSV | DataConform</title>
-    <meta name="description" content="Baixe e valide o layout CSV da tabela SA1 (Clientes) do TOTVS Protheus (MATA030). Verifique A1_COD, A1_LOJA, A1_CGC, A1_EMAIL, A1_EST e A1_CEP antes da carga." />
+    <meta name="description" content="Baixe e valide o modelo CSV de referência da tabela SA1 (Clientes) do TOTVS Protheus (CRMA980 / MATA030). Verifique A1_COD, A1_LOJA, A1_CGC, A1_EMAIL, A1_EST e A1_CEP antes da carga." />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#0f172a" />
     <link rel="canonical" href="https://dataconform.com.br/layout-importacao-protheus-sa1-clientes/" />
@@ -13,7 +13,7 @@
     <meta property="og:site_name" content="DataConform" />
     <meta property="og:locale" content="pt_BR" />
     <meta property="og:title" content="Layout de Importação TOTVS Protheus SA1 (Clientes) em CSV | DataConform" />
-    <meta property="og:description" content="Baixe e valide o layout CSV da tabela SA1 (Clientes) do TOTVS Protheus (MATA030). Verifique A1_COD, A1_LOJA, A1_CGC, A1_EMAIL, A1_EST e A1_CEP antes da carga." />
+    <meta property="og:description" content="Baixe e valide o modelo CSV de referência da tabela SA1 (Clientes) do TOTVS Protheus (CRMA980 / MATA030). Verifique A1_COD, A1_LOJA, A1_CGC, A1_EMAIL, A1_EST e A1_CEP antes da carga." />
     <meta property="og:url" content="https://dataconform.com.br/layout-importacao-protheus-sa1-clientes/" />
     <meta property="og:image" content="https://dataconform.com.br/og/dataconform-og.png" />
     <meta property="og:image:width" content="1200" />
@@ -21,7 +21,7 @@
     <meta property="og:image:alt" content="DataConform — Pré-validação de planilhas CSV para ERPs" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Layout de Importação TOTVS Protheus SA1 (Clientes) em CSV | DataConform" />
-    <meta name="twitter:description" content="Baixe e valide o layout CSV da tabela SA1 (Clientes) do TOTVS Protheus (MATA030). Verifique A1_COD, A1_LOJA, A1_CGC, A1_EMAIL, A1_EST e A1_CEP antes da carga." />
+    <meta name="twitter:description" content="Baixe e valide o modelo CSV de referência da tabela SA1 (Clientes) do TOTVS Protheus (CRMA980 / MATA030). Verifique A1_COD, A1_LOJA, A1_CGC, A1_EMAIL, A1_EST e A1_CEP antes da carga." />
     <meta name="twitter:image" content="https://dataconform.com.br/og/dataconform-og.png" />
     <link rel="stylesheet" href="/seo.css" />
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Início","item":"https://dataconform.com.br/"},{"@type":"ListItem","position":2,"name":"Layouts de Importação ERP","item":"https://dataconform.com.br/layouts-de-importacao-erp/"},{"@type":"ListItem","position":3,"name":"TOTVS Protheus — SA1 (Clientes)","item":"https://dataconform.com.br/layout-importacao-protheus-sa1-clientes/"}]}</script>
@@ -84,10 +84,10 @@
           <header class="seo-hero">
             <div class="seo-badge-row">
               <span class="seo-pill-primary">TOTVS Protheus</span>
-              <span class="seo-pill-outline">Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotina MATA030</span>
+              <span class="seo-pill-outline">Tabela SA1 (Clientes — SIGAFAT / SIGAFIN) • Rotinas CRMA980 / MATA030</span>
             </div>
-            <h1>Layout de Importação TOTVS Protheus SA1 (Clientes): Validação de CSV para MATA030</h1>
-            <p class="seo-lead">Homologue sua planilha de clientes segundo o dicionário SX3 da tabela SA1 antes de executar a rotina automática MATA030 ou o MILE no TOTVS Protheus. Intercepte erros de CNPJ/CPF, CEP, UF, limite de crédito e codificação UTF-8 linha a linha.</p>
+            <h1>Layout de Importação TOTVS Protheus SA1 (Clientes) em CSV</h1>
+            <p class="seo-lead">Homologue sua planilha segundo a referência SX3 da tabela SA1 antes das rotinas CRMA980, MATA030 ou MILE no TOTVS Protheus. Intercepte erros de CNPJ/CPF, CEP, UF, limite de crédito e UTF-8.</p>
             <div class="seo-cta-row">
               <a href="/?erp=protheus-sa1#sandbox" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
               <a href="/layouts-de-importacao-erp/" class="seo-btn seo-btn-secondary">Ver todos os layouts de ERP</a>
@@ -96,13 +96,13 @@
 
           <section class="seo-section">
             <h2>Para que serve o layout SA1 (Clientes) no TOTVS Protheus</h2>
-            <p>A tabela SA1 (Cadastro de Clientes) alimenta os módulos SIGAFAT, SIGAFIN e SIGACOM no TOTVS Protheus. Em cargas via ExecAuto (MATA030) ou MILE, a importação exige aderência estrita ao dicionário SX3 para evitar bloqueios de NF-e na SEFAZ.</p>
-          <p>O preset do DataConform para TOTVS Protheus SA1 audita o arquivo CSV antes da carga: confere o cabeçalho, valida CPF e CNPJ em A1_CGC por Módulo 11, checa siglas estaduais em A1_EST, exige 8 dígitos em A1_CEP e bloqueia valores negativos em A1_LC.</p>
+            <p>A tabela SA1 (Clientes) abastece SIGAFAT, SIGAFIN e SIGACOM no TOTVS Protheus. Cargas via CRMA980, MATA030 ou MILE exigem aderência ao dicionário SX3 para evitar rejeições de NF-e na SEFAZ.</p>
+          <p>O perfil DataConform para Protheus SA1 valida cabeçalho, CPF/CNPJ em A1_CGC (Módulo 11), siglas estaduais em A1_EST, 8 dígitos em A1_CEP e valores não negativos em A1_LC.</p>
           </section>
 
           <section class="seo-section">
-            <h2>Tabela de Colunas Obrigatórias Reais do Preset (SA1 (Clientes))</h2>
-            <p>O preset oficial do DataConform para <strong>TOTVS Protheus</strong> exige as seguintes colunas no cabeçalho da planilha CSV (arquivo de referência: <code>layout_totvs_protheus_sa1.csv</code>):</p>
+            <h2>Tabela de Colunas Sugeridas no Perfil (SA1 (Clientes))</h2>
+            <p>O perfil de referência do DataConform para <strong>TOTVS Protheus</strong> inspeciona as seguintes colunas no cabeçalho da planilha CSV (arquivo de exemplo: <code>layout_totvs_protheus_sa1.csv</code>), lembrando que a obrigatoriedade final no ERP pode variar conforme versão e parametrização local:</p>
             <div class="seo-table-wrap">
               <table class="seo-table">
                 <thead>
@@ -168,7 +168,7 @@
           </section>
 
           <section class="seo-section">
-            <h2>Exemplo de Estrutura CSV Homologada (layout_totvs_protheus_sa1.csv)</h2>
+            <h2>Exemplo de Estrutura CSV de Referência (layout_totvs_protheus_sa1.csv)</h2>
             <p>Abaixo está a estrutura real do arquivo CSV utilizado pelo DataConform para homologar cargas deste módulo, incluindo linhas íntegras e linhas de teste para captura de inconsistências:</p>
             <pre class="seo-code-block"><code>A1_COD,A1_LOJA,A1_NOME,A1_CGC,A1_EMAIL,A1_LC,A1_EST,A1_CEP
 000101,01,Alpha Tecnologia e Sistemas LTDA,12.345.678/0001-95,fiscal@alphatech.com.br,50000.00,SP,01001-000
@@ -305,7 +305,9 @@
             <a href="/">Início &amp; Simulador</a> •
             <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
             <a href="/regras-de-validacao-csv/">Regras CSV</a> •
-            <a href="/precos/">Preços</a>
+            <a href="/precos/">Preços</a> •
+            <a href="/termos/">Termos de Uso</a> •
+            <a href="/privacidade/">Privacidade (LGPD)</a>
           </p>
         </div>
         <div class="seo-footer-col">
@@ -324,7 +326,7 @@
             <li><a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA (Business Partner (BP))</a></li>
             <li><a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP (E085CLI (Clientes Sapiens))</a></li>
             <li><a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya (TGFPAR (Parceiros))</a></li>
-            <li><a href="/layout-importacao-omie-clientes/">Omie (Planilha de Clientes e Fornecedores)</a></li>
+            <li><a href="/layout-importacao-omie-clientes/">Omie (Modelo de Clientes e Fornecedores)</a></li>
             <li><a href="/layout-importacao-contaazul-clientes/">ContaAzul (Importação Cadastral e Financeira)</a></li>
           </ul>
         </div>
@@ -343,7 +345,7 @@
         </div>
       </div>
       <div class="seo-footer-bottom">
-        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>© 2026 DataConform. Software independente sem vínculo ou endosso oficial de TOTVS®, SAP®, Senior®, Sankhya®, Omie® ou ContaAzul®.</span>
         <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
       </div>
     </div>

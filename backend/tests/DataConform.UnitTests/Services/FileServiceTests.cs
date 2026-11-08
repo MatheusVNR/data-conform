@@ -246,6 +246,200 @@ public class FileServiceTests : IDisposable
         Assert.False(formulaIssue.RawValue?.StartsWith("="));
     }
 
+    private sealed class CancellingValidatorStub : DataConform.Application.Common.Interfaces.ICsvValidatorService
+    {
+        public Task<DataConform.Application.Common.Interfaces.FileValidationResult> ValidateCsvStreamAsync(
+            Stream csvStream,
+            Guid fileId,
+            IReadOnlyCollection<string>? requiredColumns = null,
+            CancellationToken cancellationToken = default)
+        {
+            throw new OperationCanceledException("Requisição abortada pelo cliente.");
+        }
+    }
+
+    [Fact]
+    public async Task UploadFileAsync_ShouldEnforcePlanByteSizeLimitsAndBlockCrossTenantDelete()
+    {
+        using DataConformDbContext context = CreateInMemoryContext();
+        FileService fileService = CreateFileService(context);
+
+        Guid ownerA = Guid.NewGuid();
+        Guid attackerB = Guid.NewGuid();
+        Workspace starterWs = new Workspace
+        {
+            Id = Guid.NewGuid(),
+            Name = "Starter Size",
+            Slug = "starter-size",
+            OwnerUserId = ownerA,
+            Plan = PlanTier.Starter,
+            MonthlyFilesQuota = 5,
+            MaxRowsPerFile = 500
+        };
+        Workspace otherWs = new Workspace
+        {
+            Id = Guid.NewGuid(),
+            Name = "Other Org",
+            Slug = "other-org",
+            OwnerUserId = attackerB,
+            Plan = PlanTier.Starter,
+            MonthlyFilesQuota = 5,
+            MaxRowsPerFile = 500
+        };
+        ImportProject proj = new ImportProject
+        {
+            Id = Guid.NewGuid(),
+            WorkspaceId = starterWs.Id,
+            Workspace = starterWs,
+            Name = "Projeto Starter",
+            TargetSystem = "TOTVS Protheus"
+        };
+        context.Workspaces.AddRange(starterWs, otherWs);
+        context.ImportProjects.Add(proj);
+        await context.SaveChangesAsync();
+
+        // Starter (> 5 MB) deve ser rejeitado antes mesmo de gravar em disco
+        long overFiveMb = (5L * 1024L * 1024L) + 1024L;
+        using MemoryStream smallBuffer = new MemoryStream(Encoding.UTF8.GetBytes("A1_COD,A1_NOME\n001,Teste"));
+        ServiceResult<ImportFileDto> oversizeStarter = await fileService.UploadFileAsync(
+            proj.Id,
+            "lote_6mb.csv",
+            "text/csv",
+            overFiveMb,
+            smallBuffer,
+            ownerA,
+            starterWs.Id);
+
+        Assert.False(oversizeStarter.IsSuccess);
+        Assert.Equal(ServiceErrorType.Validation, oversizeStarter.ErrorType);
+        Assert.Contains("5 MB", oversizeStarter.ErrorMessage);
+
+        // Upload válido + tentativa de DeleteFileAsync por outro tenant
+        byte[] okBytes = Encoding.UTF8.GetBytes("A1_COD,A1_NOME\n001,Cliente Legitimo");
+        using MemoryStream okStream = new MemoryStream(okBytes);
+        ServiceResult<ImportFileDto> validUpload = await fileService.UploadFileAsync(
+            proj.Id,
+            "legitimo.csv",
+            "text/csv",
+            okBytes.Length,
+            okStream,
+            ownerA,
+            starterWs.Id);
+
+        Assert.True(validUpload.IsSuccess);
+        Assert.NotNull(validUpload.Data);
+
+        ServiceResult crossTenantDelete = await fileService.DeleteFileAsync(
+            validUpload.Data.Id,
+            attackerB,
+            otherWs.Id);
+        Assert.False(crossTenantDelete.IsSuccess);
+        Assert.Equal(ServiceErrorType.Forbidden, crossTenantDelete.ErrorType);
+    }
+
+    [Fact]
+    public async Task ValidateFileAsync_WhenCancelledOrMissingFromEphemeralDisk_ShouldRecoverStatusAndQuota()
+    {
+        using DataConformDbContext context = CreateInMemoryContext();
+        Dictionary<string, string?> settings = new Dictionary<string, string?>
+        {
+            { "FileStorage:BasePath", _tempStoragePath }
+        };
+        IConfiguration config = new ConfigurationBuilder()
+            .AddInMemoryCollection(settings)
+            .Build();
+
+        LocalFileStorageService storage = new LocalFileStorageService(config);
+        SubscriptionQuotaService quota = new SubscriptionQuotaService(context);
+        TenantAccessService tenantAccess = new TenantAccessService(context);
+        AuditService audit = new AuditService(context, tenantAccess);
+
+        FileService cancellingFileService = new FileService(
+            context,
+            storage,
+            new CancellingValidatorStub(),
+            quota,
+            audit,
+            tenantAccess);
+
+        Guid ownerId = Guid.NewGuid();
+        Workspace ws = new Workspace
+        {
+            Id = Guid.NewGuid(),
+            Name = "Recovery Org",
+            Slug = "recovery-org",
+            OwnerUserId = ownerId,
+            Plan = PlanTier.Starter,
+            MonthlyFilesQuota = 5,
+            MaxRowsPerFile = 500
+        };
+        ImportProject proj = new ImportProject
+        {
+            Id = Guid.NewGuid(),
+            WorkspaceId = ws.Id,
+            Workspace = ws,
+            Name = "Recovery Proj"
+        };
+        context.Workspaces.Add(ws);
+        context.ImportProjects.Add(proj);
+        await context.SaveChangesAsync();
+
+        byte[] csvBytes = Encoding.UTF8.GetBytes("A1_COD,A1_NOME\n001,Empresa");
+        using MemoryStream uploadStream = new MemoryStream(csvBytes);
+        ServiceResult<ImportFileDto> uploaded = await cancellingFileService.UploadFileAsync(
+            proj.Id,
+            "teste_cancel.csv",
+            "text/csv",
+            csvBytes.Length,
+            uploadStream,
+            ownerId,
+            ws.Id);
+
+        Assert.True(uploaded.IsSuccess);
+        Guid fileId = uploaded.Data!.Id;
+        Assert.Equal(1, ws.MonthlyFilesUploaded);
+
+        // 1. Cancelamento não pode deixar arquivo preso em Processing (retorna erro controlado e marca Failed)
+        ServiceResult<ValidationReportDto> cancelResult = await cancellingFileService.ValidateFileAsync(
+            fileId,
+            null,
+            ownerId,
+            ws.Id);
+
+        Assert.False(cancelResult.IsSuccess);
+        ImportFile reloadedAfterCancel = await context.ImportFiles.FirstAsync(f => f.Id == fileId);
+        Assert.NotEqual(FileStatus.Processing, reloadedAfterCancel.Status);
+        Assert.Equal(FileStatus.Failed, reloadedAfterCancel.Status);
+
+        // 2. Se o disco efêmero perdeu um novo arquivo enquanto estava Pending, marca Failed e estorna a cota mensal
+        using MemoryStream secondUploadStream = new MemoryStream(csvBytes);
+        ServiceResult<ImportFileDto> secondUploaded = await cancellingFileService.UploadFileAsync(
+            proj.Id,
+            "teste_disco_efemero.csv",
+            "text/csv",
+            csvBytes.Length,
+            secondUploadStream,
+            ownerId,
+            ws.Id);
+        Assert.True(secondUploaded.IsSuccess);
+        Guid secondFileId = secondUploaded.Data!.Id;
+        Assert.Equal(2, ws.MonthlyFilesUploaded);
+
+        ImportFile pendingFile = await context.ImportFiles.FirstAsync(f => f.Id == secondFileId);
+        await storage.DeleteFileAsync(pendingFile.StoredFileName);
+
+        FileService normalFileService = CreateFileService(context);
+        ServiceResult<ValidationReportDto> missingDiskResult = await normalFileService.ValidateFileAsync(
+            secondFileId,
+            null,
+            ownerId,
+            ws.Id);
+
+        Assert.False(missingDiskResult.IsSuccess);
+        Assert.Equal(FileStatus.Failed, pendingFile.Status);
+        Assert.Equal(1, ws.MonthlyFilesUploaded);
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_tempStoragePath))

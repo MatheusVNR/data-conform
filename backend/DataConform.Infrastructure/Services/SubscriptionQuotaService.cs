@@ -44,13 +44,15 @@ public class SubscriptionQuotaService : ISubscriptionQuotaService
 
     public async Task IncrementFilesUploadedAsync(Guid workspaceId, CancellationToken cancellationToken = default)
     {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+
         try
         {
-            DateTimeOffset now = DateTimeOffset.UtcNow;
             int affectedRows = await _context.Workspaces
                 .Where(w => w.Id == workspaceId)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(w => w.MonthlyFilesUploaded, w => w.MonthlyFilesUploaded + 1)
+                    .SetProperty(w => w.QuotaPeriodStartedAtUtc, w => w.QuotaPeriodStartedAtUtc ?? now)
                     .SetProperty(w => w.UpdatedAt, now),
                     cancellationToken);
 
@@ -68,7 +70,40 @@ public class SubscriptionQuotaService : ISubscriptionQuotaService
             if (workspace != null)
             {
                 workspace.MonthlyFilesUploaded += 1;
-                workspace.UpdatedAt = DateTimeOffset.UtcNow;
+                workspace.QuotaPeriodStartedAtUtc ??= now;
+                workspace.UpdatedAt = now;
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
+    }
+
+    public async Task DecrementFilesUploadedAsync(Guid workspaceId, CancellationToken cancellationToken = default)
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+
+        try
+        {
+            int affectedRows = await _context.Workspaces
+                .Where(w => w.Id == workspaceId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(w => w.MonthlyFilesUploaded, w => w.MonthlyFilesUploaded > 0 ? w.MonthlyFilesUploaded - 1 : 0)
+                    .SetProperty(w => w.UpdatedAt, now),
+                    cancellationToken);
+
+            if (affectedRows > 0)
+            {
+                return;
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            Workspace? workspace = await _context.Workspaces
+                .FirstOrDefaultAsync(w => w.Id == workspaceId, cancellationToken);
+
+            if (workspace != null && workspace.MonthlyFilesUploaded > 0)
+            {
+                workspace.MonthlyFilesUploaded -= 1;
+                workspace.UpdatedAt = now;
                 await _context.SaveChangesAsync(cancellationToken);
             }
         }
@@ -86,19 +121,7 @@ public class SubscriptionQuotaService : ISubscriptionQuotaService
 
         await EnsureMonthlyQuotaPeriodCurrentAsync(workspace, cancellationToken);
 
-        double usagePercentage = workspace.MonthlyFilesQuota > 0
-            ? Math.Round(((double)workspace.MonthlyFilesUploaded / workspace.MonthlyFilesQuota) * 100.0, 1)
-            : 0;
-
-        return new WorkspaceQuotaDto
-        {
-            WorkspaceId = workspace.Id,
-            Plan = workspace.Plan,
-            MonthlyFilesUploaded = workspace.MonthlyFilesUploaded,
-            MonthlyFilesQuota = workspace.MonthlyFilesQuota,
-            MaxRowsPerFile = workspace.MaxRowsPerFile,
-            UsagePercentage = usagePercentage
-        };
+        return MapToQuotaDto(workspace);
     }
 
     public async Task<WorkspaceQuotaDto> UpdatePlanAsync(Guid workspaceId, PlanTier newPlan, CancellationToken cancellationToken = default)
@@ -111,8 +134,17 @@ public class SubscriptionQuotaService : ISubscriptionQuotaService
             throw new KeyNotFoundException($"Workspace with ID '{workspaceId}' was not found.");
         }
 
-        workspace.Plan = newPlan;
+        ApplyPlanQuotas(workspace, newPlan);
         workspace.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return MapToQuotaDto(workspace);
+    }
+
+    private static void ApplyPlanQuotas(Workspace workspace, PlanTier newPlan)
+    {
+        workspace.Plan = newPlan;
 
         switch (newPlan)
         {
@@ -130,9 +162,10 @@ public class SubscriptionQuotaService : ISubscriptionQuotaService
                 workspace.MaxRowsPerFile = 500;
                 break;
         }
+    }
 
-        await _context.SaveChangesAsync(cancellationToken);
-
+    private static WorkspaceQuotaDto MapToQuotaDto(Workspace workspace)
+    {
         double usagePercentage = workspace.MonthlyFilesQuota > 0
             ? Math.Round(((double)workspace.MonthlyFilesUploaded / workspace.MonthlyFilesQuota) * 100.0, 1)
             : 0;
@@ -144,22 +177,45 @@ public class SubscriptionQuotaService : ISubscriptionQuotaService
             MonthlyFilesUploaded = workspace.MonthlyFilesUploaded,
             MonthlyFilesQuota = workspace.MonthlyFilesQuota,
             MaxRowsPerFile = workspace.MaxRowsPerFile,
-            UsagePercentage = usagePercentage
+            UsagePercentage = usagePercentage,
+            CancelAtPeriodEnd = workspace.CancelAtPeriodEnd,
+            PlanExpiresAtUtc = workspace.PlanExpiresAtUtc
         };
     }
 
     private async Task EnsureMonthlyQuotaPeriodCurrentAsync(Workspace workspace, CancellationToken cancellationToken)
     {
         DateTimeOffset now = DateTimeOffset.UtcNow;
-        DateTimeOffset referenceDate = workspace.UpdatedAt ?? workspace.CreatedAt;
+        bool hasChanges = false;
+
+        if (workspace.CancelAtPeriodEnd &&
+            workspace.PlanExpiresAtUtc.HasValue &&
+            workspace.PlanExpiresAtUtc.Value <= now &&
+            workspace.Plan != PlanTier.Starter)
+        {
+            ApplyPlanQuotas(workspace, PlanTier.Starter);
+            workspace.CancelAtPeriodEnd = false;
+            workspace.StripeSubscriptionId = null;
+            workspace.PlanExpiresAtUtc = null;
+            workspace.UpdatedAt = now;
+            hasChanges = true;
+        }
+
+        DateTimeOffset referenceDate = workspace.QuotaPeriodStartedAtUtc ?? workspace.UpdatedAt ?? workspace.CreatedAt;
 
         bool isPreviousMonth = referenceDate.UtcDateTime.Year < now.UtcDateTime.Year ||
             (referenceDate.UtcDateTime.Year == now.UtcDateTime.Year && referenceDate.UtcDateTime.Month < now.UtcDateTime.Month);
 
-        if (isPreviousMonth && workspace.MonthlyFilesUploaded > 0)
+        if (isPreviousMonth)
         {
             workspace.MonthlyFilesUploaded = 0;
+            workspace.QuotaPeriodStartedAtUtc = now;
             workspace.UpdatedAt = now;
+            hasChanges = true;
+        }
+
+        if (hasChanges)
+        {
             await _context.SaveChangesAsync(cancellationToken);
         }
     }

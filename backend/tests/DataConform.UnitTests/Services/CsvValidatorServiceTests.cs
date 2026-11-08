@@ -310,4 +310,106 @@ public class CsvValidatorServiceTests
                  i.Severity == IssueSeverity.Error &&
                  i.RawValue == "000100/01");
     }
+
+    [Fact]
+    public async Task ValidateCsvStreamAsync_OneHundredThousandInvalidRows_ShouldCapInMemoryIssuesAtOneThousandAndCountAll()
+    {
+        StringBuilder sb = new StringBuilder(capacity: 3_200_000);
+        sb.AppendLine("B1_COD,B1_DESC,B1_POSIPI");
+        for (int i = 1; i <= 100_000; i++)
+        {
+            sb.Append("PRD");
+            sb.Append(i);
+            sb.Append(",Item Lote Massivo,123\n");
+        }
+
+        byte[] bytes = Encoding.UTF8.GetBytes(sb.ToString());
+        using MemoryStream stream = new MemoryStream(bytes);
+
+        FileValidationResult result = await _validator.ValidateCsvStreamAsync(stream, Guid.NewGuid());
+
+        Assert.Equal(100_000, result.TotalRows);
+        Assert.Equal(100_000, result.ErrorRows);
+        Assert.Equal(1_000, result.Issues.Count);
+        Assert.Equal(100_000, result.TotalIssuesCount);
+    }
+
+    [Fact]
+    public async Task ValidateCsvStreamAsync_SapB1DtwTwoLineHeaderAndAbsEntryNcm_ShouldSkipSecondHeaderAndAcceptAbsEntry()
+    {
+        string dtwCsv = "ItemCode,ItemName,NcmCode\n" +
+                        "Código do Item,Descrição do Item,Código NCM\n" +
+                        "ITM001,Notebook Corporativo,84713012\n" +
+                        "ITM002,Servidor Rack (AbsEntry ONCM),145";
+        byte[] bytes = Encoding.UTF8.GetBytes(dtwCsv);
+        using MemoryStream stream = new MemoryStream(bytes);
+
+        FileValidationResult result = await _validator.ValidateCsvStreamAsync(stream, Guid.NewGuid());
+
+        Assert.Equal(2, result.TotalRows);
+        Assert.Equal(2, result.ValidRows);
+        Assert.Equal(0, result.ErrorRows);
+        Assert.Empty(result.Issues);
+    }
+
+    [Fact]
+    public async Task ValidateCsvStreamAsync_ForeignEntityUfEx_ShouldAllowBlankTaxIdAndZeroedCep()
+    {
+        string foreignCsv = "A1_COD,A1_LOJA,A1_NOME,A1_EST,A1_CGC,A1_CEP\n" +
+                            "EXT001,01,Global Cloud Corp Inc,EX,,00000000\n" +
+                            "NAC001,01,Cliente Nacional Sem Documento,SP,,01001000";
+        byte[] bytes = Encoding.UTF8.GetBytes(foreignCsv);
+        using MemoryStream stream = new MemoryStream(bytes);
+        string[] requiredCols = new string[] { "A1_COD", "A1_LOJA", "A1_NOME", "A1_EST", "A1_CGC", "A1_CEP" };
+
+        FileValidationResult result = await _validator.ValidateCsvStreamAsync(stream, Guid.NewGuid(), requiredCols);
+
+        Assert.Equal(2, result.TotalRows);
+        Assert.Equal(1, result.ValidRows);
+        Assert.Equal(1, result.ErrorRows);
+        Assert.DoesNotContain(result.Issues, i => i.RowNumber == 2);
+        Assert.Contains(result.Issues, i => i.RowNumber == 3 && i.ColumnName == "A1_CGC");
+    }
+
+    [Fact]
+    public async Task PublicTemplatesDogfooding_AllFourCommercialCsvTemplates_ShouldPassWithZeroErrors()
+    {
+        string? currentDir = AppContext.BaseDirectory;
+        string? templatesRoot = null;
+
+        while (!string.IsNullOrEmpty(currentDir))
+        {
+            string candidate = Path.Combine(currentDir, "docs", "comercial", "github-templates-repo");
+            if (Directory.Exists(candidate))
+            {
+                templatesRoot = candidate;
+                break;
+            }
+            currentDir = Directory.GetParent(currentDir)?.FullName;
+        }
+
+        Assert.NotNull(templatesRoot);
+
+        string[] relativeTemplatePaths = new string[]
+        {
+            Path.Combine("protheus", "SA1_Clientes_Modelo.csv"),
+            Path.Combine("protheus", "SB1_Produtos_Modelo.csv"),
+            Path.Combine("sap-business-one", "OCRD_Parceiros_Modelo.csv"),
+            Path.Combine("omie", "Clientes_Fornecedores_Modelo.csv")
+        };
+
+        foreach (string relPath in relativeTemplatePaths)
+        {
+            string fullPath = Path.Combine(templatesRoot!, relPath);
+            Assert.True(File.Exists(fullPath), $"Template comercial não encontrado: {fullPath}");
+
+            await using FileStream fs = File.OpenRead(fullPath);
+            FileValidationResult validation = await _validator.ValidateCsvStreamAsync(fs, Guid.NewGuid());
+
+            Assert.True(
+                validation.ErrorRows == 0 && validation.Issues.Count == 0,
+                $"O template público '{relPath}' falhou na validação com {validation.Issues.Count} apontamento(s): " +
+                string.Join("; ", validation.Issues.Select(i => $"L{i.RowNumber}:{i.ColumnName}:{i.IssueCode}")));
+        }
+    }
 }

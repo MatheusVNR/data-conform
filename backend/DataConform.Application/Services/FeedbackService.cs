@@ -8,10 +8,14 @@ namespace DataConform.Application.Services;
 public class FeedbackService : IFeedbackService
 {
     private readonly IApplicationDbContext _dbContext;
+    private readonly ITenantAccessService? _tenantAccessService;
 
-    public FeedbackService(IApplicationDbContext dbContext)
+    public FeedbackService(
+        IApplicationDbContext dbContext,
+        ITenantAccessService? tenantAccessService = null)
     {
         _dbContext = dbContext;
+        _tenantAccessService = tenantAccessService;
     }
 
     public async Task<ServiceResult<CustomerFeedbackDto>> CreateFeedbackAsync(
@@ -31,10 +35,32 @@ public class FeedbackService : IFeedbackService
             : request.Category.Trim().ToLowerInvariant();
         int safeRating = Math.Clamp(request.Rating, 0, 5);
 
+        Guid? verifiedWorkspaceId = null;
+        if (request.WorkspaceId.HasValue && userId.HasValue)
+        {
+            if (_tenantAccessService == null)
+            {
+                verifiedWorkspaceId = request.WorkspaceId.Value;
+            }
+            else
+            {
+                bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(
+                    userId,
+                    null,
+                    request.WorkspaceId.Value,
+                    cancellationToken);
+
+                if (canAccess)
+                {
+                    verifiedWorkspaceId = request.WorkspaceId.Value;
+                }
+            }
+        }
+
         CustomerFeedback feedback = new CustomerFeedback
         {
             Id = Guid.NewGuid(),
-            WorkspaceId = request.WorkspaceId,
+            WorkspaceId = verifiedWorkspaceId,
             UserId = userId,
             Category = safeCategory.Length > 50 ? safeCategory.Substring(0, 50) : safeCategory,
             Rating = safeRating,

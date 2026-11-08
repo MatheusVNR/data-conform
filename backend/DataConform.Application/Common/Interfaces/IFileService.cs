@@ -37,5 +37,6 @@ public interface IFileService
     Task<ServiceResult> DeleteFileAsync(
         Guid fileId,
         Guid? userId,
+        Guid? primaryWorkspaceId = null,
         CancellationToken cancellationToken = default);
 }

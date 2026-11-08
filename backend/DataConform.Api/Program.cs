@@ -1,7 +1,10 @@
+using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -10,11 +13,33 @@ using DataConform.Api.Filters;
 using DataConform.Api.Services;
 using DataConform.Application;
 using DataConform.Application.Common.Interfaces;
+using DataConform.Domain.Entities;
+using DataConform.Domain.Enums;
 using DataConform.Infrastructure;
 using DataConform.Infrastructure.Persistence;
+using DataConform.Infrastructure.Security;
 using DataConform.Infrastructure.Services;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+const long maxUploadRequestBytes = 52L * 1024L * 1024L;
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = maxUploadRequestBytes;
+});
+
+builder.Services.Configure<FormOptions>(formOptions =>
+{
+    formOptions.MultipartBodyLengthLimit = maxUploadRequestBytes;
+});
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 2;
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // Add services to the container.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -33,7 +58,9 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHttpClient<IStripeBillingService, StripeBillingService>();
 builder.Services.AddHostedService<EphemeralStorageCleanupService>();
 
-string jwtSecret = builder.Configuration["Jwt:Secret"] ?? "DataConformSuperSecretJwtKey2026WithSufficientLengthForHmacSha256SecurityStandards!";
+string jwtSecret = JwtTokenGenerator.ResolveSecretKey(
+    builder.Configuration,
+    builder.Environment.IsProduction());
 string jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "DataConform";
 string jwtAudience = builder.Configuration["Jwt:Audience"] ?? "DataConform";
 
@@ -68,7 +95,10 @@ builder.Services.AddRateLimiter(options =>
         context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
         await context.HttpContext.Response.WriteAsJsonAsync(new
         {
-            error = "Muitas tentativas de autenticação em curto período. Aguarde um minuto antes de tentar novamente."
+            title = "Limite de Requisições Excedido",
+            status = StatusCodes.Status429TooManyRequests,
+            detail = "Muitas solicitações em curto período. Aguarde até um minuto antes de tentar novamente.",
+            error = "Muitas solicitações em curto período. Aguarde até um minuto antes de tentar novamente."
         }, cancellationToken);
     };
 
@@ -80,6 +110,52 @@ builder.Services.AddRateLimiter(options =>
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+
+    options.AddPolicy("FeedbackPolicy", httpContext =>
+    {
+        string partitionKey = $"feedback:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous-ip"}";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+
+    options.AddPolicy("UploadValidatePolicy", httpContext =>
+    {
+        string? userId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        string identityKey = !string.IsNullOrWhiteSpace(userId)
+            ? $"user:{userId}"
+            : $"ip:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous-ip"}";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            identityKey,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+
+    options.AddPolicy("WebhookPolicy", httpContext =>
+    {
+        string partitionKey = $"webhook:{httpContext.Connection.RemoteIpAddress?.ToString() ?? "stripe-ip"}";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 120,
                 Window = TimeSpan.FromMinutes(1),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
@@ -115,13 +191,14 @@ builder.Services.AddOpenApi();
 
 WebApplication app = builder.Build();
 
-// Auto-migrate database on startup
-using (IServiceScope scope = app.Services.CreateScope())
+// Auto-migrate database & recover interrupted validations on startup
+if (!EF.IsDesignTime)
 {
+    using IServiceScope scope = app.Services.CreateScope();
     ILogger<Program> logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     DataConformDbContext dbContext = scope.ServiceProvider.GetRequiredService<DataConformDbContext>();
     bool autoMigrate = builder.Configuration.GetValue<bool>("Database:AutoMigrate", true);
-    if (autoMigrate)
+    if (autoMigrate && dbContext.Database.IsRelational())
     {
         string? dbDataSource = dbContext.Database.GetDbConnection().DataSource;
         logger.LogInformation("Iniciando migrações no banco de dados em: {DataSource}", dbDataSource);
@@ -142,7 +219,34 @@ using (IServiceScope scope = app.Services.CreateScope())
             }
         }
     }
+
+    try
+    {
+        List<ImportFile> interruptedFiles = dbContext.ImportFiles
+            .IgnoreQueryFilters()
+            .Where(f => f.Status == FileStatus.Processing)
+            .ToList();
+
+        if (interruptedFiles.Count > 0)
+        {
+            foreach (ImportFile stuckFile in interruptedFiles)
+            {
+                stuckFile.Status = FileStatus.Failed;
+            }
+
+            dbContext.SaveChanges();
+            logger.LogWarning(
+                "Recuperação na inicialização: {Count} arquivo(s) interrompido(s) em Processing foram marcados como Failed.",
+                interruptedFiles.Count);
+        }
+    }
+    catch (Exception recoveryEx)
+    {
+        logger.LogWarning(recoveryEx, "Aviso não bloqueante ao verificar arquivos interrompidos na inicialização.");
+    }
 }
+
+app.UseForwardedHeaders();
 
 // Security Headers & Global Exception Handling Middleware (RFC 7807 ProblemDetails / CWE-209)
 app.Use(async (context, next) =>
@@ -159,20 +263,36 @@ app.Use(async (context, next) =>
     catch (BadHttpRequestException badRequestEx)
     {
         ILogger<Program> reqLogger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-        reqLogger.LogWarning(badRequestEx, "Requisição HTTP malformada em {Path}", context.Request.Path);
+        reqLogger.LogWarning(badRequestEx, "Requisição HTTP rejeitada ({StatusCode}) em {Path}", badRequestEx.StatusCode, context.Request.Path);
 
         if (!context.Response.HasStarted)
         {
-            context.Response.StatusCode = StatusCodes.Status400BadRequest;
-            context.Response.ContentType = "application/problem+json; charset=utf-8";
-            await context.Response.WriteAsJsonAsync(new
+            if (badRequestEx.StatusCode == StatusCodes.Status413PayloadTooLarge)
             {
-                type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-                title = "Requisição Inválida",
-                status = StatusCodes.Status400BadRequest,
-                detail = "O corpo da requisição (JSON) ou os parâmetros enviados estão malformados ou inválidos.",
-                error = "O corpo da requisição (JSON) ou os parâmetros enviados estão malformados ou inválidos."
-            });
+                context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+                context.Response.ContentType = "application/problem+json; charset=utf-8";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    type = "https://tools.ietf.org/html/rfc9110#section-15.5.14",
+                    title = "Arquivo Muito Grande",
+                    status = StatusCodes.Status413PayloadTooLarge,
+                    detail = "O arquivo enviado excede o tamanho máximo suportado pelo servidor (50 MB).",
+                    error = "O arquivo enviado excede o tamanho máximo suportado pelo servidor (50 MB)."
+                });
+            }
+            else
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                context.Response.ContentType = "application/problem+json; charset=utf-8";
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    type = "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+                    title = "Requisição Inválida",
+                    status = StatusCodes.Status400BadRequest,
+                    detail = "O corpo da requisição (JSON) ou os parâmetros enviados estão malformados ou inválidos.",
+                    error = "O corpo da requisição (JSON) ou os parâmetros enviados estão malformados ou inválidos."
+                });
+            }
         }
     }
     catch (Exception unhandledEx)
@@ -232,6 +352,19 @@ app.UseAuthorization();
 // Map Health & Public Webhook Endpoints
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", service = "DataConform.Api", timestamp = DateTime.UtcNow }))
     .AllowAnonymous();
+
+app.MapGet("/health/ready", async (DataConformDbContext dbContext, CancellationToken cancellationToken) =>
+{
+    bool dbHealthy = await dbContext.Database.CanConnectAsync(cancellationToken);
+    if (!dbHealthy)
+    {
+        return Results.Json(
+            new { status = "degraded", database = "unreachable", timestamp = DateTime.UtcNow },
+            statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    return Results.Ok(new { status = "ready", database = "connected", timestamp = DateTime.UtcNow });
+}).AllowAnonymous();
 
 app.MapWebhookEndpoints();
 

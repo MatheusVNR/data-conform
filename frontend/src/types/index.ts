@@ -73,7 +73,7 @@ export const ERP_PRESETS: Record<string, ErpPresetConfig> = {
     systemName: 'TOTVS Protheus',
     moduleReference: 'Tabela SA1 (Clientes — SIGAFAT / SIGAFIN)',
     summary:
-      'Dicionário SX3 oficial para rotina automática MATA030: valida Código, Loja, Razão Social, CNPJ/CPF (A1_CGC), E-mail (A1_EMAIL), Limite de Crédito (A1_LC), UF (A1_EST) e CEP (A1_CEP).',
+      'Perfil de referência SX3 para rotinas CRMA980 / MATA030: valida Código, Loja, Razão Social, CNPJ/CPF (A1_CGC), E-mail (A1_EMAIL), Limite de Crédito (A1_LC), UF (A1_EST) e CEP (A1_CEP).',
     requiredColumns: ['A1_COD', 'A1_LOJA', 'A1_NOME', 'A1_CGC', 'A1_EMAIL', 'A1_LC', 'A1_EST', 'A1_CEP'],
     sampleFileName: 'layout_totvs_protheus_sa1.csv',
     sampleCsvContent: [
@@ -88,8 +88,8 @@ export const ERP_PRESETS: Record<string, ErpPresetConfig> = {
     systemName: 'TOTVS Protheus - Fornecedores',
     moduleReference: 'Tabela SA2 (Fornecedores — SIGACOM / SIGAFIN)',
     summary:
-      'Dicionário SX3 para rotina MATA020: valida A2_COD, A2_LOJA, A2_NOME, A2_CGC, A2_EMAIL, A2_LC, A2_EST e A2_CEP.',
-    requiredColumns: ['A2_COD', 'A2_LOJA', 'A2_NOME', 'A2_CGC', 'A2_EMAIL', 'A2_LC', 'A2_EST'],
+      'Perfil de referência SX3 para rotina MATA020: valida A2_COD, A2_LOJA, A2_NOME, A2_CGC, A2_EMAIL e A2_EST (além de A2_LC e A2_CEP quando informados).',
+    requiredColumns: ['A2_COD', 'A2_LOJA', 'A2_NOME', 'A2_CGC', 'A2_EMAIL', 'A2_EST'],
     sampleFileName: 'layout_totvs_protheus_sa2.csv',
     sampleCsvContent: [
       'A2_COD,A2_LOJA,A2_NOME,A2_CGC,A2_EMAIL,A2_LC,A2_EST,A2_CEP',
@@ -101,7 +101,7 @@ export const ERP_PRESETS: Record<string, ErpPresetConfig> = {
     systemName: 'TOTVS Protheus - Produtos',
     moduleReference: 'Tabela SB1 (Catálogo de Itens / Estoque — SIGAEST)',
     summary:
-      'Dicionário SX3 para rotina MATA010: valida Código do Item (B1_COD), Descrição (B1_DESC), Tipo (B1_TIPO), Unidade (B1_UM), NCM Fiscal (B1_POSIPI) e Preço de Venda (B1_PRV1).',
+      'Perfil de referência SX3 para rotina MATA010: valida Código do Item (B1_COD), Descrição (B1_DESC), Tipo (B1_TIPO), Unidade (B1_UM), NCM Fiscal (B1_POSIPI) e Preço de Venda (B1_PRV1).',
     requiredColumns: ['B1_COD', 'B1_DESC', 'B1_TIPO', 'B1_UM', 'B1_POSIPI', 'B1_PRV1'],
     sampleFileName: 'layout_totvs_protheus_sb1.csv',
     sampleCsvContent: [
@@ -114,7 +114,7 @@ export const ERP_PRESETS: Record<string, ErpPresetConfig> = {
     systemName: 'SAP Business One',
     moduleReference: 'Objeto OCRD (Business Partners — DTW)',
     summary:
-      'Layout Data Transfer Workbench (DTW) para Parceiros de Negócio: valida CardCode, CardName, Documento Fiscal (LicTradNum), E_Mail, CreditLine e ZipCode.',
+      'Perfil de referência Data Transfer Workbench (DTW) para Parceiros de Negócio: valida CardCode, CardName, Documento Fiscal (LicTradNum), E_Mail, CreditLine e ZipCode.',
     requiredColumns: ['CardCode', 'CardName', 'LicTradNum', 'E_Mail', 'CreditLine', 'ZipCode'],
     sampleFileName: 'layout_sap_b1_ocrd.csv',
     sampleCsvContent: [
@@ -129,8 +129,8 @@ export const ERP_PRESETS: Record<string, ErpPresetConfig> = {
     systemName: 'SAP Business One - Itens',
     moduleReference: 'Objeto OITM (Item Master Data — DTW)',
     summary:
-      'Estrutura DTW para Catálogo de Itens: valida ItemCode, ItemName, Unidade de Venda (SalUnitMsr), Preço (Price) e NCM Fiscal (NcmCode).',
-    requiredColumns: ['ItemCode', 'ItemName', 'SalUnitMsr', 'Price', 'NcmCode'],
+      'Perfil de referência DTW para Catálogo de Itens: valida ItemCode, ItemName, Unidade de Venda (SalUnitMsr) e NCM Fiscal (NcmCode) — além de Price quando informado.',
+    requiredColumns: ['ItemCode', 'ItemName', 'SalUnitMsr', 'NcmCode'],
     sampleFileName: 'layout_sap_b1_oitm.csv',
     sampleCsvContent: [
       'ItemCode,ItemName,SalUnitMsr,Price,NcmCode',
@@ -179,9 +179,9 @@ export const ERP_PRESETS: Record<string, ErpPresetConfig> = {
   },
   Omie: {
     systemName: 'Omie',
-    moduleReference: 'Planilha Oficial de Clientes e Fornecedores',
+    moduleReference: 'Modelo de Referência de Clientes e Fornecedores',
     summary:
-      'Modelo padrão de importação Omie: valida codigo_cliente, razao_social, cnpj_cpf, email, valor_limite_credito, estado e cep.',
+      'Modelo de referência para importação Omie: valida codigo_cliente, razao_social, cnpj_cpf, email, valor_limite_credito, estado e cep.',
     requiredColumns: ['codigo_cliente', 'razao_social', 'cnpj_cpf', 'email', 'valor_limite_credito', 'estado', 'cep'],
     sampleFileName: 'layout_omie_clientes.csv',
     sampleCsvContent: [
@@ -241,6 +241,9 @@ export interface WorkspaceDto {
   monthlyFilesUploaded: number;
   monthlyFilesQuota: number;
   maxRowsPerFile: number;
+  cancelAtPeriodEnd?: boolean;
+  planExpiresAtUtc?: string | null;
+  hasActiveSubscription?: boolean;
 }
 
 export interface WorkspaceQuotaDto {
@@ -250,6 +253,36 @@ export interface WorkspaceQuotaDto {
   monthlyFilesQuota: number;
   maxRowsPerFile: number;
   usagePercentage: number;
+  cancelAtPeriodEnd?: boolean;
+  planExpiresAtUtc?: string | null;
+  hasActiveSubscription?: boolean;
+}
+
+export interface BillingConfigDto {
+  checkoutEnabled: boolean;
+  customerPortalEnabled: boolean;
+  isLiveMode: boolean;
+  supportEmail?: string | null;
+}
+
+export interface CreateCheckoutSessionRequest {
+  plan: string | number;
+  successUrl?: string;
+  cancelUrl?: string;
+}
+
+export interface CheckoutSessionResponseDto {
+  checkoutUrl: string;
+  sessionId?: string | null;
+  mode: string;
+}
+
+export interface CreateBillingPortalRequest {
+  returnUrl?: string;
+}
+
+export interface BillingPortalResponseDto {
+  portalUrl: string;
 }
 
 export interface AuthResponseDto {

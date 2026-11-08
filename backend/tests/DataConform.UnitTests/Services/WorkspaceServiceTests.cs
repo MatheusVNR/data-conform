@@ -205,4 +205,123 @@ public class WorkspaceServiceTests
         Assert.True(downgradeToStarter.IsSuccess);
         Assert.Equal(PlanTier.Starter, downgradeToStarter.Data?.Plan);
     }
+
+    [Fact]
+    public async Task GetUpdateAndDeleteWorkspace_WhenCrossTenantCaller_ShouldReturnForbidden()
+    {
+        using DataConformDbContext context = CreateInMemoryContext();
+        WorkspaceService service = CreateWorkspaceService(context);
+
+        Guid userA = Guid.NewGuid();
+        Guid userB = Guid.NewGuid();
+
+        ServiceResult<WorkspaceDto> wsA = await service.CreateWorkspaceAsync(
+            new CreateWorkspaceRequest { Name = "Tenant A", Slug = "tenant-idor-a" },
+            userA);
+        ServiceResult<WorkspaceDto> wsB = await service.CreateWorkspaceAsync(
+            new CreateWorkspaceRequest { Name = "Tenant B", Slug = "tenant-idor-b" },
+            userB);
+
+        Assert.NotNull(wsA.Data);
+        Assert.NotNull(wsB.Data);
+
+        ServiceResult<WorkspaceDto> getForbidden = await service.GetWorkspaceByIdAsync(
+            wsA.Data.Id,
+            userB,
+            wsB.Data.Id);
+        Assert.False(getForbidden.IsSuccess);
+        Assert.Equal(ServiceErrorType.Forbidden, getForbidden.ErrorType);
+
+        ServiceResult<WorkspaceDto> updateForbidden = await service.UpdateWorkspaceAsync(
+            wsA.Data.Id,
+            new UpdateWorkspaceRequest { Name = "Nome Invadido" },
+            userB,
+            wsB.Data.Id);
+        Assert.False(updateForbidden.IsSuccess);
+        Assert.Equal(ServiceErrorType.Forbidden, updateForbidden.ErrorType);
+
+        ServiceResult deleteForbidden = await service.DeleteWorkspaceAsync(
+            wsA.Data.Id,
+            userB,
+            wsB.Data.Id);
+        Assert.False(deleteForbidden.IsSuccess);
+        Assert.Equal(ServiceErrorType.Forbidden, deleteForbidden.ErrorType);
+    }
+
+    [Fact]
+    public async Task CreateWorkspaceAsync_ShouldEnforceOneWorkspaceCapOnStarterAndAllowUpToTenOnEnterpriseWithDowngradeCascade()
+    {
+        using DataConformDbContext context = CreateInMemoryContext();
+        WorkspaceService service = CreateWorkspaceService(context);
+        SubscriptionQuotaService quotaService = new SubscriptionQuotaService(context);
+        Guid ownerId = Guid.NewGuid();
+
+        ServiceResult<WorkspaceDto> firstWs = await service.CreateWorkspaceAsync(
+            new CreateWorkspaceRequest { Name = "Matriz Starter", Slug = "matriz-starter" },
+            ownerId);
+        Assert.True(firstWs.IsSuccess);
+        Assert.NotNull(firstWs.Data);
+
+        // Segundo workspace no Starter deve ser bloqueado
+        ServiceResult<WorkspaceDto> blockedSecond = await service.CreateWorkspaceAsync(
+            new CreateWorkspaceRequest { Name = "Filial Bloqueada", Slug = "filial-bloqueada" },
+            ownerId);
+        Assert.False(blockedSecond.IsSuccess);
+        Assert.Equal(ServiceErrorType.QuotaExceeded, blockedSecond.ErrorType);
+
+        // Upgrade para Enterprise libera criação de múltiplas organizações herdando Enterprise
+        await quotaService.UpdatePlanAsync(firstWs.Data.Id, PlanTier.Enterprise);
+
+        ServiceResult<WorkspaceDto> secondWs = await service.CreateWorkspaceAsync(
+            new CreateWorkspaceRequest { Name = "Filial Enterprise 2", Slug = "filial-ent-2" },
+            ownerId);
+        Assert.True(secondWs.IsSuccess);
+        Assert.NotNull(secondWs.Data);
+        Assert.Equal(PlanTier.Enterprise, secondWs.Data.Plan);
+        Assert.Equal(10_000, secondWs.Data.MonthlyFilesQuota);
+
+        // Downgrade da matriz Enterprise rebaixa também as filiais herdadas sem assinatura própria
+        ServiceResult<WorkspaceQuotaDto> cancelResult = await service.ChangeWorkspacePlanAsync(
+            firstWs.Data.Id,
+            new UpdatePlanRequest { Plan = PlanTier.Starter, Reason = "Encerramento projeto" },
+            ownerId,
+            firstWs.Data.Id);
+        Assert.True(cancelResult.IsSuccess);
+
+        Workspace? reloadedSecondary = await context.Workspaces.FirstAsync(w => w.Id == secondWs.Data.Id);
+        Assert.Equal(PlanTier.Starter, reloadedSecondary.Plan);
+        Assert.Equal(5, reloadedSecondary.MonthlyFilesQuota);
+    }
+
+    [Fact]
+    public async Task CancelAtPeriodEnd_WhenExpired_ShouldAutoDowngradeToStarterDuringQuotaRead()
+    {
+        using DataConformDbContext context = CreateInMemoryContext();
+        SubscriptionQuotaService quotaService = new SubscriptionQuotaService(context);
+
+        Workspace expiringWs = new Workspace
+        {
+            Id = Guid.NewGuid(),
+            Name = "Ciclo Encerrado",
+            Slug = "ciclo-encerrado",
+            Plan = PlanTier.Professional,
+            MonthlyFilesQuota = 500,
+            MaxRowsPerFile = 15_000,
+            StripeSubscriptionId = "sub_expiring_1",
+            CancelAtPeriodEnd = true,
+            PlanExpiresAtUtc = DateTimeOffset.UtcNow.AddMinutes(-5)
+        };
+        context.Workspaces.Add(expiringWs);
+        await context.SaveChangesAsync();
+
+        WorkspaceQuotaDto quota = await quotaService.GetWorkspaceQuotaAsync(expiringWs.Id);
+
+        Assert.Equal(PlanTier.Starter, quota.Plan);
+        Assert.Equal(5, quota.MonthlyFilesQuota);
+
+        Workspace reloaded = await context.Workspaces.FirstAsync(w => w.Id == expiringWs.Id);
+        Assert.Equal(PlanTier.Starter, reloaded.Plan);
+        Assert.False(reloaded.CancelAtPeriodEnd);
+        Assert.Null(reloaded.StripeSubscriptionId);
+    }
 }

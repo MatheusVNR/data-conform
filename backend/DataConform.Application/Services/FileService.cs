@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using DataConform.Application.Common.Interfaces;
@@ -12,8 +13,10 @@ namespace DataConform.Application.Services;
 public class FileService : IFileService
 {
     private const long MaxFileSizeBytes = 50L * 1024L * 1024L; // 50 MB teto global
-    private const string ForbiddenTitle = "Acesso negado Ã  organizaÃ§Ã£o";
-    private const string ForbiddenMessage = "VocÃª nÃ£o possui permissÃ£o para visualizar ou modificar recursos desta organizaÃ§Ã£o.";
+    private const string ForbiddenTitle = "Acesso negado à organização";
+    private const string ForbiddenMessage = "Você não possui permissão para visualizar ou modificar recursos desta organização.";
+
+    private static readonly ConcurrentDictionary<(Guid WorkspaceId, int ConcurrencyLimit), SemaphoreSlim> WorkspaceValidationGates = new();
 
     private readonly IApplicationDbContext _dbContext;
     private readonly IFileStorageService _fileStorage;
@@ -52,14 +55,14 @@ public class FileService : IFileService
         {
             return ServiceResult<ImportFileDto>.Failure(
                 ServiceErrorType.Validation,
-                "Nenhum arquivo foi enviado ou o arquivo estÃ¡ vazio.");
+                "Nenhum arquivo foi enviado ou o arquivo está vazio.");
         }
 
         if (byteSize > MaxFileSizeBytes)
         {
             return ServiceResult<ImportFileDto>.Failure(
                 ServiceErrorType.Validation,
-                $"O tamanho do arquivo excede o teto mÃ¡ximo permitido de {MaxFileSizeBytes / (1024 * 1024)} MB.");
+                $"O tamanho do arquivo excede o teto máximo permitido de {MaxFileSizeBytes / (1024 * 1024)} MB.");
         }
 
         string safeFileName = Path.GetFileName(originalFileName);
@@ -69,7 +72,7 @@ public class FileService : IFileService
         {
             return ServiceResult<ImportFileDto>.Failure(
                 ServiceErrorType.Validation,
-                "Formato de arquivo nÃ£o suportado. Por favor, envie um arquivo delimitado .csv ou .txt.");
+                "Formato de arquivo não suportado. Por favor, envie um arquivo delimitado .csv ou .txt.");
         }
 
         ImportProject? project = await _dbContext.ImportProjects
@@ -80,7 +83,7 @@ public class FileService : IFileService
         {
             return ServiceResult<ImportFileDto>.Failure(
                 ServiceErrorType.NotFound,
-                "Projeto de importaÃ§Ã£o informado nÃ£o foi encontrado.");
+                "Projeto de importação informado não foi encontrado.");
         }
 
         bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(userId, primaryWorkspaceId, project.WorkspaceId, cancellationToken);
@@ -104,7 +107,7 @@ public class FileService : IFileService
             long maxMb = maxPlanSizeBytes / (1024L * 1024L);
             return ServiceResult<ImportFileDto>.Failure(
                 ServiceErrorType.Validation,
-                $"O arquivo enviado ({byteSize / 1024} KB) excede o limite de {maxMb} MB por arquivo do seu plano ({project.Workspace.Plan}). FaÃ§a upgrade para enviar lotes maiores.");
+                $"O arquivo enviado ({byteSize / 1024} KB) excede o limite de {maxMb} MB por arquivo do seu plano ({project.Workspace.Plan}). Faça upgrade para enviar lotes maiores.");
         }
 
         int bufferCheckSize = (int)Math.Min(512L, byteSize);
@@ -149,7 +152,8 @@ public class FileService : IFileService
         using (Stream diskStream = await _fileStorage.GetFileStreamAsync(storedFileName, cancellationToken))
         using (StreamReader countReader = new StreamReader(diskStream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: 4096))
         {
-            bool isHeaderLine = true;
+            string? firstNonEmptyLine = null;
+            int nonEmptyLineIndex = 0;
             string? currentLine;
             while ((currentLine = await countReader.ReadLineAsync(cancellationToken)) != null)
             {
@@ -158,9 +162,17 @@ public class FileService : IFileService
                     continue;
                 }
 
-                if (isHeaderLine)
+                nonEmptyLineIndex++;
+                if (nonEmptyLineIndex == 1)
                 {
-                    isHeaderLine = false;
+                    firstNonEmptyLine = currentLine;
+                    continue;
+                }
+
+                if (nonEmptyLineIndex == 2 &&
+                    firstNonEmptyLine != null &&
+                    CsvValidatorService.IsSapB1DtwSecondHeaderLine(firstNonEmptyLine, currentLine))
+                {
                     continue;
                 }
 
@@ -219,7 +231,7 @@ public class FileService : IFileService
         {
             return ServiceResult<List<ImportFileDto>>.Failure(
                 ServiceErrorType.NotFound,
-                "Projeto de importaÃ§Ã£o nÃ£o encontrado.");
+                "Projeto de importação não encontrado.");
         }
 
         bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(userId, primaryWorkspaceId, project.WorkspaceId, cancellationToken);
@@ -268,7 +280,7 @@ public class FileService : IFileService
         {
             return ServiceResult<ValidationReportDto>.Failure(
                 ServiceErrorType.NotFound,
-                "Arquivo informado nÃ£o foi encontrado.");
+                "Arquivo informado não foi encontrado.");
         }
 
         ImportProject? project = await _dbContext.ImportProjects
@@ -279,7 +291,7 @@ public class FileService : IFileService
         {
             return ServiceResult<ValidationReportDto>.Failure(
                 ServiceErrorType.NotFound,
-                "Projeto de importaÃ§Ã£o nÃ£o encontrado.");
+                "Projeto de importação não encontrado.");
         }
 
         bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(userId, primaryWorkspaceId, project.WorkspaceId, cancellationToken);
@@ -295,24 +307,56 @@ public class FileService : IFileService
         {
             return ServiceResult<ValidationReportDto>.Failure(
                 ServiceErrorType.Conflict,
-                "Este arquivo jÃ¡ estÃ¡ sendo processado no momento. Aguarde a conclusÃ£o.");
+                "Este arquivo já está sendo processado no momento. Aguarde a conclusão.");
+        }
+
+        int maxConcurrentValidations = (project.Workspace?.Plan ?? PlanTier.Starter) switch
+        {
+            PlanTier.Enterprise => 10,
+            PlanTier.Professional => 5,
+            _ => 2
+        };
+
+        SemaphoreSlim workspaceGate = WorkspaceValidationGates.GetOrAdd(
+            (project.WorkspaceId, maxConcurrentValidations),
+            _ => new SemaphoreSlim(maxConcurrentValidations, maxConcurrentValidations));
+
+        bool acquiredGate;
+        try
+        {
+            acquiredGate = await workspaceGate.WaitAsync(TimeSpan.FromSeconds(15), cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            return ServiceResult<ValidationReportDto>.Failure(
+                ServiceErrorType.Validation,
+                "A solicitação de validação foi cancelada antes de iniciar o processamento.");
+        }
+
+        if (!acquiredGate)
+        {
+            return ServiceResult<ValidationReportDto>.Failure(
+                ServiceErrorType.Conflict,
+                $"Limite de {maxConcurrentValidations} validações simultâneas atingido para a sua organização. Aguarde a conclusão do lote atual.");
         }
 
         FileStatus previousStatus = importFile.Status;
-        importFile.Status = FileStatus.Processing;
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        string[]? requiredColumnsList = null;
-        if (!string.IsNullOrWhiteSpace(requiredColumns))
-        {
-            requiredColumnsList = requiredColumns.Split(',')
-                .Select(c => c.Trim())
-                .Where(c => !string.IsNullOrEmpty(c))
-                .ToArray();
-        }
-
+        DateTimeOffset? previousProcessedAt = importFile.ProcessedAt;
         try
         {
+            importFile.Status = FileStatus.Processing;
+            importFile.ProcessedAt = DateTimeOffset.UtcNow;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+
+            string[]? requiredColumnsList = null;
+            if (!string.IsNullOrWhiteSpace(requiredColumns))
+            {
+                requiredColumnsList = requiredColumns.Split(',')
+                    .Select(c => c.Trim())
+                    .Where(c => !string.IsNullOrEmpty(c))
+                    .ToArray();
+            }
+
             using Stream contentStream = await _fileStorage.GetFileStreamAsync(importFile.StoredFileName, cancellationToken);
             FileValidationResult validationResult = await _validatorService.ValidateCsvStreamAsync(
                 contentStream,
@@ -323,7 +367,8 @@ public class FileService : IFileService
             if (project.Workspace != null && validationResult.TotalRows > project.Workspace.MaxRowsPerFile)
             {
                 importFile.Status = FileStatus.Failed;
-                await _dbContext.SaveChangesAsync(cancellationToken);
+                importFile.ProcessedAt = previousProcessedAt;
+                await _dbContext.SaveChangesAsync(CancellationToken.None);
                 return ServiceResult<ValidationReportDto>.Failure(
                     ServiceErrorType.QuotaExceeded,
                     $"O arquivo contém {validationResult.TotalRows:N0} linhas, excedendo o teto de {project.Workspace.MaxRowsPerFile:N0} linhas por arquivo do plano atual ({project.Workspace.Plan}). Para validar bases com esse volume, faça upgrade para o plano Professional ou Enterprise.",
@@ -331,6 +376,7 @@ public class FileService : IFileService
             }
 
             const int maxPersistedIssues = 1000;
+            int totalIssuesDetected = Math.Max(validationResult.TotalIssuesCount, validationResult.Issues.Count);
             List<ValidationIssue> issuesToPersist = validationResult.Issues.Take(maxPersistedIssues).ToList();
 
             foreach (ValidationIssue issue in issuesToPersist)
@@ -338,7 +384,7 @@ public class FileService : IFileService
                 issue.RawValue = CsvFormulaSanitizer.Sanitize(issue.RawValue);
             }
 
-            if (validationResult.Issues.Count > maxPersistedIssues)
+            if (totalIssuesDetected > maxPersistedIssues)
             {
                 issuesToPersist.Add(new ValidationIssue
                 {
@@ -346,7 +392,7 @@ public class FileService : IFileService
                     RowNumber = maxPersistedIssues + 1,
                     ColumnName = "Geral",
                     IssueCode = "ISSUE_LIMIT_EXCEEDED",
-                    Message = $"Exibindo as primeiras {maxPersistedIssues:N0} inconsistências detectadas de um total superior ({validationResult.Issues.Count:N0}). Corrija os erros listados e reprocesse o arquivo.",
+                    Message = $"Exibindo as primeiras {maxPersistedIssues:N0} inconsistências detectadas de um total de {totalIssuesDetected:N0}. Corrija os erros listados e reprocesse o arquivo.",
                     Severity = IssueSeverity.Warning,
                     RawValue = string.Empty
                 });
@@ -375,7 +421,7 @@ public class FileService : IFileService
             importFile.ErrorRows = validationResult.ErrorRows;
             importFile.ProcessedAt = DateTimeOffset.UtcNow;
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _dbContext.SaveChangesAsync(CancellationToken.None);
 
             await _auditService.LogAsync(
                 project.WorkspaceId,
@@ -383,8 +429,8 @@ public class FileService : IFileService
                 "ValidateFile",
                 "ImportFile",
                 importFile.Id.ToString(),
-                $"Arquivo validado: {validationResult.TotalRows} linhas, {validationResult.Issues.Count} inconsistências.",
-                cancellationToken);
+                $"Arquivo validado: {validationResult.TotalRows} linhas, {totalIssuesDetected} inconsistências.",
+                CancellationToken.None);
 
             ValidationReportDto report = new ValidationReportDto
             {
@@ -410,10 +456,29 @@ public class FileService : IFileService
 
             return ServiceResult<ValidationReportDto>.Success(report);
         }
+        catch (OperationCanceledException)
+        {
+            importFile.Status = previousStatus == FileStatus.Completed ? FileStatus.Completed : FileStatus.Failed;
+            importFile.ProcessedAt = previousProcessedAt;
+            await _dbContext.SaveChangesAsync(CancellationToken.None);
+            return ServiceResult<ValidationReportDto>.Failure(
+                ServiceErrorType.Validation,
+                "A validação do arquivo foi interrompida ou cancelada antes da conclusão. Você pode iniciar a validação novamente.");
+        }
         catch (FileNotFoundException)
         {
             importFile.Status = previousStatus == FileStatus.Completed ? FileStatus.Completed : FileStatus.Failed;
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            importFile.ProcessedAt = previousProcessedAt;
+            await _dbContext.SaveChangesAsync(CancellationToken.None);
+
+            if (previousStatus == FileStatus.Pending)
+            {
+                await _quotaService.DecrementFilesUploadedAsync(project.WorkspaceId, CancellationToken.None);
+                return ServiceResult<ValidationReportDto>.Failure(
+                    ServiceErrorType.Validation,
+                    "O arquivo CSV temporário não está mais disponível no armazenamento efêmero (reinicialização ou janela de 24h expirada antes da primeira validação). Sua franquia mensal foi estornada automaticamente; envie a planilha novamente.");
+            }
+
             return ServiceResult<ValidationReportDto>.Failure(
                 ServiceErrorType.Validation,
                 "O arquivo CSV bruto original já foi expurgado automaticamente após a janela de segurança de 24h (processamento efêmero LGPD). Seu laudo anterior permanece íntegro; para revalidar com novas regras, envie a planilha novamente.");
@@ -421,11 +486,16 @@ public class FileService : IFileService
         catch (Exception)
         {
             importFile.Status = FileStatus.Failed;
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            importFile.ProcessedAt = previousProcessedAt;
+            await _dbContext.SaveChangesAsync(CancellationToken.None);
             return ServiceResult<ValidationReportDto>.Failure(
                 ServiceErrorType.InternalError,
-                "NÃ£o foi possÃ­vel concluir a leitura do arquivo enviado. Verifique se a planilha estÃ¡ Ã­ntegra e no formato CSV esperado.",
+                "Não foi possível concluir a leitura do arquivo enviado. Verifique se a planilha está íntegra e no formato CSV esperado.",
                 "Falha ao processar o arquivo");
+        }
+        finally
+        {
+            workspaceGate.Release();
         }
     }
 
@@ -444,7 +514,7 @@ public class FileService : IFileService
         {
             return ServiceResult<ValidationReportDto>.Failure(
                 ServiceErrorType.NotFound,
-                "Arquivo informado nÃ£o foi encontrado.");
+                "Arquivo informado não foi encontrado.");
         }
 
         bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(userId, primaryWorkspaceId, importFile.Project.WorkspaceId, cancellationToken);
@@ -487,6 +557,7 @@ public class FileService : IFileService
     public async Task<ServiceResult> DeleteFileAsync(
         Guid fileId,
         Guid? userId,
+        Guid? primaryWorkspaceId = null,
         CancellationToken cancellationToken = default)
     {
         ImportFile? importFile = await _dbContext.ImportFiles
@@ -497,10 +568,28 @@ public class FileService : IFileService
         {
             return ServiceResult.Failure(
                 ServiceErrorType.NotFound,
-                "Arquivo informado nÃ£o foi encontrado.");
+                "Arquivo informado não foi encontrado.");
         }
 
         Guid workspaceId = importFile.Project.WorkspaceId;
+
+        if (userId.HasValue || primaryWorkspaceId.HasValue)
+        {
+            bool canAccess = await _tenantAccessService.CanAccessWorkspaceAsync(
+                userId,
+                primaryWorkspaceId,
+                workspaceId,
+                cancellationToken);
+
+            if (!canAccess)
+            {
+                return ServiceResult.Failure(
+                    ServiceErrorType.Forbidden,
+                    ForbiddenMessage,
+                    ForbiddenTitle);
+            }
+        }
+
         string fileName = importFile.OriginalFileName;
         string storedFileName = importFile.StoredFileName;
 
@@ -525,7 +614,7 @@ public class FileService : IFileService
             "DeleteFile",
             "ImportFile",
             fileId.ToString(),
-            $"Arquivo '{fileName}' foi excluÃ­do do projeto.",
+            $"Arquivo '{fileName}' foi excluído do projeto.",
             cancellationToken);
 
         return ServiceResult.Success();

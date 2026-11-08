@@ -58,12 +58,14 @@ public class DataConformDbContext : DbContext, IApplicationDbContext
         modelBuilder.Entity<ImportFile>().HasQueryFilter(f =>
             CurrentUserId == null ||
             f.Project.WorkspaceId == CurrentWorkspaceId ||
+            f.Project.Workspace.OwnerUserId == CurrentUserId ||
             f.Project.Workspace.Users.Any(u => u.Id == CurrentUserId) ||
             f.Project.Workspace.AuditLogs.Any(a => a.UserId == CurrentUserId && a.Action == "CreateWorkspace"));
 
         modelBuilder.Entity<ValidationIssue>().HasQueryFilter(i =>
             CurrentUserId == null ||
             i.File.Project.WorkspaceId == CurrentWorkspaceId ||
+            i.File.Project.Workspace.OwnerUserId == CurrentUserId ||
             i.File.Project.Workspace.Users.Any(u => u.Id == CurrentUserId) ||
             i.File.Project.Workspace.AuditLogs.Any(a => a.UserId == CurrentUserId && a.Action == "CreateWorkspace"));
     }

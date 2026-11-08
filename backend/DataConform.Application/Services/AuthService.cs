@@ -34,7 +34,7 @@ public class AuthService : IAuthService
         {
             return ServiceResult<AuthResponseDto>.Failure(
                 ServiceErrorType.Validation,
-                "O e-mail informado Ã© invÃ¡lido.");
+                "O e-mail informado é inválido.");
         }
 
         if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
@@ -48,7 +48,7 @@ public class AuthService : IAuthService
         {
             return ServiceResult<AuthResponseDto>.Failure(
                 ServiceErrorType.Validation,
-                "O nome completo Ã© obrigatÃ³rio.");
+                "O nome completo é obrigatório.");
         }
 
         string normalizedEmail = request.Email.Trim().ToLowerInvariant();
@@ -60,7 +60,7 @@ public class AuthService : IAuthService
         {
             return ServiceResult<AuthResponseDto>.Failure(
                 ServiceErrorType.Conflict,
-                "JÃ¡ existe um usuÃ¡rio cadastrado com este e-mail.");
+                "Já existe um usuário cadastrado com este e-mail.");
         }
 
         string workspaceName = string.IsNullOrWhiteSpace(request.WorkspaceName)
@@ -79,6 +79,7 @@ public class AuthService : IAuthService
             MonthlyFilesUploaded = 0,
             MonthlyFilesQuota = 5,
             MaxRowsPerFile = 500,
+            QuotaPeriodStartedAtUtc = DateTimeOffset.UtcNow,
             CreatedAt = DateTimeOffset.UtcNow
         };
 
@@ -146,7 +147,7 @@ public class AuthService : IAuthService
         {
             return ServiceResult<AuthResponseDto>.Failure(
                 ServiceErrorType.Validation,
-                "E-mail e senha sÃ£o obrigatÃ³rios.");
+                "E-mail e senha são obrigatórios.");
         }
 
         string normalizedEmail = request.Email.Trim().ToLowerInvariant();
@@ -159,7 +160,7 @@ public class AuthService : IAuthService
         {
             return ServiceResult<AuthResponseDto>.Failure(
                 ServiceErrorType.Unauthorized,
-                "Credenciais invÃ¡lidas.");
+                "Credenciais inválidas.");
         }
 
         bool isPasswordValid = _passwordHasher.VerifyPassword(request.Password, user.PasswordHash);
@@ -167,7 +168,7 @@ public class AuthService : IAuthService
         {
             return ServiceResult<AuthResponseDto>.Failure(
                 ServiceErrorType.Unauthorized,
-                "Credenciais invÃ¡lidas.");
+                "Credenciais inválidas.");
         }
 
         string token = _tokenGenerator.GenerateToken(user, user.Workspace);
@@ -178,7 +179,7 @@ public class AuthService : IAuthService
             "UserLoggedIn",
             "User",
             user.Id.ToString(),
-            $"UsuÃ¡rio '{user.Email}' realizou login.",
+            $"Usuário '{user.Email}' realizou login.",
             cancellationToken);
 
         AuthResponseDto response = MapToAuthResponse(user, user.Workspace, token);
@@ -197,7 +198,7 @@ public class AuthService : IAuthService
         {
             return ServiceResult<AuthResponseDto>.Failure(
                 ServiceErrorType.NotFound,
-                "UsuÃ¡rio nÃ£o encontrado.");
+                "Usuário não encontrado.");
         }
 
         string token = _tokenGenerator.GenerateToken(user, user.Workspace);

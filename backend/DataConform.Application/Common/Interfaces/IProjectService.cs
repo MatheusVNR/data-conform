@@ -27,5 +27,6 @@ public interface IProjectService
     Task<ServiceResult> DeleteProjectAsync(
         Guid projectId,
         Guid? userId,
+        Guid? primaryWorkspaceId = null,
         CancellationToken cancellationToken = default);
 }

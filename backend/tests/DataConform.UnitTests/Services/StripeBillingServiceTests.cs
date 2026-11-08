@@ -279,4 +279,190 @@ public class StripeBillingServiceTests
             .CountAsync(a => a.Action == "StripeWebhookProcessed" && a.EntityId == "evt_concurrent_999");
         Assert.Equal(1, processedAuditCount);
     }
+
+    [Fact]
+    public async Task CreateCheckoutSessionAsync_ShouldIncludeBrazilFiscalFieldsAndSanitizeUntrustedRedirectHost()
+    {
+        Dictionary<string, string?> configMap = new Dictionary<string, string?>
+        {
+            { "Stripe:SecretKey", "sk_test_mock_secret" },
+            { "Stripe:ProPriceId", "price_pro_brl_7990" }
+        };
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configMap)
+            .Build();
+
+        string? capturedFormBody = null;
+        using HttpClient httpClient = new HttpClient(new StubHttpMessageHandler(req =>
+        {
+            capturedFormBody = req.Content?.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    "{\"id\":\"cs_test_1234567890abcdef\",\"url\":\"https://checkout.stripe.com/c/pay/cs_test_1234567890abcdef\"}",
+                    Encoding.UTF8,
+                    "application/json")
+            };
+        }));
+
+        StripeBillingService stripeBilling = new StripeBillingService(httpClient, configuration);
+
+        using DataConformDbContext dbContext = CreateInMemoryContext();
+        TenantAccessService tenantAccess = new TenantAccessService(dbContext);
+        SubscriptionQuotaService quotaService = new SubscriptionQuotaService(dbContext);
+        AuditService auditService = new AuditService(dbContext, tenantAccess);
+        WorkspaceService workspaceService = new WorkspaceService(
+            dbContext,
+            quotaService,
+            auditService,
+            tenantAccess,
+            stripeBilling);
+
+        Guid ownerId = Guid.NewGuid();
+        ServiceResult<WorkspaceDto> createdWs = await workspaceService.CreateWorkspaceAsync(
+            new CreateWorkspaceRequest { Name = "Checkout Fiscal", Slug = "checkout-fiscal" },
+            ownerId);
+        Guid workspaceId = createdWs.Data!.Id;
+
+        ServiceResult<CheckoutSessionResponseDto> sessionResult = await workspaceService.CreateCheckoutSessionAsync(
+            workspaceId,
+            new CreateCheckoutSessionRequest
+            {
+                Plan = PlanTier.Professional,
+                SuccessUrl = "https://evil-phishing.example.com/steal",
+                CancelUrl = "https://evil-phishing.example.com/cancel"
+            },
+            ownerId,
+            workspaceId,
+            "financeiro@empresa.com.br",
+            "https://dataconform.com.br");
+
+        Assert.True(sessionResult.IsSuccess);
+        Assert.NotNull(capturedFormBody);
+        string decodedForm = Uri.UnescapeDataString(capturedFormBody);
+        Assert.Contains("tax_id_collection[enabled]=true", decodedForm);
+        Assert.Contains("billing_address_collection=required", decodedForm);
+        Assert.Contains("allow_promotion_codes=true", decodedForm);
+        Assert.Contains("line_items[0][price]=price_pro_brl_7990", decodedForm);
+        Assert.DoesNotContain("evil-phishing.example.com", decodedForm);
+        Assert.Contains("https://dataconform.com.br/", decodedForm);
+    }
+
+    [Fact]
+    public async Task HandleStripeWebhookAsync_FullSubscriptionLifecycle_CancelAtPeriodEndRenewalPastDueAndRefund()
+    {
+        const string webhookSecret = "whsec_lifecycle_2026";
+        Dictionary<string, string?> configMap = new Dictionary<string, string?>
+        {
+            { "Stripe:SecretKey", "sk_test_mock_secret" },
+            { "Stripe:WebhookSecret", webhookSecret },
+            { "Stripe:ProPriceId", "price_pro_7990" }
+        };
+        IConfiguration configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(configMap)
+            .Build();
+
+        using HttpClient httpClient = new HttpClient(new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)));
+        StripeBillingService stripeBilling = new StripeBillingService(httpClient, configuration);
+
+        using DataConformDbContext dbContext = CreateInMemoryContext();
+        TenantAccessService tenantAccess = new TenantAccessService(dbContext);
+        SubscriptionQuotaService quotaService = new SubscriptionQuotaService(dbContext);
+        AuditService auditService = new AuditService(dbContext, tenantAccess);
+        WorkspaceService workspaceService = new WorkspaceService(
+            dbContext,
+            quotaService,
+            auditService,
+            tenantAccess,
+            stripeBilling);
+
+        Guid ownerId = Guid.NewGuid();
+        ServiceResult<WorkspaceDto> createdWs = await workspaceService.CreateWorkspaceAsync(
+            new CreateWorkspaceRequest { Name = "Lifecycle Org", Slug = "lifecycle-org" },
+            ownerId);
+        Guid workspaceId = createdWs.Data!.Id;
+
+        Workspace ws = await dbContext.Workspaces.FirstAsync(w => w.Id == workspaceId);
+        ws.Plan = PlanTier.Professional;
+        ws.MonthlyFilesQuota = 500;
+        ws.MaxRowsPerFile = 15_000;
+        ws.MonthlyFilesUploaded = 42;
+        ws.StripeCustomerId = "cus_life_1";
+        ws.StripeSubscriptionId = "sub_life_1";
+        await dbContext.SaveChangesAsync();
+
+        long nowUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        long futurePeriodEnd = DateTimeOffset.UtcNow.AddDays(20).ToUnixTimeSeconds();
+
+        // 1. customer.subscription.updated com cancel_at_period_end = true mantém plano Professional ativo até o fim do período
+        string subCancelScheduledPayload = $$"""
+        {
+          "id": "evt_life_1",
+          "type": "customer.subscription.updated",
+          "data": {
+            "object": {
+              "id": "sub_life_1",
+              "customer": "cus_life_1",
+              "status": "active",
+              "cancel_at_period_end": true,
+              "current_period_end": {{futurePeriodEnd}},
+              "metadata": { "workspace_id": "{{workspaceId}}", "plan": "Professional" }
+            }
+          }
+        }
+        """;
+        ServiceResult r1 = await workspaceService.HandleStripeWebhookAsync(
+            subCancelScheduledPayload,
+            CreateStripeSignatureHeader(subCancelScheduledPayload, webhookSecret, nowUnix));
+        Assert.True(r1.IsSuccess);
+        Assert.Equal(PlanTier.Professional, ws.Plan);
+        Assert.True(ws.CancelAtPeriodEnd);
+        Assert.NotNull(ws.PlanExpiresAtUtc);
+
+        // 2. invoice.payment_succeeded em renovação zera MonthlyFilesUploaded
+        string invoicePaidPayload = $$"""
+        {
+          "id": "evt_life_2",
+          "type": "invoice.payment_succeeded",
+          "data": {
+            "object": {
+              "id": "in_life_1",
+              "customer": "cus_life_1",
+              "subscription": "sub_life_1",
+              "billing_reason": "subscription_cycle",
+              "amount_paid": 7990
+            }
+          }
+        }
+        """;
+        ServiceResult r2 = await workspaceService.HandleStripeWebhookAsync(
+            invoicePaidPayload,
+            CreateStripeSignatureHeader(invoicePaidPayload, webhookSecret, nowUnix));
+        Assert.True(r2.IsSuccess);
+        Assert.Equal(0, ws.MonthlyFilesUploaded);
+        Assert.Equal(PlanTier.Professional, ws.Plan);
+
+        // 3. charge.refunded integral faz downgrade para Starter
+        string fullRefundPayload = $$"""
+        {
+          "id": "evt_life_3",
+          "type": "charge.refunded",
+          "data": {
+            "object": {
+              "id": "ch_life_1",
+              "customer": "cus_life_1",
+              "amount": 7990,
+              "amount_refunded": 7990,
+              "refunded": true
+            }
+          }
+        }
+        """;
+        ServiceResult r3 = await workspaceService.HandleStripeWebhookAsync(
+            fullRefundPayload,
+            CreateStripeSignatureHeader(fullRefundPayload, webhookSecret, nowUnix));
+        Assert.True(r3.IsSuccess);
+        Assert.Equal(PlanTier.Starter, ws.Plan);
+        Assert.Equal(5, ws.MonthlyFilesQuota);
+    }
 }

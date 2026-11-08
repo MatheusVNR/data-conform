@@ -12,7 +12,8 @@ const publicDir = path.join(frontendRoot, 'public');
 
 const SITE_ORIGIN = 'https://dataconform.com.br';
 const OG_IMAGE_URL = `${SITE_ORIGIN}/og/dataconform-og.png`;
-const TODAY_ISO = '2026-10-26';
+const TODAY_ISO = '2026-11-02';
+const SUPPORT_EMAIL = (process.env.VITE_SUPPORT_EMAIL || '').trim();
 
 function escapeHtml(raw) {
   return String(raw)
@@ -171,7 +172,9 @@ function renderFooter() {
             <a href="/">Início &amp; Simulador</a> •
             <a href="/layouts-de-importacao-erp/">Layouts ERP</a> •
             <a href="/regras-de-validacao-csv/">Regras CSV</a> •
-            <a href="/precos/">Preços</a>
+            <a href="/precos/">Preços</a> •
+            <a href="/termos/">Termos de Uso</a> •
+            <a href="/privacidade/">Privacidade (LGPD)</a>
           </p>
         </div>
         <div class="seo-footer-col">
@@ -194,7 +197,7 @@ function renderFooter() {
         </div>
       </div>
       <div class="seo-footer-bottom">
-        <span>© 2026 DataConform. Todos os direitos reservados.</span>
+        <span>© 2026 DataConform. Software independente sem vínculo ou endosso oficial de TOTVS®, SAP®, Senior®, Sankhya®, Omie® ou ContaAzul®.</span>
         <span>Conformidade RFC 4180 • Validação Fiscal e Cadastral para ERPs</span>
       </div>
     </div>
@@ -320,8 +323,8 @@ ${renderBreadcrumbs(breadcrumbItems)}
           </section>
 
           <section class="seo-section">
-            <h2>Tabela de Colunas Obrigatórias Reais do Preset (${escapeHtml(page.tableCode)})</h2>
-            <p>O preset oficial do DataConform para <strong>${escapeHtml(page.systemName)}</strong> exige as seguintes colunas no cabeçalho da planilha CSV (arquivo de referência: <code>${escapeHtml(page.sampleFileName)}</code>):</p>
+            <h2>Tabela de Colunas Sugeridas no Perfil (${escapeHtml(page.tableCode)})</h2>
+            <p>O perfil de referência do DataConform para <strong>${escapeHtml(page.systemName)}</strong> inspeciona as seguintes colunas no cabeçalho da planilha CSV (arquivo de exemplo: <code>${escapeHtml(page.sampleFileName)}</code>), lembrando que a obrigatoriedade final no ERP pode variar conforme versão e parametrização local:</p>
             <div class="seo-table-wrap">
               <table class="seo-table">
                 <thead>
@@ -340,7 +343,7 @@ ${columnsRowsHtml}
           </section>
 
           <section class="seo-section">
-            <h2>Exemplo de Estrutura CSV Homologada (${escapeHtml(page.sampleFileName)})</h2>
+            <h2>Exemplo de Estrutura CSV de Referência (${escapeHtml(page.sampleFileName)})</h2>
             <p>Abaixo está a estrutura real do arquivo CSV utilizado pelo DataConform para homologar cargas deste módulo, incluindo linhas íntegras e linhas de teste para captura de inconsistências:</p>
             <pre class="seo-code-block"><code>${escapeHtml(page.sampleCsvContent)}</code></pre>
           </section>
@@ -602,7 +605,7 @@ function buildLayoutsHubHtml() {
     {
       question: 'Posso baixar uma planilha modelo CSV para cada ERP?',
       answer:
-        'Sim. Cada preset disponibiliza para download imediato um arquivo CSV de exemplo em UTF-8 contendo o cabeçalho oficial e linhas demonstrativas.',
+        'Sim. Cada preset disponibiliza para download imediato um arquivo CSV de exemplo em UTF-8 contendo o cabeçalho de referência e linhas demonstrativas.',
     },
     {
       question: 'É possível customizar as colunas obrigatórias ao validar um arquivo?',
@@ -665,18 +668,18 @@ ${renderBreadcrumbs(breadcrumbItems)}
             <p class="seo-lead">Consulte a estrutura técnica das planilhas de carga para TOTVS Protheus, SAP Business One, SAP S/4HANA, Senior ERP, Sankhya, Omie e ContaAzul. Homologue seus arquivos CSV linha a linha antes de executar a importação definitiva no banco de dados.</p>
             <div class="seo-cta-row">
               <a href="${escapeHtml(ctaHref)}" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
-              <a href="/regras-de-validacao-csv/" class="seo-btn seo-btn-secondary">Conhecer as 17 regras de validação</a>
+              <a href="/regras-de-validacao-csv/" class="seo-btn seo-btn-secondary">Conhecer as 18 regras de validação</a>
             </div>
           </header>
 
           <section class="seo-section">
             <h2>Por que Homologar o Layout CSV Antes da Carga no ERP</h2>
-            <p>Projetos de migração e cargas cadastrais atrasam quando as planilhas não respeitam o dicionário técnico do ERP. Uma coluna ausente, um CNPJ com zero à esquerda suprimido pelo Excel ou um NCM de 7 dígitos interrompem rotinas como o MATA030/MATA010 do TOTVS Protheus, o DTW do SAP Business One e o Migration Cockpit do SAP S/4HANA.</p>
-            <p>Ao selecionar o ERP de destino no DataConform, a plataforma verifica todas as colunas obrigatórias e aplica validações fiscais em cada célula, gerando laudo em PDF e exportação CSV das inconsistências.</p>
+            <p>Projetos de migração e cargas cadastrais atrasam quando as planilhas não respeitam o dicionário técnico do ERP. Uma coluna ausente, um CNPJ com zero à esquerda suprimido pelo Excel ou um NCM de 7 dígitos interrompem rotinas como o CRMA980/MATA030/MATA010 do TOTVS Protheus, o DTW do SAP Business One e o Migration Cockpit do SAP S/4HANA.</p>
+            <p>Ao selecionar o ERP de destino no DataConform, a plataforma verifica todas as colunas configuradas no perfil e aplica validações fiscais em cada célula, gerando laudo em PDF e exportação CSV das inconsistências.</p>
           </section>
 
           <section class="seo-section">
-            <h2>Tabela Comparativa dos Layouts de Importação Homologados</h2>
+            <h2>Tabela Comparativa dos Perfis de Importação por ERP</h2>
             <div class="seo-table-wrap">
               <table class="seo-table">
                 <thead>
@@ -739,7 +742,7 @@ function buildRulesHubHtml() {
   const ctaHref = '/#sandbox';
   const title = 'Regras de Validação CSV e Conformidade Fiscal para ERPs | DataConform';
   const metaDescription =
-    'Conheça as 17 regras reais de validação estrutural (RFC 4180) e fiscal do DataConform: CPF/CNPJ (Módulo 11), NCM, CEP, UF, UTF-8, linhas duplicadas e delimitadores.';
+    'Conheça as 18 regras reais de validação estrutural (RFC 4180) e fiscal do DataConform: CPF/CNPJ (Módulo 11), NCM, CEP, UF, UTF-8, chave primária e delimitadores.';
 
   const breadcrumbItems = [
     { name: 'Início', path: '/', url: `${SITE_ORIGIN}/` },
@@ -811,10 +814,10 @@ ${renderBreadcrumbs(breadcrumbItems)}
           <header class="seo-hero">
             <div class="seo-badge-row">
               <span class="seo-pill-primary">Motor de Auditoria CSV</span>
-              <span class="seo-pill-outline">17 Códigos de Verificação Nativos</span>
+              <span class="seo-pill-outline">18 Códigos de Verificação Nativos</span>
             </div>
             <h1>Regras de Validação CSV: Conformidade Estrutural (RFC 4180) e Fiscal para ERPs</h1>
-            <p class="seo-lead">Conheça em detalhes todas as 17 regras executadas pelo motor do DataConform para auditar planilhas cadastrais, fiscais, financeiras e de estoque antes da importação no seu sistema ERP.</p>
+            <p class="seo-lead">Conheça em detalhes todas as 18 regras executadas pelo motor do DataConform para auditar planilhas cadastrais, fiscais, financeiras e de estoque antes da importação no seu sistema ERP.</p>
             <div class="seo-cta-row">
               <a href="${escapeHtml(ctaHref)}" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
               <a href="/layouts-de-importacao-erp/" class="seo-btn seo-btn-secondary">Ver layouts por ERP</a>
@@ -836,7 +839,7 @@ ${cardsHtml}
           </section>
 
           <section class="seo-section">
-            <h2>Catálogo Completo dos 17 Códigos de Erro e Aviso do DataConform</h2>
+            <h2>Catálogo Completo dos 18 Códigos de Erro e Aviso do DataConform</h2>
             <div class="seo-table-wrap">
               <table class="seo-table">
                 <thead>
@@ -863,7 +866,7 @@ ${faqsHtml}
 
           <section class="seo-cta-banner">
             <div>
-              <h2>Audite sua planilha contra as 17 regras em segundos</h2>
+              <h2>Audite sua planilha contra as 18 regras em segundos</h2>
               <p>Use o simulador gratuito sem cadastro ou crie sua conta no plano Starter para validar seus próprios arquivos CSV e emitir laudos em PDF.</p>
             </div>
             <div class="seo-cta-row">
@@ -899,14 +902,14 @@ function buildPricingPageHtml() {
         'Sim. O plano Starter é 100% gratuito (R$ 0/mês), não exige cartão no cadastro e inclui até 5 arquivos validados por mês (até 500 linhas e 5 MB por arquivo), com acesso a todos os presets de ERP, às regras fiscais e ao laudo preliminar em PDF.',
     },
     {
-      question: 'Como funciona o pagamento dos planos Professional e Enterprise?',
+      question: 'Como funciona o pagamento, cancelamento e reembolso dos planos pagos?',
       answer:
-        'O upgrade é self-service dentro da plataforma com pagamento via cartão de crédito processado pelo Stripe, sem taxa de setup nem fidelidade.',
+        'O upgrade é self-service com pagamento via cartão de crédito processado pela Stripe (PCI-DSS Nível 1), sem taxa de setup nem fidelidade. Ao cancelar, o acesso pago segue ativo até o fim do período já faturado, com garantia integral de reembolso em até 7 dias corridos da contratação inicial (Art. 49 do CDC).',
     },
     {
       question: 'Há diferença nas regras ou nos ERPs suportados entre os planos?',
       answer:
-        'Não. Todos os planos incluem os 10 presets de ERP, todas as regras de validação, exportação CSV de erros e laudo PDF (com versão executiva White-Label e Termo de Aceite nos planos pagos).',
+        'Não. Todos os planos incluem os 10 presets de ERP, todas as 18 regras de validação, exportação CSV de erros e laudo PDF (com versão executiva oficial sem marca d\'água e Termo de Aceite nos planos pagos).',
     },
     {
       question: 'Qual plano escolher para migrações de médio ou grande porte?',
@@ -1004,7 +1007,7 @@ ${pricingCardsHtml}
 
           <section class="seo-section">
             <h2>Comparativo de Limites Operacionais por Plano</h2>
-            <p>Todos os planos contam com as 17 regras de validação, os 10 presets de ERP, exportação CSV de erros e emissão de laudo em PDF:</p>
+            <p>Todos os planos contam com as 18 regras de validação, os 10 presets de ERP, exportação CSV de erros e emissão de laudo em PDF:</p>
             <div class="seo-table-wrap">
               <table class="seo-table">
                 <thead>
@@ -1070,11 +1073,11 @@ ${pricingCardsHtml}
           </section>
 
           <section class="seo-section">
-            <h2>O que está Incluso em Todos os Planos</h2>
+            <h2>Incluso em Todos os Planos</h2>
             <ul class="seo-bullet-list">
-              <li><strong>10 Presets de ERP + Genérico:</strong> Modelos CSV para <a href="/layout-importacao-protheus-sa1-clientes/">TOTVS Protheus (SA1, SA2, SB1)</a>, <a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP Business One (OCRD, OITM)</a>, <a href="/layout-importacao-sap-s4hana-business-partner/">SAP S/4HANA</a>, <a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior ERP</a>, <a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya</a>, <a href="/layout-importacao-omie-clientes/">Omie</a> e <a href="/layout-importacao-contaazul-clientes/">ContaAzul</a>.</li>
-              <li><strong>17 Regras Fiscais e Estruturais:</strong> Validação de <a href="/validar-cpf-cnpj-em-massa-csv/">CPF/CNPJ (Módulo 11)</a>, <a href="/validar-ncm-planilha-csv/">NCM</a>, <a href="/validar-cep-em-lote-csv/">CEP</a>, <a href="/validar-uf-estado-planilha-csv/">UF</a>, <a href="/validar-email-em-lote-planilha-csv/">e-mail</a>, <a href="/erro-encoding-utf8-caracteres-estranhos-csv/">UTF-8</a>, <a href="/erro-colunas-delimitador-quebrado-csv/">delimitadores</a> e <a href="/remover-identificar-linhas-duplicadas-csv/">duplicidades</a>.</li>
-              <li><strong>Laudo em PDF e Exportação CSV:</strong> Filtro de erros, download CSV das inconsistências e laudo PDF com campos de assinatura.</li>
+              <li><strong>Presets ERP:</strong> <a href="/layout-importacao-protheus-sa1-clientes/">Protheus</a>, <a href="/layout-importacao-sap-business-one-ocrd-parceiros/">SAP B1</a>, <a href="/layout-importacao-sap-s4hana-business-partner/">S/4HANA</a>, <a href="/layout-importacao-senior-erp-e085cli-clientes/">Senior</a>, <a href="/layout-importacao-sankhya-tgfpar-parceiros/">Sankhya</a>, <a href="/layout-importacao-omie-clientes/">Omie</a> e <a href="/layout-importacao-contaazul-clientes/">ContaAzul</a>.</li>
+              <li><strong>18 Regras:</strong> <a href="/validar-cpf-cnpj-em-massa-csv/">CPF/CNPJ</a>, <a href="/validar-ncm-planilha-csv/">NCM</a>, <a href="/validar-cep-em-lote-csv/">CEP</a>, <a href="/validar-uf-estado-planilha-csv/">UF</a>, <a href="/validar-email-em-lote-planilha-csv/">e-mail</a>, <a href="/erro-encoding-utf8-caracteres-estranhos-csv/">UTF-8</a>, <a href="/erro-colunas-delimitador-quebrado-csv/">delimitadores</a> e <a href="/remover-identificar-linhas-duplicadas-csv/">duplicidades</a>.</li>
+              <li><strong>Exportação e PDF:</strong> Download CSV de inconsistências e laudo PDF para aceite de carga.</li>
             </ul>
           </section>
 
@@ -1094,6 +1097,148 @@ ${faqsHtml}
               <a href="${escapeHtml(ctaHref)}" class="seo-btn seo-btn-primary">Validar meu arquivo grátis</a>
               <a href="/regras-de-validacao-csv/" class="seo-btn seo-btn-secondary">Explorar regras de validação</a>
             </div>
+          </section>
+        </article>
+      </div>
+    </main>
+${renderFooter()}
+  </body>
+</html>`;
+}
+
+function buildTermsPageHtml() {
+  const slug = 'termos';
+  const canonicalUrl = `${SITE_ORIGIN}/${slug}/`;
+  const ctaHref = '/#sandbox';
+  const title = 'Termos de Uso, Assinatura e Política de Reembolso | DataConform';
+  const metaDescription =
+    'Consulte os Termos de Uso do DataConform: escopo técnico da pré-validação CSV para ERPs, planos Starter, Professional e Enterprise, cobrança via Stripe, cancelamento sem fidelidade e reembolso em 7 dias (CDC Art. 49).';
+
+  const breadcrumbItems = [
+    { name: 'Início', path: '/', url: `${SITE_ORIGIN}/` },
+    { name: 'Termos de Uso', path: `/${slug}/`, url: canonicalUrl },
+  ];
+
+  const jsonLdObjects = [buildBreadcrumbJsonLd(breadcrumbItems)];
+  const supportContactHtml = SUPPORT_EMAIL
+    ? `pelo e-mail institucional <strong>${escapeHtml(SUPPORT_EMAIL)}</strong> ou pelo Canal de Suporte e Atendimento disponível no rodapé da aplicação web`
+    : 'diretamente pelo <strong>Canal de Suporte e Atendimento</strong> disponível no rodapé da aplicação web em <a href="/">dataconform.com.br</a>';
+
+  return `${renderHead({ title, metaDescription, canonicalUrl, jsonLdObjects })}
+  <body>
+${renderTopHeader(ctaHref)}
+    <main class="seo-main">
+      <div class="seo-container">
+${renderBreadcrumbs(breadcrumbItems)}
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">Governança Contratual</span>
+              <span class="seo-pill-outline">Atualizado em Novembro de 2026</span>
+            </div>
+            <h1>Termos de Uso, Licenciamento SaaS e Política de Cancelamento e Reembolso</h1>
+            <p class="seo-lead">Estes Termos de Uso regulam o acesso e a utilização da plataforma SaaS DataConform por empresas, consultorias de implantação, escritórios de BPO e profissionais técnicos em operações de pré-validação de arquivos CSV.</p>
+          </header>
+
+          <section class="seo-section">
+            <h2>1. Objeto e Escopo Técnico da Plataforma</h2>
+            <p>O DataConform fornece software como serviço (SaaS) voltado à auditoria sintática (norma RFC 4180), estrutural e semântica de arquivos em texto delimitado (<code>.csv</code> e <code>.txt</code>) antes de sua importação em sistemas de gestão empresarial (ERP).</p>
+            <p>Os perfis de validação disponibilizados na plataforma constituem modelos técnicos de referência baseados na documentação pública de mercado. O laudo emitido pelo DataConform atesta exclusivamente a conformidade matemática e estrutural das regras inspecionadas (como dígitos verificadores Módulo 11 de CPF/CNPJ, CEP, UF, NCM, formato de datas, valores numéricos e chaves repetidas), cabendo integralmente ao usuário e ao responsável pela implantação validar parametrizações fiscais, versões, gatilhos customizados e backups no ambiente ERP de destino antes da carga definitiva.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>2. Planos, Cotas Operacionais e Isolamento de Workspaces</h2>
+            <p>O uso da plataforma organiza-se em três faixas transparentes de capacidade mensal por organização: <strong>Starter</strong> (gratuito, até 5 arquivos/mês, 500 linhas e 5 MB por arquivo, limitado a 1 Workspace por titular), <strong>Professional</strong> (R$ 79,90/mês, até 500 arquivos/mês, 15.000 linhas e 25 MB por arquivo, 1 Workspace) e <strong>Enterprise</strong> (R$ 249,90/mês, até 10.000 arquivos/mês, 1.000.000 de linhas e 50 MB por arquivo, até 10 Workspaces segregados).</p>
+            <p>É vedado compartilhar credenciais de acesso com terceiros não autorizados, automatizar cadastros múltiplos para contornar limites gratuitos ou submeter arquivos contendo código malicioso.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>3. Cobrança Segura via Stripe, Cancelamento e Reembolso (CDC Art. 49)</h2>
+            <p>Os pagamentos recorrentes dos planos Professional e Enterprise são processados exclusivamente pela <strong>Stripe</strong> (certificação PCI-DSS Nível 1), sem armazenamento de números completos de cartão ou códigos CVV nos servidores do DataConform. Não há taxa de adesão nem prazo mínimo de fidelidade.</p>
+            <p><strong>Cancelamento sem multa:</strong> o titular pode solicitar o cancelamento da renovação automática a qualquer momento no painel de planos ou no Portal do Cliente Stripe. Após o cancelamento da renovação, os recursos contratados permanecem integralmente ativos até a data de encerramento do ciclo mensal já pago, retornando automaticamente ao plano gratuito Starter ao término do período.</p>
+            <p><strong>Direito de arrependimento (7 dias):</strong> em conformidade com o Art. 49 da Lei nº 8.078/1990 (Código de Defesa do Consumidor), o contratante pode solicitar o reembolso integral (100%) do valor pago em até 7 (sete) dias corridos contados da contratação inicial da assinatura, bastando registrar o pedido em nosso canal oficial de suporte.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>4. Propriedade Intelectual e Independência de Marcas</h2>
+            <p>Todo o código-fonte, layout visual, motor de validação e identidade DataConform pertencem aos seus titulares legais, enquanto os arquivos e dados submetidos permanecem sob titularidade exclusiva do cliente. <strong>Aviso de independência:</strong> TOTVS®, Protheus®, SAP®, SAP Business One®, SAP S/4HANA®, Senior®, Sankhya®, Omie® e ContaAzul® são marcas registradas de seus respectivos proprietários. O DataConform é uma solução tecnológica independente e não possui vínculo societário, parceria comercial ou homologação oficial dessas fabricantes.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>5. Suporte Técnico, Atendimento Comercial e Foro</h2>
+            <p>Solicitações técnicas, dúvidas de faturamento, pedidos de reembolso e comunicações contratuais são atendidos ${supportContactHtml}, com prazo padrão de resposta de até 1 (um) dia útil. Estes Termos são regidos pelas leis da República Federativa do Brasil.</p>
+          </section>
+        </article>
+      </div>
+    </main>
+${renderFooter()}
+  </body>
+</html>`;
+}
+
+function buildPrivacyPageHtml() {
+  const slug = 'privacidade';
+  const canonicalUrl = `${SITE_ORIGIN}/${slug}/`;
+  const ctaHref = '/#sandbox';
+  const title = 'Política de Privacidade, Segurança e Governança LGPD | DataConform';
+  const metaDescription =
+    'Política de Privacidade do DataConform conforme a LGPD (Lei nº 13.709/2018): papéis de Controlador e Operador, expurgo físico do CSV bruto em até 24h, retenção de laudos e direitos dos titulares.';
+
+  const breadcrumbItems = [
+    { name: 'Início', path: '/', url: `${SITE_ORIGIN}/` },
+    { name: 'Política de Privacidade (LGPD)', path: `/${slug}/`, url: canonicalUrl },
+  ];
+
+  const jsonLdObjects = [buildBreadcrumbJsonLd(breadcrumbItems)];
+  const dpoContactHtml = SUPPORT_EMAIL
+    ? `pelo canal dedicado <strong>${escapeHtml(SUPPORT_EMAIL)}</strong> ou pelo formulário de Atendimento Comercial / LGPD integrado à plataforma`
+    : 'pelo <strong>Canal de Suporte e Atendimento (categoria Comercial / LGPD)</strong> disponível diretamente na plataforma em <a href="/">dataconform.com.br</a>';
+
+  return `${renderHead({ title, metaDescription, canonicalUrl, jsonLdObjects })}
+  <body>
+${renderTopHeader(ctaHref)}
+    <main class="seo-main">
+      <div class="seo-container">
+${renderBreadcrumbs(breadcrumbItems)}
+        <article class="seo-article">
+          <header class="seo-hero">
+            <div class="seo-badge-row">
+              <span class="seo-pill-primary">Conformidade LGPD</span>
+              <span class="seo-pill-outline">Lei Federal nº 13.709/2018</span>
+            </div>
+            <h1>Política de Privacidade, Proteção de Dados e Retenção Efêmera</h1>
+            <p class="seo-lead">Esta Política descreve de forma clara e objetiva como o DataConform coleta, processa, protege e elimina dados pessoais e corporativos durante o uso da plataforma de pré-validação de planilhas CSV.</p>
+          </header>
+
+          <section class="seo-section">
+            <h2>1. Papéis na LGPD: Controlador e Operador</h2>
+            <p>Nos termos do Art. 5º, incisos VI e VII, e do Art. 39 da Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018), o cliente ou organização usuária atua como <strong>Controlador</strong> dos dados contidos nas planilhas submetidas para homologação, cabendo-lhe definir a base legal para o tratamento cadastral. O DataConform atua estritamente como <strong>Operador</strong> técnico em relação ao conteúdo das planilhas auditadas e como Controlador apenas quanto aos dados cadastrais da conta do próprio usuário (nome, e-mail corporativo, hash de senha e histórico de faturamento).</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>2. Ciclo de Vida, Retenção e Expurgo de Arquivos e Laudos</h2>
+            <p>Aplicamos o princípio da minimização de dados (Art. 6º, III da LGPD) com separação estrita entre o arquivo bruto e o relatório técnico:</p>
+            <ul class="seo-bullet-list">
+              <li><strong>Simulador interativo na página inicial:</strong> executa 100% localmente na memória do navegador do visitante; nenhum arquivo testado no simulador é transmitido aos servidores do DataConform.</li>
+              <li><strong>Arquivos CSV e TXT brutos em projetos autenticados:</strong> são lidos em streaming para execução das regras determinísticas e <strong>expurgados fisicamente do armazenamento efêmero em até 24 (vinte e quatro) horas</strong> após o envio — ou imediatamente no instante em que o usuário aciona o botão <em>Excluir</em> no arquivo ou no projeto.</li>
+              <li><strong>Relatórios de conformidade no Workspace:</strong> para permitir auditoria e exportação pelo cliente, o banco de dados retém os contadores do lote e até 1.000 apontamentos de inconsistência por arquivo (incluindo número da linha, coluna, código da regra e trecho do valor rejeitado), os quais permanecem segregados no Workspace até sua exclusão pelo próprio titular.</li>
+            </ul>
+          </section>
+
+          <section class="seo-section">
+            <h2>3. Zero Compartilhamento Comercial e Zero Uso em Inteligência Artificial</h2>
+            <p>O motor do DataConform é 100% determinístico e algorítmico. Os dados das planilhas (CNPJs, CPFs, razões sociais, endereços, e-mails e limites financeiros) <strong>jamais</strong> são comercializados, cedidos a parceiros de marketing ou transmitidos para APIs externas de modelos de linguagem (LLMs / Inteligência Artificial).</p>
+            <p>Utilizamos exclusivamente suboperadores essenciais de infraestrutura em nuvem com criptografia em trânsito (TLS 1.2/1.3): processamento de pagamentos via Stripe (PCI-DSS Nível 1), banco de dados gerenciado PostgreSQL com conexão SSL obrigatória, hospedagem de aplicação containerizada e proteção de borda DNS/CDN via Cloudflare, além de atribuição própria sem cookies invasivos de terceiros.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>4. Segurança Técnica e Isolamento Multi-Tenant</h2>
+            <p>Adotamos medidas técnicas e administrativas alinhadas ao Art. 46 da LGPD para proteger os dados contra acessos não autorizados, incluindo derivação criptográfica de senhas (PBKDF2-SHA256 com salt aleatório), autenticação JWT assinada, isolamento lógico estrito por Workspace, proteção contra injeção de fórmulas em planilhas CSV, limitação de requisições por endereço IP e registro em trilha de auditoria das operações administrativas.</p>
+          </section>
+
+          <section class="seo-section">
+            <h2>5. Direitos dos Titulares e Canal de Privacidade</h2>
+            <p>Em cumprimento ao Art. 18 da LGPD, o titular ou representante legal pode solicitar confirmação de tratamento, acesso, correção cadastral, portabilidade ou eliminação integral de sua conta e Workspaces ${dpoContactHtml}. As requisições são respondidas com prioridade e transparência dentro dos prazos legais.</p>
           </section>
         </article>
       </div>
@@ -1882,6 +2027,16 @@ function main() {
     ...writePageFile('precos', buildPricingPageHtml()),
     priority: '0.9',
     changefreq: 'weekly',
+  });
+  generatedPages.push({
+    ...writePageFile('termos', buildTermsPageHtml()),
+    priority: '0.5',
+    changefreq: 'monthly',
+  });
+  generatedPages.push({
+    ...writePageFile('privacidade', buildPrivacyPageHtml()),
+    priority: '0.5',
+    changefreq: 'monthly',
   });
 
   // 3. Write 10 ERP Preset pages

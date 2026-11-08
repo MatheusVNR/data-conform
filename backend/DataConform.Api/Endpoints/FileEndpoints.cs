@@ -17,10 +17,12 @@ public static class FileEndpoints
         group.MapPost("/projects/{projectId:guid}/files/upload", UploadFile)
             .WithName("UploadFile")
             .DisableAntiforgery()
+            .RequireRateLimiting("UploadValidatePolicy")
             .Produces<ImportFileDto>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status413PayloadTooLarge);
 
         group.MapGet("/projects/{projectId:guid}/files", GetFilesByProject)
             .WithName("GetFilesByProject")
@@ -30,6 +32,7 @@ public static class FileEndpoints
 
         group.MapPost("/files/{fileId:guid}/validate", ValidateFile)
             .WithName("ValidateFile")
+            .RequireRateLimiting("UploadValidatePolicy")
             .Produces<ValidationReportDto>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound)
@@ -52,11 +55,22 @@ public static class FileEndpoints
 
     private static async Task<IResult> UploadFile(
         Guid projectId,
+        HttpContext httpContext,
         IFormFile? file,
         ClaimsPrincipal claimsPrincipal,
         IFileService fileService,
         CancellationToken cancellationToken)
     {
+        const long maxGlobalBytes = 52L * 1024L * 1024L;
+        if (httpContext.Request.ContentLength.HasValue &&
+            httpContext.Request.ContentLength.Value > maxGlobalBytes)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status413PayloadTooLarge,
+                title: "Arquivo Muito Grande",
+                detail: "O arquivo enviado excede o tamanho máximo suportado pelo servidor (50 MB).");
+        }
+
         Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
         Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
 
@@ -138,7 +152,8 @@ public static class FileEndpoints
         CancellationToken cancellationToken)
     {
         Guid? userId = TenantAuthorizationHelper.GetAuthenticatedUserId(claimsPrincipal);
-        ServiceResult result = await fileService.DeleteFileAsync(fileId, userId, cancellationToken);
+        Guid? primaryWorkspaceId = TenantAuthorizationHelper.GetPrimaryWorkspaceId(claimsPrincipal);
+        ServiceResult result = await fileService.DeleteFileAsync(fileId, userId, primaryWorkspaceId, cancellationToken);
         return result.ToHttpResult();
     }
 }

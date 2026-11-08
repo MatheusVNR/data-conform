@@ -58,6 +58,11 @@ namespace DataConform.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Action", "EntityId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_audit_logs_stripe_idempotency")
+                        .HasFilter("\"Action\" IN ('StripeWebhookProcessed', 'StripeCheckoutConfirmed')");
+
                     b.HasIndex("UserId", "Action");
 
                     b.HasIndex("WorkspaceId", "CreatedAt");
@@ -302,6 +307,11 @@ namespace DataConform.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("CancelAtPeriodEnd")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -334,6 +344,9 @@ namespace DataConform.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(50)");
 
                     b.Property<DateTimeOffset?>("PlanExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("QuotaPeriodStartedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Slug")
