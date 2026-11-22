@@ -81,7 +81,7 @@ export class ApiHttpError extends Error {
 }
 
 export function warmUpBackend(): void {
-  void apiFetch(`${API_BASE_URL}/billing/config`, { method: 'GET' }, DEFAULT_REQUEST_TIMEOUT_MS).catch(
+  void apiFetch(`${API_BASE_URL}/workspaces/billing-config`, { method: 'GET' }, DEFAULT_REQUEST_TIMEOUT_MS).catch(
     () => undefined
   );
 }

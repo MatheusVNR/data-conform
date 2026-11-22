@@ -374,21 +374,8 @@ public class CsvValidatorServiceTests
     [Fact]
     public async Task PublicTemplatesDogfooding_AllFourCommercialCsvTemplates_ShouldPassWithZeroErrors()
     {
-        string? currentDir = AppContext.BaseDirectory;
-        string? templatesRoot = null;
-
-        while (!string.IsNullOrEmpty(currentDir))
-        {
-            string candidate = Path.Combine(currentDir, "docs", "comercial", "github-templates-repo");
-            if (Directory.Exists(candidate))
-            {
-                templatesRoot = candidate;
-                break;
-            }
-            currentDir = Directory.GetParent(currentDir)?.FullName;
-        }
-
-        Assert.NotNull(templatesRoot);
+        string fixturesRoot = Path.Combine(AppContext.BaseDirectory, "Fixtures", "Templates");
+        Assert.True(Directory.Exists(fixturesRoot), $"Diretório de fixtures não encontrado: {fixturesRoot}");
 
         string[] relativeTemplatePaths = new string[]
         {
@@ -398,18 +385,35 @@ public class CsvValidatorServiceTests
             Path.Combine("omie", "Clientes_Fornecedores_Modelo.csv")
         };
 
-        foreach (string relPath in relativeTemplatePaths)
+        List<string> rootsToValidate = new List<string> { fixturesRoot };
+
+        string? currentDir = AppContext.BaseDirectory;
+        while (!string.IsNullOrEmpty(currentDir))
         {
-            string fullPath = Path.Combine(templatesRoot!, relPath);
-            Assert.True(File.Exists(fullPath), $"Template comercial não encontrado: {fullPath}");
+            string localDocsCandidate = Path.Combine(currentDir, "docs", "comercial", "github-templates-repo");
+            if (Directory.Exists(localDocsCandidate))
+            {
+                rootsToValidate.Add(localDocsCandidate);
+                break;
+            }
+            currentDir = Directory.GetParent(currentDir)?.FullName;
+        }
 
-            await using FileStream fs = File.OpenRead(fullPath);
-            FileValidationResult validation = await _validator.ValidateCsvStreamAsync(fs, Guid.NewGuid());
+        foreach (string rootDir in rootsToValidate)
+        {
+            foreach (string relPath in relativeTemplatePaths)
+            {
+                string fullPath = Path.Combine(rootDir, relPath);
+                Assert.True(File.Exists(fullPath), $"Template comercial não encontrado: {fullPath}");
 
-            Assert.True(
-                validation.ErrorRows == 0 && validation.Issues.Count == 0,
-                $"O template público '{relPath}' falhou na validação com {validation.Issues.Count} apontamento(s): " +
-                string.Join("; ", validation.Issues.Select(i => $"L{i.RowNumber}:{i.ColumnName}:{i.IssueCode}")));
+                await using FileStream fs = File.OpenRead(fullPath);
+                FileValidationResult validation = await _validator.ValidateCsvStreamAsync(fs, Guid.NewGuid());
+
+                Assert.True(
+                    validation.ErrorRows == 0 && validation.Issues.Count == 0,
+                    $"O template público '{relPath}' em '{rootDir}' falhou na validação com {validation.Issues.Count} apontamento(s): " +
+                    string.Join("; ", validation.Issues.Select(i => $"L{i.RowNumber}:{i.ColumnName}:{i.IssueCode}")));
+            }
         }
     }
 }

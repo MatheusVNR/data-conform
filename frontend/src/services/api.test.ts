@@ -102,13 +102,13 @@ describe('resiliência para hospedagem gratuita (Render Free)', () => {
     await expect(getCurrentUser()).rejects.toBeInstanceOf(ApiHttpError);
   });
 
-  it('warmUpBackend dispara GET /api/billing/config sem propagar exceção em falha de rede', async () => {
+  it('warmUpBackend dispara GET /api/workspaces/billing-config sem propagar exceção em falha de rede', async () => {
     const fetchMock = vi.fn().mockRejectedValue(new Error('cold start timeout'));
     vi.stubGlobal('fetch', fetchMock);
 
     expect(() => warmUpBackend()).not.toThrow();
     expect(fetchMock).toHaveBeenCalledWith(
-      '/api/billing/config',
+      '/api/workspaces/billing-config',
       expect.objectContaining({ method: 'GET' })
     );
   });

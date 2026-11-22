@@ -21,6 +21,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Fixtures\**\*.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\DataConform.Domain\DataConform.Domain.csproj" />
     <ProjectReference Include="..\..\DataConform.Application\DataConform.Application.csproj" />
     <ProjectReference Include="..\..\DataConform.Infrastructure\DataConform.Infrastructure.csproj" />

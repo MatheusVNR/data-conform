@@ -1,0 +1,4 @@
+CardCode;CardName;CardType;GroupCode;LicTradNum;Currency;Phone1;Email
+Código do Parceiro;Razão Social;Tipo (C/S/L);Código do Grupo;CNPJ/CPF;Moeda;Telefone;E-mail
+C0001;DISTRIBUIDORA BRASIL DE ALIMENTOS SA;C;100;12345678000195;BRL;1133334444;contato@distribuidorabrasil.exemplo.com.br
+S0001;METALURGICA INDUSTRIAL PAULISTA LTDA;S;101;11222333000181;BRL;1144445555;financeiro@metalurgicapaulista.exemplo.com.br
